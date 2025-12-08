@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Target, Trophy, Calendar } from "lucide-react";
 
 const matches = [
@@ -24,7 +25,8 @@ const matches = [
 
 export default function MatchesPage() {
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       <PageHeader
         title="Matches"
         description="Submit scores, confirm results, and view history."
@@ -68,6 +70,6 @@ export default function MatchesPage() {
           </div>
         ))}
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

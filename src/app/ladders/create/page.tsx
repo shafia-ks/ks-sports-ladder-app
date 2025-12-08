@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useAuth } from "@/lib/auth/auth-context";
 import { Trophy } from "lucide-react";
 
 const SPORTS = ["Squash", "Tennis", "Badminton", "Racquetball", "Pickleball"];
@@ -20,6 +22,8 @@ const RANKING_TYPES = [
 ];
 
 export default function CreateLadderPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -33,7 +37,13 @@ export default function CreateLadderPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
+
+  // Check if user has permission to create ladder
+  useEffect(() => {
+    if (user && !["organizer", "admin"].includes(user.role)) {
+      setError("Only group leaders (organizers) and admins can create ladders.");
+    }
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -65,22 +75,36 @@ export default function CreateLadderPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Create Ladder"
-        description="Set up a new competition ladder for your group."
-      />
+    <ProtectedRoute requiredRoles={["organizer", "admin"]}>
+      <div className="space-y-6">
+        <PageHeader
+          title="Create Ladder"
+          description="Set up a new competition ladder for your group."
+        />
 
-      <div className="max-w-2xl">
-        <form onSubmit={handleSubmit} className="card space-y-6 p-6">
+        <div className="max-w-2xl">
           {error && (
-            <div className="rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
-              {error}
+            <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">
+              <p className="font-semibold">{error}</p>
+              {error.includes("Only group leaders") && (
+                <p className="mt-2">
+                  <Link href="/dashboard" className="font-semibold underline">
+                    Request to become a group leader →
+                  </Link>
+                </p>
+              )}
             </div>
           )}
 
-          {/* Basic Info */}
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="card space-y-6 p-6">
+            {error && (
+              <div className="rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
+                {error}
+              </div>
+            )}
+
+            {/* Basic Info */}
+            <div className="space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">Basic Information</h2>
 
             <div className="space-y-2">
@@ -262,7 +286,8 @@ export default function CreateLadderPage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

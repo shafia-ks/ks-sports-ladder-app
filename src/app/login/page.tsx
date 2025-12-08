@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +14,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { isSignedIn, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isSignedIn) {
+      router.push("/dashboard");
+    }
+  }, [isSignedIn, isLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

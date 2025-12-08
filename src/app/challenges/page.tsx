@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Swords, Calendar, MapPin } from "lucide-react";
 
 const challenges = [
@@ -26,7 +27,8 @@ const challenges = [
 
 export default function ChallengesPage() {
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       <PageHeader
         title="Challenges"
         description="Track outgoing and incoming challenges with status, expiry, and actions."
@@ -73,6 +75,6 @@ export default function ChallengesPage() {
           </div>
         ))}
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

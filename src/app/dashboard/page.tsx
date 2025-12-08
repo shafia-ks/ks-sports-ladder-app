@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Badge } from "@/components/ui/badge";
+import { RoleRequest } from "@/components/ui/role-request";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Trophy, Swords, TrendingUp, Calendar, AlertCircle, Plus } from "lucide-react";
 
 const userLadders = [
@@ -32,17 +34,18 @@ const pendingJoins = [
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Stay on top of your ladders, challenges, and upcoming matches."
-        cta={
-          <Link href="/challenges/create" className="btn btn-primary">
-            <Swords className="h-4 w-4" />
-            New challenge
-          </Link>
-        }
-      />
+    <ProtectedRoute>
+      <div className="space-y-6">
+        <PageHeader
+          title="Dashboard"
+          description="Stay on top of your ladders, challenges, and upcoming matches."
+          cta={
+            <Link href="/challenges/create" className="btn btn-primary">
+              <Swords className="h-4 w-4" />
+              New challenge
+            </Link>
+          }
+        />
 
       {/* My Ladders */}
       <div className="space-y-4">
@@ -108,6 +111,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Role Request Section */}
+      <RoleRequest currentRole="player" hasActivRequest={false} />
+
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -171,6 +177,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

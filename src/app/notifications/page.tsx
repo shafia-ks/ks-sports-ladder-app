@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui/page-header";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 const notifications = [
   {
@@ -26,7 +27,8 @@ const notifications = [
 
 export default function NotificationsPage() {
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       <PageHeader
         title="Notifications"
         description="In-app alerts for challenges, matches, expiry, and admin updates."
@@ -49,6 +51,6 @@ export default function NotificationsPage() {
           </div>
         ))}
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 const cards = [
+  {
+    title: "Leader Requests",
+    description: "Review and approve/reject player requests to become group leaders.",
+    href: "/admin/leader-requests",
+  },
   {
     title: "Ladder settings",
     description: "Configure rules, ranking modes, challenge limits, visibility.",
@@ -21,13 +27,14 @@ const cards = [
 
 export default function AdminPage() {
   return (
-    <div className="space-y-6">
+    <ProtectedRoute requiredRoles={["admin", "organizer"]}>
+      <div className="space-y-6">
       <PageHeader
         title="Admin console"
         description="Organizer tools with audit logging and RBAC-ready controls."
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <Link key={card.href} href={card.href} className="card block p-4 hover:border-brand-200">
             <h3 className="text-lg font-semibold text-slate-900">{card.title}</h3>
@@ -36,6 +43,6 @@ export default function AdminPage() {
           </Link>
         ))}
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

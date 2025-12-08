@@ -9,8 +9,11 @@ create extension if not exists "pgcrypto";
 create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
+  first_name text,
+  last_name text,
   full_name text,
   avatar_url text,
+  role text not null default 'player' check (role in ('player', 'organizer', 'admin')),
   gdpr_accepted boolean not null default false,
   gdpr_accepted_at timestamptz,
   sportsmanship_accepted boolean not null default false,
@@ -19,6 +22,7 @@ create table if not exists public.users (
   updated_at timestamptz not null default now()
 );
 create index if not exists users_email_idx on public.users (email);
+create index if not exists users_role_idx on public.users (role);
 
 -- Ladders
 create table if not exists public.ladders (
@@ -70,10 +74,6 @@ alter table public.ladder_memberships add column if not exists status text defau
 alter table public.ladder_memberships add column if not exists requested_at timestamptz default now();
 alter table public.ladder_memberships add column if not exists accepted_at timestamptz;
 alter table public.ladder_memberships add column if not exists accepted_by uuid;
-
--- Add constraints (will error if they exist, but that's ok - schema is already correct)
-alter table public.ladder_memberships add constraint check_membership_status check (status in ('pending','active','removed'));
-alter table public.ladder_memberships add constraint fk_accepted_by foreign key (accepted_by) references auth.users(id);
 
 create index if not exists ladder_memberships_status_idx on public.ladder_memberships (ladder_id, status);
 create index if not exists ladder_memberships_user_idx on public.ladder_memberships (user_id, status);
@@ -157,6 +157,22 @@ create table if not exists public.ranking_history (
   created_at timestamptz not null default now()
 );
 create index if not exists ranking_history_ladder_idx on public.ranking_history (ladder_id, created_at);
+
+-- Leader/Role Promotion Requests
+create table if not exists public.leader_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  requested_role text not null check (requested_role in ('organizer', 'admin')),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  reason text,
+  requested_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id) on delete set null,
+  rejection_reason text
+);
+create index if not exists leader_requests_user_idx on public.leader_requests (user_id);
+create index if not exists leader_requests_status_idx on public.leader_requests (status);
+create index if not exists leader_requests_requested_at_idx on public.leader_requests (requested_at);
 
 -- Recommended defaults for challenge_rules
 -- { "maxPositionsUp": 3, "preventChallengingBusyPlayers": true, "maxActiveChallengesPerPlayer": 1, "expiryDays": 7 }
