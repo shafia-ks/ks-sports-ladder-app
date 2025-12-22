@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
@@ -33,6 +33,10 @@ export default function CreateLadderPage() {
     ranking: "default-swap-minimal-drop",
     maxPositionsUp: 3,
     expiryDays: 7,
+    cooldownHours: 0,
+    kFactor: 24,
+    maxDrop: 1,
+    bonusWinStreak: 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -45,30 +49,62 @@ export default function CreateLadderPage() {
     }
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "maxPositionsUp" || name === "expiryDays" ? parseInt(value) : value,
+      [name]:
+        name === "maxPositionsUp" || name === "expiryDays" || name === "cooldownHours" || name === "kFactor" ||
+        name === "maxDrop" || name === "bonusWinStreak"
+          ? parseInt(value)
+          : value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // TODO: Call API to create ladder
-      // const response = await fetch("/api/ladders", {
-      //   method: "POST",
-      //   body: JSON.stringify(formData),
-      // });
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
 
-      // For now, just redirect
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        sport_id: formData.sport,
+        location: formData.location,
+        visibility: formData.visibility,
+        challenge_rules: {
+          max_positions_up: formData.maxPositionsUp,
+          expiry_days: formData.expiryDays,
+          cooldown_hours: formData.cooldownHours,
+        },
+        ranking_rules: {
+          type: formData.ranking,
+          kFactor: formData.kFactor || undefined,
+          maxDrop: formData.maxDrop || undefined,
+          bonusWinStreak: formData.bonusWinStreak || undefined,
+        },
+        created_by: user.id,
+      };
+
+      const response = await fetch("/api/ladders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create ladder");
+      }
+
       router.push("/ladders");
     } catch (err) {
-      setError("Failed to create ladder. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to create ladder. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -200,6 +236,61 @@ export default function CreateLadderPage() {
                 </label>
               ))}
             </div>
+
+            {formData.ranking === "points-elo" && (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="kFactor" className="block text-sm font-medium text-slate-700">
+                    K-Factor
+                  </label>
+                  <input
+                    id="kFactor"
+                    name="kFactor"
+                    type="number"
+                    min="8"
+                    max="64"
+                    value={formData.kFactor}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="bonusWinStreak" className="block text-sm font-medium text-slate-700">
+                    Bonus Win Streak
+                  </label>
+                  <input
+                    id="bonusWinStreak"
+                    name="bonusWinStreak"
+                    type="number"
+                    min="0"
+                    max="5"
+                    value={formData.bonusWinStreak}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.ranking === "default-swap-minimal-drop" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="maxDrop" className="block text-sm font-medium text-slate-700">
+                    Max Drop
+                  </label>
+                  <input
+                    id="maxDrop"
+                    name="maxDrop"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.maxDrop}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Challenge Rules */}
@@ -234,6 +325,22 @@ export default function CreateLadderPage() {
                   min="1"
                   max="30"
                   value={formData.expiryDays}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="cooldownHours" className="block text-sm font-medium text-slate-700">
+                  Cooldown (hours)
+                </label>
+                <input
+                  id="cooldownHours"
+                  name="cooldownHours"
+                  type="number"
+                  min="0"
+                  max="168"
+                  value={formData.cooldownHours}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />

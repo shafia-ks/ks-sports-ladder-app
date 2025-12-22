@@ -1,4 +1,5 @@
 import { Check, Clock, X, AlertCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ChallengeStatus, MatchStatus } from "@/types/domain";
 
 interface StatusBadgeProps {
@@ -6,7 +7,7 @@ interface StatusBadgeProps {
   type?: "challenge" | "match" | "generic";
 }
 
-const challengeStatusConfig: Record<ChallengeStatus, { variant: string; icon: any }> = {
+const challengeStatusConfig: Record<ChallengeStatus, { variant: string; icon: LucideIcon }> = {
   Pending: { variant: "warning", icon: Clock },
   Accepted: { variant: "success", icon: Check },
   Declined: { variant: "danger", icon: X },
@@ -15,14 +16,14 @@ const challengeStatusConfig: Record<ChallengeStatus, { variant: string; icon: an
   Cancelled: { variant: "neutral", icon: X },
 };
 
-const matchStatusConfig: Record<MatchStatus, { variant: string; icon: any }> = {
+const matchStatusConfig: Record<MatchStatus, { variant: string; icon: LucideIcon }> = {
   Submitted: { variant: "warning", icon: Clock },
   Confirmed: { variant: "success", icon: Check },
   Disputed: { variant: "danger", icon: AlertCircle },
 };
 
 export function StatusBadge({ status, type = "generic" }: StatusBadgeProps) {
-  let config = { variant: "neutral", icon: null };
+  let config: { variant: string; icon: LucideIcon | null } = { variant: "neutral", icon: null };
 
   if (type === "challenge" && status in challengeStatusConfig) {
     config = challengeStatusConfig[status as ChallengeStatus];

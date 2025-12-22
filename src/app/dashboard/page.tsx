@@ -1,44 +1,32 @@
+"use client";
+
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/ui/stat-card";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { Badge } from "@/components/ui/badge";
 import { RoleRequest } from "@/components/ui/role-request";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Trophy, Swords, TrendingUp, Calendar, AlertCircle, Plus } from "lucide-react";
-
-const userLadders = [
-  {
-    id: "ladder-1",
-    name: "Squash A League",
-    rank: 4,
-    members: 24,
-    status: "active",
-  },
-  {
-    id: "ladder-2",
-    name: "Tennis Mixed",
-    rank: 7,
-    members: 18,
-    status: "active",
-  },
-];
-
-const pendingJoins = [
-  {
-    id: "ladder-3",
-    name: "Badminton Beginners",
-    requestedAt: "2024-12-08",
-  },
-];
+import { useLadders } from "@/features/ladders/api";
+import { useMemberships } from "@/features/memberships/api";
+import { useAuth } from "@/lib/auth/auth-context";
+import { Loader2, Swords, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { data: laddersData, isLoading: laddersLoading, error: laddersError } = useLadders();
+  const { data: membershipsData, isLoading: membershipsLoading, error: membershipsError } = useMemberships(user?.id);
+
+  const ladders = laddersData?.ladders ?? [];
+  const myActive = membershipsData?.active ?? [];
+  const myPending = membershipsData?.pending ?? [];
+  const isLoading = laddersLoading || membershipsLoading;
+  const hasError = laddersError || membershipsError;
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
         <PageHeader
           title="Dashboard"
-          description="Stay on top of your ladders, challenges, and upcoming matches."
+          description="Your ladders, challenges, and admin tasks in one place."
           cta={
             <Link href="/challenges/create" className="btn btn-primary">
               <Swords className="h-4 w-4" />
@@ -47,135 +35,92 @@ export default function DashboardPage() {
           }
         />
 
-      {/* My Ladders */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">My Ladders</h2>
-          <Link href="/ladders" className="text-sm font-semibold text-brand-600 hover:underline">
-            View all
-          </Link>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">My ladders</h2>
+            <div className="flex gap-2 text-xs text-slate-500">
+              <Link href="/ladders/create" className="rounded-full bg-brand-50 px-2 py-1 font-semibold text-brand-700">
+                Create
+              </Link>
+              <Link href="/ladders" className="rounded-full border border-slate-200 px-2 py-1 font-semibold text-slate-700 hover:border-brand-200">
+                Browse
+              </Link>
+            </div>
+          </div>
+
+          {isLoading && (
+            <div className="grid gap-3 md:grid-cols-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="card p-5 space-y-3">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {hasError && (
+            <div className="card p-4 text-sm text-red-600">Failed to load ladders or memberships.</div>
+          )}
+
+          {!isLoading && !hasError && myActive.length === 0 && (
+            <div className="card space-y-3 p-5 text-center">
+              <p className="text-sm font-semibold text-slate-800">No ladders yet</p>
+              <p className="text-sm text-slate-600">Join or create a ladder to get started.</p>
+              <div className="flex justify-center gap-2">
+                <Link href="/ladders/create" className="btn btn-primary text-sm">Create ladder</Link>
+                <Link href="/ladders" className="btn btn-secondary text-sm">Browse ladders</Link>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !hasError && myActive.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2">
+              {myActive.map((membership: any) => (
+                <Link
+                  key={membership.id}
+                  href={`/ladders/${membership.ladder_id}`}
+                  className="card group p-5 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-900 group-hover:text-brand-600">
+                        {membership.ladders?.name}
+                      </h3>
+                      <p className="text-sm text-slate-600">{membership.ladders?.location || "Location TBD"}</p>
+                    </div>
+                    <div className="rounded-lg bg-brand-100 px-3 py-1">
+                      <p className="text-sm font-bold text-brand-700">#{membership.current_rank ?? ""}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        {userLadders.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {userLadders.map((ladder) => (
-              <Link
-                key={ladder.id}
-                href={`/ladders/${ladder.id}`}
-                className="card group p-5 hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900 group-hover:text-brand-600">
-                      {ladder.name}
-                    </h3>
-                    <p className="text-sm text-slate-600">{ladder.members} members</p>
-                  </div>
-                  <div className="rounded-lg bg-brand-100 px-3 py-1">
-                    <p className="text-sm font-bold text-brand-700">#{ladder.rank}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="card space-y-3 p-5 text-center">
-            <Trophy className="mx-auto h-8 w-8 text-slate-400" />
-            <p className="text-sm text-slate-600">No ladders yet</p>
-            <Link href="/ladders" className="inline-block text-sm font-semibold text-brand-600">
-              Browse & join a ladder →
-            </Link>
+        {!isLoading && !hasError && myPending.length > 0 && (
+          <div className="card space-y-3 p-5">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-warning-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Pending join requests</p>
+                <p className="text-xs text-slate-600">Awaiting organizer approval.</p>
+              </div>
+            </div>
+            <ul className="space-y-2 text-sm text-slate-700">
+              {myPending.map((membership: any) => (
+                <li key={membership.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
+                  <span>{membership.ladders?.name || "Ladder"}</span>
+                  <span className="text-xs text-slate-500">Requested {membership.requested_at?.slice(0, 10) || "recently"}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-      </div>
 
-      {/* Pending Join Requests */}
-      {pendingJoins.length > 0 && (
-        <div className="card space-y-4 p-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-warning-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-slate-900">Pending Join Requests</h3>
-              <p className="text-sm text-slate-600 mt-1">
-                {pendingJoins.length} request{pendingJoins.length > 1 ? "s" : ""} awaiting approval
-              </p>
-              <ul className="mt-3 space-y-2">
-                {pendingJoins.map((join) => (
-                  <li key={join.id} className="text-sm text-slate-700">
-                    <span className="font-medium">{join.name}</span> - Requested {join.requestedAt}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Role Request Section */}
-      <RoleRequest currentRole="player" hasActivRequest={false} />
-
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Current Rank"
-          value="#4"
-          subtitle="Squash A League"
-          icon={Trophy}
-          trend={{ value: 2, isPositive: true }}
-        />
-        <StatCard
-          title="Active Challenges"
-          value="2"
-          subtitle="1 to confirm, 1 pending"
-          icon={Swords}
-        />
-        <StatCard
-          title="Win Rate"
-          value="73%"
-          subtitle="Last 10 matches"
-          icon={TrendingUp}
-          trend={{ value: 5, isPositive: true }}
-        />
-        <StatCard
-          title="Next Match"
-          value="Tomorrow"
-          subtitle="vs Riley Chen"
-          icon={Calendar}
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card p-5 space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900">Performance Overview</h2>
-          <ProgressBar label="Matches Won" value={12} max={20} showPercentage />
-          <ProgressBar label="Challenges Completed" value={8} max={10} showPercentage />
-          <ProgressBar label="Season Progress" value={45} max={90} showPercentage />
-        </div>
-
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Upcoming Matches</h2>
-            <Link className="text-sm font-semibold text-brand-700" href="/matches">
-              View all
-            </Link>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 p-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">vs Riley Chen</p>
-                <p className="text-xs text-slate-500">Tomorrow at 6:00 PM</p>
-              </div>
-              <span className="badge badge-success">Accepted</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 p-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">vs Jordan Smith</p>
-                <p className="text-xs text-slate-500">Dec 15 at 7:30 PM</p>
-              </div>
-              <span className="badge badge-warning">Pending</span>
-            </div>
-          </div>
-        </div>
+        <RoleRequest currentRole="player" hasActivRequest={false} />
       </div>
     </ProtectedRoute>
   );

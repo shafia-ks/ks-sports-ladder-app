@@ -1,49 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Trophy, Users, MapPin, Plus } from "lucide-react";
-
-const ladders = [
-  {
-    id: "ladder-1",
-    name: "Squash A League",
-    sport: "Squash",
-    location: "Downtown Court",
-    members: 24,
-    status: "Active",
-    description: "Competitive squash ladder for advanced players",
-  },
-  {
-    id: "ladder-2",
-    name: "Tennis Mixed Doubles",
-    sport: "Tennis",
-    location: "Central Park",
-    members: 18,
-    status: "Active",
-    description: "Mixed doubles tennis ladder for all levels",
-  },
-  {
-    id: "ladder-3",
-    name: "Badminton Beginners",
-    sport: "Badminton",
-    location: "Sports Complex",
-    members: 12,
-    status: "Active",
-    description: "Friendly badminton ladder for beginners",
-  },
-  {
-    id: "ladder-4",
-    name: "Racquetball Pro",
-    sport: "Racquetball",
-    location: "Fitness Center",
-    members: 8,
-    status: "Waiting for approval",
-    description: "High-level racquetball competition",
-  },
-];
+import { Badge } from "@/components/ui/badge";
+import { useLadders } from "@/features/ladders/api";
+import { Loader2, MapPin, Plus, Shield } from "lucide-react";
 
 export default function LaddersPage() {
+  const { data, isLoading, error, refetch } = useLadders();
+  const ladders = data?.ladders ?? [];
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
@@ -58,49 +25,82 @@ export default function LaddersPage() {
           }
         />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {ladders.map((ladder) => (
-            <div key={ladder.id} className="card p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-brand-100 p-2">
-                    <Trophy className="h-5 w-5 text-brand-700" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
-                    <p className="text-xs text-slate-500">{ladder.sport}</p>
-                  </div>
-                </div>
-                <Badge variant={ladder.status === "Active" ? "success" : "warning"}>
-                  {ladder.status}
-                </Badge>
-              </div>
+        {isLoading && (
+          <div className="card p-5 text-center text-sm text-slate-600 flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading ladders...
+          </div>
+        )}
 
-              <p className="text-sm text-slate-600">{ladder.description}</p>
+        {error && (
+          <div className="card p-5 text-center space-y-3">
+            <p className="text-sm text-red-600">Failed to load ladders.</p>
+            <button className="btn btn-secondary text-sm" onClick={() => refetch()}>
+              Try again
+            </button>
+          </div>
+        )}
 
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {ladder.location}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  {ladder.members} members
-                </span>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Link
-                  href={`/ladders/${ladder.id}`}
-                  className="btn btn-secondary text-sm flex-1"
-                >
-                  View
-                </Link>
-                <button className="btn btn-primary text-sm flex-1">Join</button>
-              </div>
+        {!isLoading && !error && ladders.length === 0 && (
+          <div className="card p-6 text-center space-y-4">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+              <Plus className="h-6 w-6" />
             </div>
-          ))}
-        </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-800">No ladders yet.</p>
+              <p className="text-sm text-slate-600">
+                Create a ladder or check back once one is available to join.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Link href="/ladders/create" className="btn btn-primary">
+                <Plus className="h-4 w-4" />
+                Create ladder
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !error && ladders.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {ladders.map((ladder: any) => (
+              <div key={ladder.id} className="card p-5 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
+                    <p className="text-xs text-slate-500">{ladder.description || "No description provided"}</p>
+                  </div>
+                  <Badge variant={ladder.status === "active" ? "success" : "neutral"}>
+                    {ladder.status ?? "pending"}
+                  </Badge>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                  {ladder.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {ladder.location}
+                    </span>
+                  )}
+                  {ladder.visibility && (
+                    <span className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      {ladder.visibility}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Link href={`/ladders/${ladder.id}`} className="btn btn-secondary text-sm flex-1">
+                    View
+                  </Link>
+                  <Link href={`/ladders/${ladder.id}`} className="btn btn-primary text-sm flex-1">
+                    Join
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );

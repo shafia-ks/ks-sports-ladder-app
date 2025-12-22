@@ -12,7 +12,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const router = useRouter();
   const { isSignedIn, isLoading } = useAuth();
 
@@ -25,6 +27,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     setLoading(true);
 
     if (!supabase) {
@@ -51,6 +54,34 @@ export default function LoginPage() {
     }
   };
 
+  const handleReset = async () => {
+    setError("");
+    setInfo("");
+    if (!email) {
+      setError("Enter your email to reset your password.");
+      return;
+    }
+    if (!supabase) {
+      setError("Supabase is not configured");
+      return;
+    }
+    setResetting(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      if (resetError) {
+        setError(resetError.message);
+      } else {
+        setInfo("Check your email for a reset link.");
+      }
+    } catch (err) {
+      setError("Unable to send reset email. Try again.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 px-4">
       <div className="w-full max-w-md space-y-6">
@@ -68,6 +99,11 @@ export default function LoginPage() {
           {error && (
             <div className="rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
               {error}
+            </div>
+          )}
+          {info && (
+            <div className="rounded-lg border border-success-200 bg-success-50 p-3 text-sm text-success-700">
+              {info}
             </div>
           )}
 
@@ -108,6 +144,15 @@ export default function LoginPage() {
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={resetting}
+            className="w-full text-center text-xs font-semibold text-brand-700 hover:text-brand-800"
+          >
+            {resetting ? "Sending reset email..." : "Forgot password? Send reset link"}
+          </button>
         </form>
 
         {/* Divider */}
@@ -128,11 +173,9 @@ export default function LoginPage() {
           Create account
         </Link>
 
-        {/* Demo credentials */}
-        <div className="rounded-lg bg-slate-100 p-3 text-xs text-slate-600">
-          <p className="font-semibold text-slate-700">Demo Credentials:</p>
-          <p>Email: demo@sports.local</p>
-          <p>Password: demo123</p>
+        <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+          <p className="font-semibold text-slate-700">Need access?</p>
+          <p>Sign up or contact an admin to be added to a ladder.</p>
         </div>
       </div>
     </div>

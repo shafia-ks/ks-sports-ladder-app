@@ -10,8 +10,9 @@ export async function updateLadderRanks(params: {
   }
 
   // Atomic transaction: update each membership's currentRank
+  const client = supabaseAdmin!;
   const updates = params.ranking.map((entry) =>
-    supabaseAdmin
+    client
       .from("ladder_memberships")
       .update({ current_rank: entry.currentRank })
       .eq("ladder_id", params.ladderId)

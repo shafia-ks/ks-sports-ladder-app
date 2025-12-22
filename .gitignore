@@ -7,3 +7,4 @@ out
 coverage
 playwright-report
 junit.xml
+*.tsbuildinfo

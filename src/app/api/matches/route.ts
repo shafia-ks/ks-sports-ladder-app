@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { applyMatchResult } from "@/lib/ranking/ranking-engine";
-import { RankingRuleType } from "@/types/domain";
+import { RankingRules, RankingRuleType } from "@/types/domain";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { updateLadderRanks } from "@/lib/supabase/rankings";
 import { createAuditLog } from "@/lib/supabase/audit";
 import { notifyMatchSubmitted } from "@/lib/supabase/notifications";
+
+const rankingRulesSchema = z.object({
+  type: z.custom<RankingRuleType>(),
+  kFactor: z.number().optional(),
+  maxDrop: z.number().int().optional(),
+  bonusWinStreak: z.number().int().optional(),
+});
 
 const submitSchema = z.object({
   ladderId: z.string(),
@@ -18,6 +25,7 @@ const submitSchema = z.object({
   playedAt: z.string().optional(),
   ruleType: z.custom<RankingRuleType>(),
   ranking: z.array(z.object({ userId: z.string(), currentRank: z.number().int().positive() })),
+  rankingRules: rankingRulesSchema.optional(),
 });
 
 export async function GET(req: Request) {
@@ -63,7 +71,7 @@ export async function POST(req: Request) {
     ranking: parsed.data.ranking,
     winnerId: parsed.data.winnerId,
     loserId: parsed.data.loserId,
-    ruleType: parsed.data.ruleType,
+    rules: deriveRules(parsed.data.ruleType, parsed.data.rankingRules),
   });
 
   const { data: matchRow, error: matchError } = await supabaseAdmin
@@ -123,4 +131,9 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok: true, note: result.note, ranking: result.ranking, matchId: matchRow?.id });
+}
+
+function deriveRules(ruleType: RankingRuleType, rules?: RankingRules | null): RankingRules {
+  if (rules && rules.type) return rules;
+  return { type: ruleType };
 }

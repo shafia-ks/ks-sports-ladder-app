@@ -10,7 +10,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
-    if (!supabase) {
+    const client = supabase;
+    if (!client) {
       setIsLoading(false);
       return;
     }
@@ -20,11 +21,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await client.auth.getSession();
 
         if (session?.user) {
           // Fetch user profile from users table
-          const { data: profile } = await supabase
+          const { data: profile } = await client
             .from("users")
             .select("id, email, first_name, last_name, full_name, avatar_url, role")
             .eq("id", session.user.id)
@@ -55,13 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+    } = client.auth.onAuthStateChange(async (event: string, session: any) => {
       if (event === "SIGNED_OUT") {
         setUser(null);
         setIsSignedIn(false);
       } else if (session?.user) {
         // Fetch updated profile
-        const { data: profile } = await supabase
+        const { data: profile } = await client
           .from("users")
           .select("id, email, first_name, last_name, full_name, avatar_url, role")
           .eq("id", session.user.id)
@@ -88,8 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    const client = supabase;
+    if (!client) return;
+    await client.auth.signOut();
     setUser(null);
     setIsSignedIn(false);
   };

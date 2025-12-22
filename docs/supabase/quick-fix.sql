@@ -17,7 +17,7 @@ create table if not exists public.leader_requests (
   reviewed_by uuid references auth.users(id) on delete set null,
   rejection_reason text
 );
-
+ 
 -- Create indexes if they don't exist
 create index if not exists leader_requests_user_idx on public.leader_requests (user_id);
 create index if not exists leader_requests_status_idx on public.leader_requests (status);

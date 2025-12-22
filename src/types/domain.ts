@@ -48,10 +48,14 @@ export interface ChallengeRules {
   preventChallengingBusyPlayers: boolean;
   maxActiveChallengesPerPlayer: number;
   expiryDays: number;
+  cooldownHours?: number;
 }
 
 export interface RankingRules {
   type: RankingRuleType;
+  kFactor?: number;
+  maxDrop?: number;
+  bonusWinStreak?: number;
 }
 
 export interface Ladder {
