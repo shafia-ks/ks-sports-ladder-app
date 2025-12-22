@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  typecheck-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Run unit tests
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+
+  e2e-health:
+    runs-on: ubuntu-latest
+    needs: [typecheck-and-unit]
+    if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NODE_ENV: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Start Next.js server
+        run: |
+          nohup npm start --silent &
+          echo $! > .next-server-pid
+      
+      - name: Wait for server to be ready
+        run: |
+          npx wait-on --timeout 60000 http://localhost:3000
+
+      - name: Run health e2e test
+        run: npx playwright test e2e/health.spec.ts --reporter=list
+
+      - name: Stop server
+        if: always()
+        run: |
+          kill $(cat .next-server-pid) || true
