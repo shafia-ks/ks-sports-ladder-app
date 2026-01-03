@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
+    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 } as ResponseInit);
   }
 
   try {
@@ -20,12 +20,12 @@ export async function GET(
       // If the ladder isn't found, return 404 rather than 500
       const msg = (ladderError.message || "").toLowerCase();
       if (!ladder && (msg.includes("not found") || msg.includes("no rows") || msg.includes("not exist"))) {
-        return NextResponse.json({ error: "Ladder not found" }, { status: 404 });
+        return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
       }
       throw ladderError;
     }
     if (!ladder) {
-      return NextResponse.json({ error: "Ladder not found" }, { status: 404 });
+      return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
     }
 
     const { data: members, error: membersError } = await supabaseAdmin
@@ -59,13 +59,13 @@ export async function GET(
     return NextResponse.json({ ladder, members: membersWithUsers });
   } catch (error) {
     console.error(`GET /api/ladders/${params.id} error:`, error);
-    return NextResponse.json({ error: "Failed to load ladder" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load ladder" }, { status: 500 } as ResponseInit);
   }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
+    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 } as ResponseInit);
   }
 
   try {
@@ -91,6 +91,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ ladder: data });
   } catch (error) {
     console.error(`PATCH /api/ladders/${params.id} error:`, error);
-    return NextResponse.json({ error: "Failed to update ladder" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update ladder" }, { status: 500 } as ResponseInit);
   }
 }

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Avatar } from "@/components/ui/avatar";
-import { Check, X, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, X, Trash2, ArrowLeft, Loader2, Download } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useRouter } from "next/navigation";
 
@@ -61,6 +61,15 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
   });
 
   const router = useRouter();
+
+  const handleExport = async (type: "rankings" | "matches") => {
+    try {
+      const url = `/api/export?type=${type}&ladderId=${params.id}`;
+      window.open(url, "_blank");
+    } catch (err) {
+      alert("Export failed");
+    }
+  };
 
   const reload = async () => {
     setIsLoading(true);
@@ -170,13 +179,33 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
   return (
     <ProtectedRoute requiredRoles={["organizer", "admin"]}>
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Link href="/ladders" className="text-brand-600 hover:text-brand-700">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{ladderName}</h1>
-            <p className="text-slate-600">Manage members and ladder settings</p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Link href="/ladders" className="text-brand-600 hover:text-brand-700">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">{ladderName}</h1>
+              <p className="text-slate-600">Manage members and ladder settings</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleExport("rankings")}
+              className="btn btn-secondary btn-sm flex items-center gap-2"
+              title="Export rankings to CSV"
+            >
+              <Download className="h-4 w-4" />
+              Export Rankings
+            </button>
+            <button
+              onClick={() => handleExport("matches")}
+              className="btn btn-secondary btn-sm flex items-center gap-2"
+              title="Export match history to CSV"
+            >
+              <Download className="h-4 w-4" />
+              Export Matches
+            </button>
           </div>
         </div>
 
