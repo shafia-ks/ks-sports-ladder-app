@@ -4,6 +4,10 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  // These routes have useSearchParams and should not be prerendered
+  typescript: {
+    tsconfigPath: './tsconfig.json',
+  },
 };
 
 export default nextConfig;

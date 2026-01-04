@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -20,7 +21,7 @@ interface Ladder {
   name: string;
 }
 
-export default function InviteMembersPage() {
+function InvitePageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams() || new URLSearchParams();
   const ladderId = searchParams.get("ladder_id");
@@ -166,5 +167,13 @@ export default function InviteMembersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <InvitePageContent />
+    </Suspense>
   );
 }

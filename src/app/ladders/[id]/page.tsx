@@ -404,7 +404,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                 <p className="text-sm font-semibold text-slate-700">Ranking</p>
-                <span className="text-xs text-slate-500">{data.ladder.ranking_rules?.type || "Ranking"}</span>
+                <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
               </div>
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">

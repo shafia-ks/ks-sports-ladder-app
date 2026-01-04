@@ -117,21 +117,21 @@ export default function AdminPage() {
           <StatCard
             title="Active Ladders"
             value={stats.totalLadders}
-            icon={Trophy}
+            icon={<Trophy className="h-5 w-5 text-blue-600" />}
             variant="primary"
             loading={loading}
           />
           <StatCard
             title="Pending Challenges"
             value={stats.activeChallenges}
-            icon={Swords}
+            icon={<Swords className="h-5 w-5 text-purple-600" />}
             variant="info"
             loading={loading}
           />
           <StatCard
             title="Pending Disputes"
             value={stats.pendingDisputes}
-            icon={AlertCircle}
+            icon={<AlertCircle className="h-5 w-5 text-red-600" />}
             variant={stats.pendingDisputes > 0 ? "danger" : "neutral"}
             loading={loading}
             link="/admin/disputes"
@@ -139,7 +139,7 @@ export default function AdminPage() {
           <StatCard
             title="Organizer Requests"
             value={stats.pendingRequests}
-            icon={TrendingUp}
+            icon={<TrendingUp className="h-5 w-5 text-amber-600" />}
             variant={stats.pendingRequests > 0 ? "warning" : "neutral"}
             loading={loading}
             link="/admin/organizer-requests"
@@ -147,7 +147,7 @@ export default function AdminPage() {
           <StatCard
             title="Pending Memberships"
             value={stats.pendingMemberships}
-            icon={Users}
+            icon={<Users className="h-5 w-5 text-blue-600" />}
             variant={stats.pendingMemberships > 0 ? "info" : "neutral"}
             loading={loading}
             link="/admin/users"
@@ -155,14 +155,14 @@ export default function AdminPage() {
           <StatCard
             title="Total Members"
             value={stats.totalMembers}
-            icon={Users}
+            icon={<Users className="h-5 w-5 text-slate-600" />}
             variant="neutral"
             loading={loading}
           />
           <StatCard
             title="Recent Matches"
             value={stats.recentMatches}
-            icon={Calendar}
+            icon={<Calendar className="h-5 w-5 text-green-600" />}
             variant="neutral"
             loading={loading}
           />

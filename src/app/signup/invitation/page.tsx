@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,7 +17,7 @@ interface Invitation {
   };
 }
 
-export default function SignUpWithInvitationPage() {
+function SignUpWithInvitationPage() {
   const router = useRouter();
   const searchParams = useSearchParams() || new URLSearchParams();
   const invitationId = searchParams.get("invitation");
@@ -266,5 +267,13 @@ export default function SignUpWithInvitationPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignUpWithInvitationPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <SignUpWithInvitationPage />
+    </Suspense>
   );
 }
