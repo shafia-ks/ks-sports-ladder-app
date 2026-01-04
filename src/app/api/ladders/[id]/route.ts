@@ -32,28 +32,34 @@ export async function GET(
       .from("ladder_memberships")
       .select("id, user_id, current_rank, status, accepted_at, requested_at")
       .eq("ladder_id", params.id)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
+      .order("status", { ascending: false })
       .order("current_rank", { ascending: true });
 
     if (membersError) throw membersError;
 
+    // Only include user details for active members (GDPR compliance - pending/non-members don't see others' details)
     let membersWithUsers = members ?? [];
 
     if (members && members.length > 0) {
-      const userIds = members.map((m) => m.user_id);
+      const activeUserIds = members
+        .filter((m) => m.status === "active")
+        .map((m) => m.user_id);
 
-      const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
-        .from("users")
-        .select("id, full_name, first_name, last_name, email")
-        .in("id", userIds);
+      if (activeUserIds.length > 0) {
+        const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
+          .from("users")
+          .select("id, full_name, first_name, last_name, email")
+          .in("id", activeUserIds);
 
-      if (userProfilesError) throw userProfilesError;
+        if (userProfilesError) throw userProfilesError;
 
-      const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
-      membersWithUsers = members.map((member) => ({
-        ...member,
-        users: userMap.get(member.user_id) ?? null,
-      }));
+        const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
+        membersWithUsers = members.map((member) => ({
+          ...member,
+          users: member.status === "active" ? userMap.get(member.user_id) ?? null : null,
+        }));
+      }
     }
 
     return NextResponse.json({ ladder, members: membersWithUsers });

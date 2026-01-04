@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { user_id, requested_role, reason } = body;
 
+    // Only allow organizer role requests (admin role is reserved for system admins only)
+    if (requested_role !== "organizer") {
+      return NextResponse.json(
+        { error: "Only organizer role can be requested" },
+        { status: 400 }
+      );
+    }
+
     // Check if user already has a pending request
     const { data: existing } = await supabaseAdmin
       .from("leader_requests")
@@ -40,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: "You already have a pending leader request" },
+        { error: "You already have a pending organizer request" },
         { status: 400 }
       );
     }

@@ -1,0 +1,245 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Supabase env vars missing" },
+      { status: 500 } as ResponseInit
+    );
+  }
+
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      // Return public stats only (no personal stats)
+      return await getPublicStats(params.id);
+    }
+
+    const ladderId = params.id;
+
+    // Get user's membership in this ladder
+    const { data: membership } = await supabaseAdmin
+      .from("ladder_memberships")
+      .select("*")
+      .eq("ladder_id", ladderId)
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    // Get user's match stats
+    let myStats = null;
+    let rankChange = null;
+
+    if (membership) {
+      // Get all matches for this user in this ladder
+      const { data: matches } = await supabaseAdmin
+        .from("matches")
+        .select("*")
+        .eq("ladder_id", ladderId)
+        .or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`)
+        .eq("status", "completed")
+        .order("played_at", { ascending: false });
+
+      const totalMatches = matches?.length || 0;
+      const wins = matches?.filter((m: any) => m.winner_id === userId).length || 0;
+      const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
+
+      // Calculate current streak
+      let streak = 0;
+      if (matches && matches.length > 0) {
+        const lastResult = matches[0].winner_id === userId;
+        for (const match of matches) {
+          if ((match.winner_id === userId) === lastResult) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+        if (!lastResult) streak = -streak; // Negative for losing streak
+      }
+
+      // Get rank change (compare to previous rank snapshot)
+      const { data: rankHistory } = await supabaseAdmin
+        .from("ranking_history")
+        .select("*")
+        .eq("ladder_id", ladderId)
+        .order("created_at", { ascending: false })
+        .limit(2);
+
+      if (rankHistory && rankHistory.length >= 2) {
+        const currentRank = membership.current_rank;
+        const previousSnapshot = rankHistory[1].snapshot as any;
+        const previousRank = previousSnapshot.find((r: any) => r.user_id === userId)?.rank;
+        if (currentRank && previousRank) {
+          rankChange = previousRank - currentRank; // Positive means moved up
+        }
+      }
+
+      myStats = {
+        totalMatches,
+        wins,
+        losses: totalMatches - wins,
+        winRate,
+        streak: streak > 0 ? streak : null,
+        rankChange,
+      };
+    }
+
+    // Check if user is organizer
+    const { data: isLeader } = await supabaseAdmin
+      .from("ladder_leaders")
+      .select("id")
+      .eq("ladder_id", ladderId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Get user info to check admin role
+    const { data: userInfo } = await supabaseAdmin
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // Get organizer stats if applicable
+    let organizerStats = null;
+    if (isLeader || userInfo?.role === "admin") {
+      // Count active challenges
+      const { count: activeChallenges } = await supabaseAdmin
+        .from("challenges")
+        .select("*", { count: "exact", head: true })
+        .eq("ladder_id", ladderId)
+        .in("status", ["pending", "accepted"]);
+
+      // Count recent matches (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { count: recentMatches } = await supabaseAdmin
+        .from("matches")
+        .select("*", { count: "exact", head: true })
+        .eq("ladder_id", ladderId)
+        .eq("status", "completed")
+        .gte("played_at", sevenDaysAgo.toISOString());
+
+      organizerStats = {
+        activeChallenges: activeChallenges || 0,
+        recentMatches: recentMatches || 0,
+      };
+    }
+
+    // Get recent activity (last 10 items)
+    const recentActivity = await getRecentActivity(ladderId);
+
+    return NextResponse.json({
+      myStats,
+      organizerStats,
+      recentActivity,
+    } as ResponseInit);
+  } catch (error: any) {
+    console.error("Dashboard stats error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch dashboard stats" },
+      { status: 500 } as ResponseInit
+    );
+  }
+}
+
+async function getPublicStats(ladderId: string) {
+  const recentActivity = await getRecentActivity(ladderId);
+  return NextResponse.json({
+    myStats: null,
+    organizerStats: null,
+    recentActivity,
+  } as ResponseInit);
+}
+
+async function getRecentActivity(ladderId: string) {
+  if (!supabaseAdmin) return [];
+
+  const recentActivity = [];
+
+  // Recent matches
+  const { data: recentMatchesData } = await supabaseAdmin
+    .from("matches")
+    .select(`
+      *,
+      challenger:users!matches_challenger_id_fkey(full_name, first_name, last_name),
+      opponent:users!matches_opponent_id_fkey(full_name, first_name, last_name),
+      winner:users!matches_winner_id_fkey(full_name, first_name, last_name)
+    `)
+    .eq("ladder_id", ladderId)
+    .eq("status", "completed")
+    .order("played_at", { ascending: false })
+    .limit(5);
+
+  if (recentMatchesData) {
+    for (const match of recentMatchesData) {
+      const challengerName = match.challenger?.full_name || 
+        `${match.challenger?.first_name} ${match.challenger?.last_name}`.trim() || "Player";
+      const opponentName = match.opponent?.full_name || 
+        `${match.opponent?.first_name} ${match.opponent?.last_name}`.trim() || "Player";
+      const winnerName = match.winner?.full_name || 
+        `${match.winner?.first_name} ${match.winner?.last_name}`.trim() || "Player";
+
+      recentActivity.push({
+        type: "match",
+        description: `${winnerName} defeated ${match.winner_id === match.challenger_id ? opponentName : challengerName}`,
+        time: formatRelativeTime(new Date(match.played_at)),
+        timestamp: new Date(match.played_at).getTime(),
+      });
+    }
+  }
+
+  // Recent challenges
+  const { data: recentChallengesData } = await supabaseAdmin
+    .from("challenges")
+    .select(`
+      *,
+      challenger:users!challenges_challenger_id_fkey(full_name, first_name, last_name),
+      opponent:users!challenges_opponent_id_fkey(full_name, first_name, last_name)
+    `)
+    .eq("ladder_id", ladderId)
+    .in("status", ["pending", "accepted"])
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (recentChallengesData) {
+    for (const challenge of recentChallengesData) {
+      const challengerName = challenge.challenger?.full_name || 
+        `${challenge.challenger?.first_name} ${challenge.challenger?.last_name}`.trim() || "Player";
+      const opponentName = challenge.opponent?.full_name || 
+        `${challenge.opponent?.first_name} ${challenge.opponent?.last_name}`.trim() || "Player";
+
+      recentActivity.push({
+        type: "challenge",
+        description: `${challengerName} challenged ${opponentName}`,
+        time: formatRelativeTime(new Date(challenge.created_at)),
+        timestamp: new Date(challenge.created_at).getTime(),
+      });
+    }
+  }
+
+  // Sort by timestamp and take top 10
+  recentActivity.sort((a, b) => b.timestamp - a.timestamp);
+  return recentActivity.slice(0, 10).map(({ timestamp, ...rest }) => rest);
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Home, LayoutDashboard, Trophy, Swords, Target, Bell, Settings, Menu, X, LogOut, LogIn } from "lucide-react";
+import { Home, LayoutDashboard, Trophy, Bell, Settings, Menu, X, LogOut, LogIn, Users, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,13 +11,23 @@ const publicLinks = [
   { href: { pathname: "/" }, label: "Home", icon: Home },
 ];
 
-const authLinks = [
-  { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard, roles: ["player", "organizer", "admin"] },
-  { href: { pathname: "/ladders" }, label: "Ladders", icon: Trophy, roles: ["player", "organizer", "admin"] },
-  { href: { pathname: "/challenges" }, label: "Challenges", icon: Swords, roles: ["player", "organizer", "admin"] },
-  { href: { pathname: "/matches" }, label: "Matches", icon: Target, roles: ["player", "organizer", "admin"] },
-  { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell, roles: ["player", "organizer", "admin"] },
-  { href: { pathname: "/admin" }, label: "Admin", icon: Settings, roles: ["admin", "organizer"] },
+// Navigation links by role
+const playerLinks = [
+  { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
+  { href: { pathname: "/ladders" }, label: "Ladders", icon: Trophy },
+  { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+];
+
+const organizerLinks = [
+  { href: { pathname: "/organizer" }, label: "My Ladders", icon: Trophy },
+  { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
+  { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+];
+
+const adminLinks = [
+  { href: { pathname: "/admin" }, label: "Dashboard", icon: LayoutDashboard },
+  { href: { pathname: "/admin/users" }, label: "Users", icon: Users },
+  { href: { pathname: "/admin/organizer-requests" }, label: "Requests", icon: FileText },
 ];
 
 export function TopNav() {
@@ -26,9 +36,12 @@ export function TopNav() {
   const { user, isSignedIn, isLoading, signOut } = useAuth();
   const router = useRouter();
 
-  // Fetch pending leader requests count for admins
+  // Fetch pending organizer requests count for admins
   useEffect(() => {
     if (user?.role === "admin") {
+      let retryCount = 0;
+      const maxRetries = 3;
+      
       const fetchPendingCount = async () => {
         try {
           const response = await fetch("/api/leader-requests");
@@ -38,9 +51,14 @@ export function TopNav() {
               (r: { status: string }) => r.status === "pending"
             ).length;
             setPendingRequests(pending);
+            retryCount = 0; // Reset on success
           }
         } catch (error) {
-          console.error("Error fetching pending requests:", error);
+          retryCount++;
+          // Only log errors for the first few attempts to avoid console spam
+          if (retryCount <= maxRetries) {
+            console.warn("Unable to fetch pending requests (will retry)");
+          }
         }
       };
 
@@ -52,15 +70,24 @@ export function TopNav() {
   }, [user?.role]);
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
     setMobileOpen(false);
+    await signOut();
+    // signOut now handles navigation via window.location
   };
 
+  // Get links based on user role
   const getVisibleLinks = () => {
     if (!isSignedIn) return publicLinks;
-    const filtered = authLinks.filter((link) => link.roles.includes(user?.role || "player"));
-    return [publicLinks[0], ...filtered];
+    
+    switch (user?.role) {
+      case "admin":
+        return [...publicLinks, ...adminLinks];
+      case "organizer":
+        return [...publicLinks, ...organizerLinks];
+      case "player":
+      default:
+        return [...publicLinks, ...playerLinks];
+    }
   };
 
   const visibleLinks = getVisibleLinks();
@@ -84,7 +111,7 @@ export function TopNav() {
             >
               <link.icon className="h-4 w-4" />
               {link.label}
-              {link.href.pathname === "/admin" && pendingRequests > 0 && (
+              {link.href.pathname === "/admin/organizer-requests" && pendingRequests > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-600 text-xs font-bold text-white">
                   {pendingRequests}
                 </span>
@@ -98,7 +125,13 @@ export function TopNav() {
             <>
               {isSignedIn && user ? (
                 <div className="hidden items-center gap-3 md:flex">
-                  <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-100 transition"
+                    title="Profile settings"
+                  >
+                    <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
+                  </Link>
                   <div className="flex flex-col items-start">
                     <p className="text-xs font-medium text-slate-800">{user.fullName || user.email}</p>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">

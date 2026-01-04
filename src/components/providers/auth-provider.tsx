@@ -91,9 +91,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const client = supabase;
     if (!client) return;
-    await client.auth.signOut();
-    setUser(null);
-    setIsSignedIn(false);
+    
+    try {
+      // Sign out from Supabase
+      await client.auth.signOut();
+      
+      // Clear local state
+      setUser(null);
+      setIsSignedIn(false);
+      
+      // Clear any cached data
+      if (typeof window !== 'undefined') {
+        // Clear local storage items related to auth
+        localStorage.removeItem('supabase.auth.token');
+        // Reload to clear any in-memory state
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Force clear state even if signOut fails
+      setUser(null);
+      setIsSignedIn(false);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    }
   };
 
   const value: AuthContextType = {

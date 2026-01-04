@@ -135,8 +135,8 @@ export default function LeaderRequestsPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <PageHeader
-            title="Leader Requests"
-            description="Review and approve player requests to become group leaders or admins."
+            title="Organizer Requests"
+            description="Review and approve player requests to become organizers."
           />
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Loader2, FileText, Filter } from "lucide-react";
@@ -20,11 +20,11 @@ export default function AuditLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const url = filter === "all" 
+      const url = filter === "all"
         ? "/api/audit-logs?limit=100"
         : `/api/audit-logs?entityType=${filter}&limit=100`;
       const res = await fetch(url);
@@ -36,11 +36,11 @@ export default function AuditLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     fetchLogs();
-  }, [filter]);
+  }, [fetchLogs]);
 
   const entityTypes = ["all", "ladder", "match", "challenge", "user", "membership"];
 

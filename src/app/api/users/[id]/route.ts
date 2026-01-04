@@ -12,29 +12,52 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { role } = body;
+    const { role, confirmEmail } = body;
 
-    if (!["player", "organizer", "admin"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 } as ResponseInit);
+    // Handle email confirmation
+    if (confirmEmail) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(params.id, {
+        email_confirm: true,
+      });
+
+      if (authError) throw authError;
+
+      await createAuditLog({
+        entityType: "user",
+        entityId: params.id,
+        action: "Email confirmed by admin",
+        performedBy: "admin",
+      });
+
+      return NextResponse.json({ success: true, message: "Email confirmed" });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("users")
-      .update({ role })
-      .eq("id", params.id)
-      .select()
-      .single();
+    // Handle role change
+    if (role) {
+      if (!["player", "organizer", "admin"].includes(role)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 } as ResponseInit);
+      }
 
-    if (error) throw error;
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .update({ role })
+        .eq("id", params.id)
+        .select()
+        .single();
 
-    await createAuditLog({
-      entityType: "user",
-      entityId: params.id,
-      action: `Role changed to ${role}`,
-      performedBy: params.id, // In production, get from auth context
-    });
+      if (error) throw error;
 
-    return NextResponse.json({ user: data });
+      await createAuditLog({
+        entityType: "user",
+        entityId: params.id,
+        action: `Role changed to ${role}`,
+        performedBy: params.id, // In production, get from auth context
+      });
+
+      return NextResponse.json({ user: data });
+    }
+
+    return NextResponse.json({ error: "No action specified" }, { status: 400 } as ResponseInit);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
   }

@@ -28,13 +28,14 @@ export async function POST(
       );
     }
 
-    // Create pending membership
+    // Create pending membership (rank 0 until approved)
     const { data, error } = await supabaseAdmin
       .from("ladder_memberships")
       .insert({
         ladder_id: params.id,
         user_id,
         status: "pending",
+        current_rank: 0,
         requested_at: new Date().toISOString(),
       })
       .select()

@@ -40,10 +40,7 @@ export async function GET(req: Request) {
   let query = supabaseAdmin
     .from("matches")
     .select(
-      `id, ladder_id, challenge_id, player1_id, player2_id, winner_id, status, set_scores, played_at, created_at, disputed_by,
-      player1:users!matches_player1_id_fkey(full_name, email),
-      player2:users!matches_player2_id_fkey(full_name, email),
-      ladders(name)`
+      `id, ladder_id, challenge_id, player1_id, player2_id, winner_id, status, set_scores, played_at, created_at, disputed_by`
     )
     .order("played_at", { ascending: false })
     .limit(50);

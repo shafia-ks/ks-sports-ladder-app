@@ -1,0 +1,262 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
+import { AvatarPicker, AvatarGrid } from "@/components/ui/avatar-picker";
+import { useAuth } from "@/lib/auth/auth-context";
+import { ArrowLeft, Loader2, Key } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+
+export default function ProfilePage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    full_name: "",
+    email: "",
+    avatar_url: "",
+    avatar_color: "",
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.firstName || "",
+        last_name: user.lastName || "",
+        full_name: user.fullName || "",
+        email: user.email || "",
+        avatar_url: user.avatarUrl || "",
+        avatar_color: user.avatarUrl || "",
+      });
+    }
+  }, [user]);
+
+  const handleAvatarUpload = async (file: File) => {
+    // TODO: Implement avatar upload to Supabase storage
+    console.log("Avatar upload not yet implemented:", file.name);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (!supabase) throw new Error("Supabase not configured");
+      if (!user?.id) throw new Error("User not found");
+
+      // Use Supabase client directly since we're authenticated
+      const { data, error } = await supabase
+        .from("users")
+        .update({
+          first_name: formData.first_name || null,
+          last_name: formData.last_name || null,
+          full_name: formData.full_name || null,
+          avatar_url: formData.avatar_url || null,
+        })
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSuccess("Profile updated successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!user?.email) return;
+    
+    setIsResettingPassword(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (!supabase) throw new Error("Supabase not configured");
+      
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        user.email,
+        {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        }
+      );
+
+      if (resetError) throw resetError;
+
+      setSuccess(
+        "Password reset email sent! Check your inbox to complete the reset."
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to send password reset email"
+      );
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-slate-600">Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Link href="/dashboard" className="text-brand-600 hover:text-brand-700">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <PageHeader
+          title="Profile Settings"
+          description="Manage your profile information and avatar."
+        />
+      </div>
+
+      {error && (
+        <div className="card p-4 text-sm text-red-600">{error}</div>
+      )}
+
+      {success && (
+        <div className="card p-4 text-sm text-green-600">{success}</div>
+      )}
+
+      <form onSubmit={handleSave} className="card space-y-6 p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Avatar</h2>
+          <AvatarPicker
+            currentUrl={user.avatarUrl}
+            userName={user.fullName || user.email}
+            selectedColor={formData.avatar_color}
+            onUpload={handleAvatarUpload}
+            isLoading={isLoading}
+          />
+          <div className="mt-4">
+            <AvatarGrid
+              selectedColor={formData.avatar_color}
+              onSelectAvatar={(avatarId, color) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  avatar_url: color,
+                  avatar_color: color,
+                }));
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 pt-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Personal Information</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">First Name</label>
+              <input
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Full Name</label>
+              <input
+                type="text"
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                disabled
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 bg-slate-50 text-slate-500 cursor-not-allowed"
+              />
+              <p className="text-xs text-slate-500">Email cannot be changed here. Contact support.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isSaving ? "Saving..." : "Save Profile"}
+          </button>
+          <Link href="/dashboard" className="btn btn-secondary">
+            Cancel
+          </Link>
+        </div>
+      </form>
+
+      <div className="card space-y-4 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Password & Security</h2>
+            <p className="text-sm text-slate-600 mt-1">Manage your account security</p>
+          </div>
+          <Key className="h-5 w-5 text-slate-400" />
+        </div>
+
+        <div className="border-t border-slate-200 pt-4">
+          <button
+            onClick={handleResetPassword}
+            disabled={isResettingPassword}
+            className="btn btn-secondary flex items-center gap-2"
+          >
+            {isResettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isResettingPassword ? "Sending..." : "Reset Password"}
+          </button>
+          <p className="text-xs text-slate-500 mt-2">
+            We'll send a password reset link to your email address.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

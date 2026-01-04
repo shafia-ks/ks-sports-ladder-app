@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, useCallback, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,7 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
     }
   };
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -98,11 +98,11 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     reload();
-  }, [params.id]);
+  }, [reload]);
 
   const members = data?.members ?? [];
   const activeMembers = members.filter((m) => m.status === "active");

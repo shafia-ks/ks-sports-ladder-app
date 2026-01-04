@@ -1,7 +1,124 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { useAuth } from "@/lib/auth/auth-context";
+import { Loader2 } from "lucide-react";
+
+interface Ladder {
+  id: string;
+  name: string;
+  status: string;
+  challenge_rules?: Record<string, unknown>;
+}
+
+interface Member {
+  id: string;
+  user_id: string;
+  current_rank: number;
+  status: string;
+  users?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  } | null;
+}
 
 export default function ChallengeCreatePage() {
+  const { user } = useAuth();
+  const [ladders, setLadders] = useState<Ladder[]>([]);
+  const [selectedLadder, setSelectedLadder] = useState<string>("");
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    opponent_id: "",
+    scheduledAt: new Date().toISOString().slice(0, 16),
+    location: "",
+    notes: "",
+  });
+
+  useEffect(() => {
+    const fetchLadders = async () => {
+      try {
+        const res = await fetch("/api/ladders");
+        const json = await res.json();
+        setLadders(json.ladders ?? []);
+        if (json.ladders?.length > 0) {
+          setSelectedLadder(json.ladders[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to load ladders", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLadders();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedLadder) return;
+    const fetchMembers = async () => {
+      try {
+        const res = await fetch(`/api/ladders/${selectedLadder}`);
+        const json = await res.json();
+        const activeMembers = json.members?.filter((m: Member) => m.status === "active" && m.user_id !== user?.id) ?? [];
+        setMembers(activeMembers);
+      } catch (err) {
+        console.error("Failed to load members", err);
+      }
+    };
+    fetchMembers();
+  }, [selectedLadder, user?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLadder || !formData.opponent_id) {
+      alert("Please select ladder and opponent");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ladder_id: selectedLadder,
+          challenger_id: user?.id,
+          challenged_id: formData.opponent_id,
+          status: "Pending",
+          scheduled_at: formData.scheduledAt || null,
+          location: formData.location || null,
+          notes: formData.notes || null,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        alert(json.error || "Failed to create challenge");
+        return;
+      }
+
+      alert("Challenge sent!");
+      window.location.href = "/challenges";
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create challenge");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -9,26 +126,46 @@ export default function ChallengeCreatePage() {
         description="Select ladder, opponent, and propose schedule. Validations enforced per ladder rules."
       />
 
-      <form className="card space-y-4 p-5">
+      <form onSubmit={handleSubmit} className="card space-y-4 p-5">
         <div>
           <label className="text-sm font-semibold text-slate-700">Ladder</label>
-          <select className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
-            <option>Squash A</option>
-            <option>Tennis Mixed</option>
+          <select
+            value={selectedLadder}
+            onChange={(e) => setSelectedLadder(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            required
+          >
+            <option value="">Select ladder</option>
+            {ladders.map((ladder) => (
+              <option key={ladder.id} value={ladder.id}>
+                {ladder.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="text-sm font-semibold text-slate-700">Opponent</label>
-            <input
+            <select
+              value={formData.opponent_id}
+              onChange={(e) => setFormData({ ...formData, opponent_id: e.target.value })}
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              placeholder="Search player"
-            />
+              required
+            >
+              <option value="">Select opponent</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.user_id}>
+                  #{member.current_rank} {member.users?.full_name || member.users?.email}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-700">Scheduled time</label>
             <input
               type="datetime-local"
+              value={formData.scheduledAt}
+              onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
@@ -36,6 +173,9 @@ export default function ChallengeCreatePage() {
         <div>
           <label className="text-sm font-semibold text-slate-700">Location</label>
           <input
+            type="text"
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             placeholder="Court location"
           />
@@ -43,6 +183,8 @@ export default function ChallengeCreatePage() {
         <div>
           <label className="text-sm font-semibold text-slate-700">Notes</label>
           <textarea
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             rows={3}
             placeholder="Optional details or constraints"
@@ -51,9 +193,10 @@ export default function ChallengeCreatePage() {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            disabled={submitting}
+            className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           >
-            Submit challenge
+            {submitting ? "Creating..." : "Submit challenge"}
           </button>
           <Link className="text-sm font-semibold text-slate-600" href="/challenges">
             Cancel

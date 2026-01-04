@@ -61,7 +61,7 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
           <h3 className="font-semibold text-slate-900">Become a Group Leader</h3>
           <p className="text-sm text-slate-600 mt-1">
             {hasActivRequest
-              ? "Your request is pending admin review. You'll be notified when a decision is made."
+              ? "Your request is pending admin review. You&apos;ll be notified when a decision is made."
               : "Request to become an organizer and create your own groups."}
           </p>
 
@@ -84,7 +84,7 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
                 <form onSubmit={handleSubmit} className="mt-3 space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Role you're requesting *
+                      Role you&apos;re requesting *
                     </label>
                     <select
                       value={requestedRole}

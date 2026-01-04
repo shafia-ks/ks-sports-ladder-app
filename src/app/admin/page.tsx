@@ -9,9 +9,9 @@ import { Trophy, Users, Swords, AlertCircle, TrendingUp, Calendar } from "lucide
 
 const cards = [
   {
-    title: "Leader Requests",
-    description: "Review and approve/reject player requests to become group leaders.",
-    href: { pathname: "/admin/leader-requests" },
+    title: "Organizer Requests",
+    description: "Review and approve player requests to become organizers.",
+    href: { pathname: "/admin/organizer-requests" },
   },
   {
     title: "User Management",
@@ -46,6 +46,7 @@ interface AdminStats {
   activeChallenges: number;
   pendingDisputes: number;
   pendingRequests: number;
+  pendingMemberships: number;
   recentMatches: number;
 }
 
@@ -56,6 +57,7 @@ export default function AdminPage() {
     activeChallenges: 0,
     pendingDisputes: 0,
     pendingRequests: 0,
+    pendingMemberships: 0,
     recentMatches: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -63,20 +65,22 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [laddersRes, matchesRes, challengesRes, requestsRes, memberCountRes] = await Promise.all([
+        const [laddersRes, matchesRes, challengesRes, requestsRes, memberCountRes, membershipsRes] = await Promise.all([
           fetch("/api/ladders"),
           fetch("/api/matches?status=Disputed"),
           fetch("/api/challenges?status=Pending"),
           fetch("/api/leader-requests"),
           fetch("/api/admin/member-count"),
+          fetch("/api/admin/pending-memberships"),
         ]);
 
-        const [ladders, matches, challenges, requests, memberCount] = await Promise.all([
+        const [ladders, matches, challenges, requests, memberCount, memberships] = await Promise.all([
           laddersRes.json(),
           matchesRes.json(),
           challengesRes.json(),
           requestsRes.json(),
           memberCountRes.json(),
+          membershipsRes.json(),
         ]);
 
         setStats({
@@ -85,6 +89,7 @@ export default function AdminPage() {
           activeChallenges: challenges.challenges?.length || 0,
           pendingDisputes: matches.matches?.length || 0,
           pendingRequests: requests.requests?.filter((r: any) => r.status === "pending").length || 0,
+          pendingMemberships: memberships.memberships?.length || 0,
           recentMatches: 0,
         });
       } catch (err) {
@@ -100,11 +105,11 @@ export default function AdminPage() {
   }, []);
 
   return (
-    <ProtectedRoute requiredRoles={["admin", "organizer"]}>
+    <ProtectedRoute requiredRoles={["admin"]}>
       <div className="space-y-6">
         <PageHeader
-          title="Admin console"
-          description="Manage ladders, resolve disputes, and oversee league operations."
+          title="System Administration"
+          description="Manage users, approve organizer requests, and oversee league operations."
         />
 
         {/* Stats Grid */}
@@ -132,12 +137,20 @@ export default function AdminPage() {
             link="/admin/disputes"
           />
           <StatCard
-            title="Role Requests"
+            title="Organizer Requests"
             value={stats.pendingRequests}
             icon={TrendingUp}
             variant={stats.pendingRequests > 0 ? "warning" : "neutral"}
             loading={loading}
-            link="/admin/leader-requests"
+            link="/admin/organizer-requests"
+          />
+          <StatCard
+            title="Pending Memberships"
+            value={stats.pendingMemberships}
+            icon={Users}
+            variant={stats.pendingMemberships > 0 ? "info" : "neutral"}
+            loading={loading}
+            link="/admin/users"
           />
           <StatCard
             title="Total Members"

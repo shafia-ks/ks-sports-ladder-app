@@ -5,11 +5,75 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { useLadders } from "@/features/ladders/api";
-import { Loader2, MapPin, Plus, Shield } from "lucide-react";
+import { Loader2, MapPin, Plus, Shield, Clock } from "lucide-react";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useEffect, useState } from "react";
 
 export default function LaddersPage() {
+  const { user } = useAuth();
   const { data, isLoading, error, refetch } = useLadders();
+  const [memberships, setMemberships] = useState<any[]>([]);
+  const [membershipLoading, setMembershipLoading] = useState(false);
   const ladders = data?.ladders ?? [];
+
+  useEffect(() => {
+    const fetchMemberships = async () => {
+      if (!user) return;
+      setMembershipLoading(true);
+      try {
+        const res = await fetch(`/api/memberships?user_id=${user.id}`);
+        const data = await res.json();
+        setMemberships(data.memberships || []);
+      } catch (err) {
+        console.error("Failed to fetch memberships:", err);
+      } finally {
+        setMembershipLoading(false);
+      }
+    };
+
+    fetchMemberships();
+  }, [user]);
+
+  const getMembershipStatus = (ladderId: string) => {
+    const membership = memberships.find((m) => m.ladder_id === ladderId);
+    if (!membership) return null;
+    return membership.status; // "active" | "pending"
+  };
+
+  const renderJoinButton = (ladderId: string) => {
+    if (membershipLoading) {
+      return (
+        <button disabled className="btn btn-primary text-sm flex-1 opacity-50">
+          Loading...
+        </button>
+      );
+    }
+
+    const status = getMembershipStatus(ladderId);
+
+    if (status === "active") {
+      return (
+        <span className="btn btn-secondary text-sm flex-1 bg-success-50 border-success-200 text-success-700 cursor-default">
+          ✓ Member
+        </span>
+      );
+    }
+
+    if (status === "pending") {
+      return (
+        <span className="btn btn-secondary text-sm flex-1 bg-amber-50 border-amber-200 text-amber-700 cursor-default flex items-center justify-center gap-1">
+          <Clock className="h-4 w-4" />
+          Pending
+        </span>
+      );
+    }
+
+    return (
+      <Link href={`/ladders/${ladderId}`} className="btn btn-primary text-sm flex-1">
+        Join
+      </Link>
+    );
+  };
 
   return (
     <ProtectedRoute>
@@ -93,9 +157,7 @@ export default function LaddersPage() {
                   <Link href={`/ladders/${ladder.id}`} className="btn btn-secondary text-sm flex-1">
                     View
                   </Link>
-                  <Link href={`/ladders/${ladder.id}`} className="btn btn-primary text-sm flex-1">
-                    Join
-                  </Link>
+                  {renderJoinButton(ladder.id)}
                 </div>
               </div>
             ))}

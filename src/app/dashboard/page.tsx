@@ -7,7 +7,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useLadders } from "@/features/ladders/api";
 import { useMemberships } from "@/features/memberships/api";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Loader2, Swords, AlertCircle } from "lucide-react";
+import { Loader2, Swords, AlertCircle, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
@@ -21,12 +21,56 @@ export default function DashboardPage() {
   const isLoading = laddersLoading || membershipsLoading;
   const hasError = laddersError || membershipsError;
 
+  const isOrganizer = user?.role === "organizer";
+  const isAdmin = user?.role === "admin";
+  const isPlayer = user?.role === "player";
+
+  // Redirect organizers to their console
+  if (isOrganizer) {
+    return (
+      <ProtectedRoute requiredRoles={["organizer"]}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Dashboard"
+            description="Welcome, Organizer! View your ladders and manage everything from here."
+          />
+          <div className="card p-8 text-center space-y-4">
+            <p className="text-slate-600">You're being redirected to your organizer dashboard...</p>
+            <Link href="/organizer" className="btn btn-primary inline-block">
+              Go to My Ladders
+            </Link>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  // Redirect admins to admin console
+  if (isAdmin) {
+    return (
+      <ProtectedRoute requiredRoles={["admin"]}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Dashboard"
+            description="Welcome, Admin! Go to the admin console to manage the system."
+          />
+          <div className="card p-8 text-center space-y-4">
+            <p className="text-slate-600">You're being redirected to admin console...</p>
+            <Link href="/admin" className="btn btn-primary inline-block">
+              Go to Admin Console
+            </Link>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRoles={["player"]}>
       <div className="space-y-6">
         <PageHeader
           title="Dashboard"
-          description="Your ladders, challenges, and admin tasks in one place."
+          description="Your ladders, challenges, and rankings at a glance."
           cta={
             <Link href="/challenges/create" className="btn btn-primary">
               <Swords className="h-4 w-4" />
@@ -37,15 +81,10 @@ export default function DashboardPage() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">My ladders</h2>
-            <div className="flex gap-2 text-xs text-slate-500">
-              <Link href="/ladders/create" className="rounded-full bg-brand-50 px-2 py-1 font-semibold text-brand-700">
-                Create
-              </Link>
-              <Link href="/ladders" className="rounded-full border border-slate-200 px-2 py-1 font-semibold text-slate-700 hover:border-brand-200">
-                Browse
-              </Link>
-            </div>
+            <h2 className="text-lg font-semibold text-slate-900">My Ladders</h2>
+            <Link href="/ladders" className="rounded-full border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:border-brand-200">
+              Browse all
+            </Link>
           </div>
 
           {isLoading && (
@@ -66,11 +105,10 @@ export default function DashboardPage() {
 
           {!isLoading && !hasError && myActive.length === 0 && (
             <div className="card space-y-3 p-5 text-center">
-              <p className="text-sm font-semibold text-slate-800">No ladders yet</p>
-              <p className="text-sm text-slate-600">Join or create a ladder to get started.</p>
+              <p className="text-sm font-semibold text-slate-800">No active ladders</p>
+              <p className="text-sm text-slate-600">Join or browse available ladders to get started.</p>
               <div className="flex justify-center gap-2">
-                <Link href="/ladders/create" className="btn btn-primary text-sm">Create ladder</Link>
-                <Link href="/ladders" className="btn btn-secondary text-sm">Browse ladders</Link>
+                <Link href="/ladders" className="btn btn-primary text-sm">Browse ladders</Link>
               </div>
             </div>
           )}

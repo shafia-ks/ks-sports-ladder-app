@@ -50,7 +50,7 @@ export function ProtectedRoute({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-slate-900">Access Denied</h1>
-          <p className="text-slate-600">You don't have permission to access this page.</p>
+          <p className="text-slate-600">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     );

@@ -174,9 +174,20 @@ create index if not exists leader_requests_user_idx on public.leader_requests (u
 create index if not exists leader_requests_status_idx on public.leader_requests (status);
 create index if not exists leader_requests_requested_at_idx on public.leader_requests (requested_at);
 
--- Recommended defaults for challenge_rules
--- { "maxPositionsUp": 3, "preventChallengingBusyPlayers": true, "maxActiveChallengesPerPlayer": 1, "expiryDays": 7 }
--- Recommended defaults for ranking_rules
--- { "type": "default-swap-minimal-drop" }
+-- Invitations (for admins/organizers to invite new users)
+create table if not exists public.invitations (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  invited_by uuid not null references auth.users(id) on delete cascade,
+  ladder_id uuid references public.ladders(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'expired')),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  accepted_at timestamptz,
+  unique(email, ladder_id)
+);
+create index if not exists invitations_email_idx on public.invitations (email);
+create index if not exists invitations_ladder_idx on public.invitations (ladder_id);
+create index if not exists invitations_status_idx on public.invitations (status);
+create index if not exists invitations_expires_at_idx on public.invitations (expires_at);
 
--- RLS can be enabled later; for now, server routes should use the service role key.
