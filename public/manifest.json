@@ -1,0 +1,54 @@
+{
+  "name": "KS Sports Ladder",
+  "short_name": "Sports Ladder",
+  "description": "Modern ladder challenge app for racket sports with real governance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["sports", "games", "productivity"],
+  "shortcuts": [
+    {
+      "name": "My Challenges",
+      "short_name": "Challenges",
+      "description": "View your active challenges",
+      "url": "/challenges",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Matches",
+      "short_name": "Matches",
+      "description": "View your match history",
+      "url": "/matches",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ladders",
+      "short_name": "Ladders",
+      "description": "Browse available ladders",
+      "url": "/ladders",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
