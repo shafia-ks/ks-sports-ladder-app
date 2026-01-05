@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsSignedIn(false);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
           // Fetch updated profile
           const { data: profile, error } = await client
             .from("users")
@@ -97,15 +98,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             setIsSignedIn(true);
             console.log('Auth state updated, isSignedIn=true');
-          } else if (error) {
-            console.error('Profile fetch failed:', error);
-            // Set basic user info even if profile fetch fails
+          } else {
+            // Profile doesn't exist or fetch failed - use session data as fallback
+            console.warn('Profile fetch failed, using session data:', error);
             setUser({
               id: session.user.id,
               email: session.user.email || "",
               role: "player",
             });
             setIsSignedIn(true);
+            console.log('Auth state updated with fallback, isSignedIn=true');
           }
         }
       }
