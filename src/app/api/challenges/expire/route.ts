@@ -11,11 +11,17 @@ export async function POST(req: Request) {
   // Verify cron secret for security
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" });
+    return new NextResponse(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401 }
+    );
   }
 
   if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500, statusText: "Internal Server Error" });
+    return new NextResponse(
+      JSON.stringify({ error: "Supabase env vars missing" }),
+      { status: 500 }
+    );
   }
 
   try {
@@ -87,9 +93,11 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Error expiring challenges:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500, statusText: "Internal Server Error" }
+    return new NextResponse(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500 }
     );
   }
 }
