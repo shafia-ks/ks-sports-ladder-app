@@ -49,6 +49,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NODE_ENV: production
+      NPM_CONFIG_PRODUCTION: false
     steps:
       - name: Check if secrets are configured
         id: check-secrets
