@@ -85,17 +85,27 @@ export default function MatchSubmitPage() {
         return { player1: p1, player2: p2 };
       });
 
+      // Build ranking from current members
+      const ranking = members
+        .filter((m) => m.status === "active")
+        .map((m) => ({
+          userId: m.user_id,
+          currentRank: m.current_rank,
+        }));
+
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ladder_id: selectedLadder,
-          player1_id: formData.player1_id,
-          player2_id: formData.player2_id,
-          set_scores: scores,
-          winner_id: formData.winner === "player1" ? formData.player1_id : formData.player2_id,
-          status: "Submitted",
-          played_at: formData.playedAt,
+          ladderId: selectedLadder,
+          player1Id: formData.player1_id,
+          player2Id: formData.player2_id,
+          winnerId: formData.winner === "player1" ? formData.player1_id : formData.player2_id,
+          loserId: formData.winner === "player1" ? formData.player2_id : formData.player1_id,
+          setScores: scores,
+          playedAt: formData.playedAt,
+          ruleType: "default-swap-minimal-drop",
+          ranking,
         }),
       });
 
