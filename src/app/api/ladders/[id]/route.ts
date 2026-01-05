@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function GET(
   _req: NextRequest,
@@ -8,6 +10,29 @@ export async function GET(
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 } as ResponseInit);
   }
+
+  // Check authentication
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
 
   try {
     const { data: ladder, error: ladderError } = await supabaseAdmin
@@ -28,37 +53,65 @@ export async function GET(
       return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
     }
 
-    const { data: members, error: membersError } = await supabaseAdmin
-      .from("ladder_memberships")
-      .select("id, user_id, current_rank, status, accepted_at, requested_at")
-      .eq("ladder_id", params.id)
-      .in("status", ["active", "pending"])
-      .order("status", { ascending: false })
-      .order("current_rank", { ascending: true });
+    // Check if user is a member of this ladder or admin
+    let isMember = false;
+    let userRole = "player";
+    if (user) {
+      const { data: userProfile } = await supabaseAdmin
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      
+      userRole = userProfile?.role || "player";
 
-    if (membersError) throw membersError;
+      const { data: membership } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("id, status")
+        .eq("ladder_id", params.id)
+        .eq("user_id", user.id)
+        .in("status", ["active", "pending"])
+        .maybeSingle();
+      
+      isMember = !!membership || userRole === "admin";
+    }
 
-    // Only include user details for active members (GDPR compliance - pending/non-members don't see others' details)
-    let membersWithUsers = members ?? [];
+    // Only return member list if user is a member or admin
+    let membersWithUsers: any[] = [];
+    
+    if (isMember) {
+      const { data: members, error: membersError } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("id, user_id, current_rank, status, accepted_at, requested_at")
+        .eq("ladder_id", params.id)
+        .in("status", ["active", "pending"])
+        .order("status", { ascending: false })
+        .order("current_rank", { ascending: true });
 
-    if (members && members.length > 0) {
-      const activeUserIds = members
-        .filter((m) => m.status === "active")
-        .map((m) => m.user_id);
+      if (membersError) throw membersError;
 
-      if (activeUserIds.length > 0) {
-        const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
-          .from("users")
-          .select("id, full_name, first_name, last_name, email")
-          .in("id", activeUserIds);
+      // Only include user details for active members (GDPR compliance)
+      membersWithUsers = members ?? [];
 
-        if (userProfilesError) throw userProfilesError;
+      if (members && members.length > 0) {
+        const activeUserIds = members
+          .filter((m) => m.status === "active")
+          .map((m) => m.user_id);
 
-        const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
-        membersWithUsers = members.map((member) => ({
-          ...member,
-          users: member.status === "active" ? userMap.get(member.user_id) ?? null : null,
-        }));
+        if (activeUserIds.length > 0) {
+          const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
+            .from("users")
+            .select("id, full_name, first_name, last_name, email")
+            .in("id", activeUserIds);
+
+          if (userProfilesError) throw userProfilesError;
+
+          const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
+          membersWithUsers = members.map((member) => ({
+            ...member,
+            users: member.status === "active" ? userMap.get(member.user_id) ?? null : null,
+          }));
+        }
       }
     }
 
