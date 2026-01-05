@@ -99,24 +99,50 @@ export default function ChallengeCreatePage() {
 
     setSubmitting(true);
     try {
+      const ladder = ladders.find(l => l.id === selectedLadder);
+      const challenger = members.find(m => m.user_id === user?.id);
+      const challenged = members.find(m => m.user_id === formData.opponent_id);
+
+      if (!ladder || !challenger || !challenged) {
+        alert("Invalid ladder or members");
+        return;
+      }
+
+      const rules = ladder.challenge_rules as {
+        maxPositionsUp: number;
+        preventChallengingBusyPlayers: boolean;
+        maxActiveChallengesPerPlayer: number;
+        expiryDays: number;
+      } || {
+        maxPositionsUp: 3,
+        preventChallengingBusyPlayers: true,
+        maxActiveChallengesPerPlayer: 2,
+        expiryDays: 7,
+      };
+
       const res = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ladder_id: selectedLadder,
-          challenger_id: user?.id,
-          challenged_id: formData.opponent_id,
-          status: "Pending",
-          scheduled_at: formData.scheduledAt || null,
-          location: formData.location || null,
-          notes: formData.notes || null,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          ladderId: selectedLadder,
+          challengerId: user?.id,
+          challengedId: formData.opponent_id,
+          challengerRank: challenger.current_rank,
+          challengedRank: challenged.current_rank,
+          challengerActiveChallenges: 0, // TODO: fetch from challenges
+          challengedActiveChallenges: 0, // TODO: fetch from challenges
+          challengerBusy: false, // TODO: calculate from challenges/matches
+          challengedBusy: challenged.hasActiveChallenge || false,
+          scheduledDateTime: formData.scheduledAt || undefined,
+          location: formData.location || undefined,
+          notes: formData.notes || undefined,
+          rules,
         }),
       });
 
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error || "Failed to create challenge");
+        alert(json.errors?.[0]?.message || json.error || "Failed to create challenge");
         return;
       }
 
