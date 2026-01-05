@@ -29,23 +29,32 @@ export default function ResetPasswordForm() {
       }
 
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !data.session) {
-          // No valid session from reset link
-          setError("Reset link expired or invalid. Please request a new one.");
-          setValidating(false);
-          setTimeout(() => router.push("/login"), 3000);
+        // Supabase automatically handles the token in the URL hash
+        // Just check if there's a session after the redirect
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) {
+          // No session yet - might still be loading, wait a moment
+          setTimeout(async () => {
+            const { data: retryData } = await supabase.auth.getSession();
+            if (!retryData.session) {
+              setError("Reset link expired or invalid. Please request a new one.");
+              setTimeout(() => router.push("/login"), 3000);
+            }
+            setValidating(false);
+          }, 500);
           return;
         }
-        // Session is valid, proceed with form
+        
         setValidating(false);
       } catch (err) {
-        setError("Failed to verify reset link.");
+        console.error("Session check error:", err);
         setValidating(false);
       }
     };
 
-    checkSession();
+    // Small delay to let Supabase process the URL hash
+    setTimeout(checkSession, 300);
   }, [router]);
 
   // Validate password strength
