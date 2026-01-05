@@ -32,6 +32,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon.svg" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                  .then(reg => console.log('Service Worker registered'))
+                  .catch(err => console.log('Service Worker registration failed:', err));
+              }
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900">
         <QueryProvider>
