@@ -36,6 +36,7 @@ export default function ResetPasswordForm() {
         if (!data.session) {
           // No session yet - might still be loading, wait a moment
           setTimeout(async () => {
+            if (!supabase) return;
             const { data: retryData } = await supabase.auth.getSession();
             if (!retryData.session) {
               setError("Reset link expired or invalid. Please request a new one.");
