@@ -15,16 +15,19 @@ export async function POST(
     const { member_id, action } = body; // action: "accept" | "decline" | "remove"
 
     if (action === "accept") {
-      // Get current max rank
+      // Get current max rank (excluding rank 0 which is for pending members)
       const { data: ranks } = await supabaseAdmin
         .from("ladder_memberships")
         .select("current_rank")
         .eq("ladder_id", params.id)
         .eq("status", "active")
+        .gt("current_rank", 0)
         .order("current_rank", { ascending: false })
         .limit(1);
 
       const nextRank = (ranks?.[0]?.current_rank ?? 0) + 1;
+
+      console.log(`Accepting member ${member_id}: current max rank = ${ranks?.[0]?.current_rank}, assigning rank ${nextRank}`);
 
       // Accept member
       const { data, error } = await supabaseAdmin
