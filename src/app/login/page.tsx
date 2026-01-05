@@ -37,19 +37,25 @@ export default function LoginPage() {
     }
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      console.log("Attempting login with:", email);
+      const { error: authError, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log("Auth response:", { error: authError, data });
+
       if (authError) {
+        console.error("Auth error:", authError);
         setError(authError.message);
+        setLoading(false);
       } else {
+        console.log("Login successful, redirecting to dashboard");
         router.push("/dashboard");
       }
     } catch (err) {
+      console.error("Login exception:", err);
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -67,15 +73,19 @@ export default function LoginPage() {
     }
     setResetting(true);
     try {
+      console.log("Requesting password reset for:", email);
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
+      console.log("Reset response:", { error: resetError });
       if (resetError) {
+        console.error("Reset error:", resetError);
         setError(resetError.message);
       } else {
         setInfo("Check your email for a reset link.");
       }
     } catch (err) {
+      console.error("Reset exception:", err);
       setError("Unable to send reset email. Try again.");
     } finally {
       setResetting(false);
