@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowRight, Shield, Sparkles, BarChart3, Users, ShieldCheck, Timer } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useEffect } from "react";
 
 const featureList = [
   {
@@ -44,21 +43,7 @@ const stats = [
 export default function HomePage() {
   const { isSignedIn, isLoading } = useAuth();
 
-  useEffect(() => {
-    // keep landing accessible for signed-in users
-  }, [isLoading, isSignedIn]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Don't block on loading - show landing page for everyone
   const primaryCta = isSignedIn ? "/dashboard" : "/signup";
   const primaryLabel = isSignedIn ? "Go to dashboard" : "Create account";
   const secondaryCta = isSignedIn ? "/ladders" : "/login";
