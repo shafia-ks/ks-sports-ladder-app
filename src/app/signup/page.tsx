@@ -172,48 +172,29 @@ export default function SignupPage() {
     }
 
     try {
-      // Sign up user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            full_name: `${firstName} ${lastName}`,
-          },
-        },
+      // Call signup API (uses service role to bypass RLS)
+      const signupRes = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+        }),
       });
 
-      if (authError) {
-        setError(authError.message);
+      const signupData = await signupRes.json();
+
+      if (!signupRes.ok) {
+        setError(signupData.error || "Signup failed");
         setLoading(false);
         return;
       }
 
-      // Create user profile with GDPR/sportsmanship acceptance
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from("users")
-          .insert({
-            id: authData.user.id,
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            full_name: `${firstName} ${lastName}`,
-            gdpr_accepted: true,
-            gdpr_accepted_at: new Date().toISOString(),
-            sportsmanship_accepted: true,
-            sportsmanship_accepted_at: new Date().toISOString(),
-          });
+      console.log("Signup successful, logging in...");
 
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          // Continue anyway, user can update later
-        }
-      }
-
-      // Auto-login
+      // Auto-login after successful signup
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -226,6 +207,7 @@ export default function SignupPage() {
         router.push("/dashboard");
       }
     } catch (err) {
+      console.error("Signup error:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
