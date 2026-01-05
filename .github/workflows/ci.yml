@@ -1,5 +1,6 @@
 name: CI
 
+# TypeScript and unit tests
 on:
   push:
     branches: [ main ]
