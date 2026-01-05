@@ -22,12 +22,12 @@ export function ProtectedRoute({
     if (isLoading) return; // Don't do anything while loading
     
     if (!isSignedIn) {
-      router.push(fallbackPath);
+      router.push((fallbackPath || "/login") as any);
       return;
     }
 
     if (user && !requiredRoles.includes(user.role)) {
-      router.push("/");
+      router.push(("/") as any);
       return;
     }
   }, [isSignedIn, isLoading, user, requiredRoles, fallbackPath, router]);
