@@ -77,6 +77,10 @@ jobs:
         if: steps.check-secrets.outputs.skip != 'true'
         run: npm ci
 
+      - name: Clear Next.js cache
+        if: steps.check-secrets.outputs.skip != 'true'
+        run: rm -rf .next || true
+
       - name: Install Playwright Browsers
         if: steps.check-secrets.outputs.skip != 'true'
         run: npx playwright install --with-deps
