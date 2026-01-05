@@ -29,24 +29,20 @@ export default function ResetPasswordForm() {
       }
 
       try {
-        // First, clear any existing session to avoid conflicts
-        await supabase.auth.signOut({ scope: 'local' });
+        // Check if there's a session from the reset link URL hash
+        // Supabase automatically handles the token extraction, just need to wait for it
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Wait a moment for Supabase to process the URL hash token
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Now check for the new session from the reset link
         const { data } = await supabase.auth.getSession();
         
         if (!data.session) {
-          // Try one more time after another delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          if (!supabase) return;
+          // Try one more time after a brief delay
+          await new Promise(resolve => setTimeout(resolve, 300));
           const { data: retryData } = await supabase.auth.getSession();
           
           if (!retryData.session) {
             setError("Reset link expired or invalid. Please request a new one.");
-            setTimeout(() => router.push("/login"), 3000);
+            setTimeout(() => router.push("/login"), 2000);
           }
         }
         

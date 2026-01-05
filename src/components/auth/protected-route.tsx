@@ -19,23 +19,28 @@ export function ProtectedRoute({
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isSignedIn) {
-      router.push(fallbackPath as any);
+    if (isLoading) return; // Don't do anything while loading
+    
+    if (!isSignedIn) {
+      router.push(fallbackPath);
       return;
     }
 
-    if (!isLoading && isSignedIn && user && !requiredRoles.includes(user.role)) {
-      router.push("/" as any);
+    if (user && !requiredRoles.includes(user.role)) {
+      router.push("/");
       return;
     }
   }, [isSignedIn, isLoading, user, requiredRoles, fallbackPath, router]);
 
+  // While loading, show skeleton (don't block with spinner)
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-          <p className="text-slate-600">Loading...</p>
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-slate-200 rounded animate-pulse"></div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-slate-100 rounded animate-pulse"></div>
+          ))}
         </div>
       </div>
     );
