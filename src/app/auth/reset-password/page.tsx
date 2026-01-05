@@ -38,12 +38,21 @@ export default function ResetPasswordPage() {
           setTimeout(() => router.push("/login"), 3000);
           return;
         }
+        // Session is valid, proceed with form
         setValidating(false);
       } catch (err) {
         setError("Failed to verify reset link.");
         setValidating(false);
       }
     };
+
+    // Don't run in development if already on the page
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    if (params.has("access_token")) {
+      // Has reset token, let form show
+      setValidating(false);
+      return;
+    }
 
     checkSession();
   }, [router]);
