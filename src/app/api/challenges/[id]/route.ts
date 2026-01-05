@@ -4,104 +4,97 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { createAuditLog } from "@/lib/supabase/audit";
 import { createNotification } from "@/lib/supabase/notifications";
 
-const acceptSchema = z.object({
-  challengeId: z.string(),
-  userId: z.string(),
-  scheduledDateTime: z.string().optional(),
+const updateSchema = z.object({
+  status: z.enum(["Accepted", "Declined", "Cancelled", "Completed"]).optional(),
+  cancellation_reason: z.string().optional(),
+  cancelled_by: z.string().optional(),
+  counter_proposal_time: z.string().optional(),
+  counter_proposal_location: z.string().optional(),
+  counter_proposal_notes: z.string().optional(),
+  scheduled_at: z.string().optional(),
   location: z.string().optional(),
 });
 
-const declineSchema = z.object({
-  challengeId: z.string(),
-  userId: z.string(),
-  reason: z.string().optional(),
-});
-
-export async function POST(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const action = searchParams.get("action");
-
-  if (action === "accept") {
-    const json = await req.json();
-    const parsed = acceptSchema.safeParse(json);
-    if (!parsed.success) {
-      return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
-    }
-
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: "Supabase env missing" }, { status: 500 });
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("challenges")
-      .update({
-        status: "Accepted",
-        scheduled_at: parsed.data.scheduledDateTime ?? null,
-        location: parsed.data.location ?? null,
-      })
-      .eq("id", parsed.data.challengeId)
-      .select("challenger_id")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    await createAuditLog({
-      entityType: "challenge",
-      entityId: parsed.data.challengeId,
-      action: "Challenge accepted",
-      performedBy: parsed.data.userId,
-    });
-
-    await createNotification({
-      userId: data?.challenger_id ?? "",
-      type: "challenge_accepted",
-      message: `Your challenge was accepted`,
-      link: `/challenges/${parsed.data.challengeId}`,
-    });
-
-    return NextResponse.json({ ok: true });
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const json = await req.json();
+  const parsed = updateSchema.safeParse(json);
+  
+  if (!parsed.success) {
+    return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
   }
 
-  if (action === "decline") {
-    const json = await req.json();
-    const parsed = declineSchema.safeParse(json);
-    if (!parsed.success) {
-      return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
-    }
-
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: "Supabase env missing" }, { status: 500 });
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("challenges")
-      .update({ status: "Declined" })
-      .eq("id", parsed.data.challengeId)
-      .select("challenger_id")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    await createAuditLog({
-      entityType: "challenge",
-      entityId: parsed.data.challengeId,
-      action: `Challenge declined: ${parsed.data.reason ?? "no reason"}`,
-      performedBy: parsed.data.userId,
-    });
-
-    await createNotification({
-      userId: data?.challenger_id ?? "",
-      type: "challenge_declined",
-      message: `Your challenge was declined`,
-      link: `/challenges/${parsed.data.challengeId}`,
-    });
-
-    return NextResponse.json({ ok: true });
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "Supabase env missing" }, { status: 500 });
   }
 
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  const updateData: any = {};
+  
+  if (parsed.data.status) {
+    updateData.status = parsed.data.status;
+    
+    // Set timestamps based on status
+    if (parsed.data.status === "Accepted") {
+      updateData.accepted_at = new Date().toISOString();
+    } else if (parsed.data.status === "Declined") {
+      updateData.declined_at = new Date().toISOString();
+    } else if (parsed.data.status === "Cancelled") {
+      updateData.cancelled_at = new Date().toISOString();
+      updateData.cancelled_by = parsed.data.cancelled_by;
+      updateData.cancellation_reason = parsed.data.cancellation_reason;
+    } else if (parsed.data.status === "Completed") {
+      updateData.completed_at = new Date().toISOString();
+    }
+  }
+
+  if (parsed.data.scheduled_at) updateData.scheduled_at = parsed.data.scheduled_at;
+  if (parsed.data.location) updateData.location = parsed.data.location;
+  if (parsed.data.counter_proposal_time) updateData.counter_proposal_time = parsed.data.counter_proposal_time;
+  if (parsed.data.counter_proposal_location) updateData.counter_proposal_location = parsed.data.counter_proposal_location;
+  if (parsed.data.counter_proposal_notes) updateData.counter_proposal_notes = parsed.data.counter_proposal_notes;
+
+  const { data, error } = await supabaseAdmin
+    .from("challenges")
+    .update(updateData)
+    .eq("id", params.id)
+    .select("challenger_id, challenged_id, status")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Create audit log
+  await createAuditLog({
+    entityType: "challenge",
+    entityId: params.id,
+    action: `Challenge ${parsed.data.status?.toLowerCase() || "updated"}${parsed.data.cancellation_reason ? `: ${parsed.data.cancellation_reason}` : ""}`,
+    performedBy: parsed.data.cancelled_by || data?.challenged_id || data?.challenger_id || "",
+  });
+
+  // Send notification to the other party
+  let notifyUserId = "";
+  let notifyMessage = "";
+  
+  if (parsed.data.status === "Accepted") {
+    notifyUserId = data?.challenger_id || "";
+    notifyMessage = "Your challenge was accepted";
+  } else if (parsed.data.status === "Declined") {
+    notifyUserId = data?.challenger_id || "";
+    notifyMessage = "Your challenge was declined";
+  } else if (parsed.data.status === "Cancelled") {
+    notifyUserId = data?.challenged_id || "";
+    notifyMessage = `Challenge cancelled: ${parsed.data.cancellation_reason}`;
+  }
+
+  if (notifyUserId) {
+    await createNotification({
+      userId: notifyUserId,
+      type: `challenge_${parsed.data.status?.toLowerCase()}`,
+      message: notifyMessage,
+      link: `/challenges`,
+    });
+  }
+
+  return NextResponse.json({ ok: true, message: "Challenge updated" });
 }
+

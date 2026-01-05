@@ -33,17 +33,24 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const ladderId = searchParams.get("ladderId");
+  const userId = searchParams.get("userId");
 
   let query = supabaseAdmin
     .from("challenges")
     .select(
-      "id, ladder_id, challenger_id, challenged_id, status, scheduled_at, location, notes, expires_at, created_at"
+      `id, ladder_id, challenger_id, challenged_id, status, scheduled_at, location, notes, 
+       expires_at, created_at, cancellation_reason, cancelled_at, counter_proposal_time, 
+       counter_proposal_location, counter_proposal_notes, accepted_at, declined_at, completed_at`
     )
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (ladderId) {
     query = query.eq("ladder_id", ladderId);
+  }
+
+  if (userId) {
+    query = query.or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`);
   }
 
   const { data, error } = await query;
@@ -51,7 +58,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ challenges: data ?? [] });
+  // Enrich with user data
+  if (!supabaseAdmin) {
+    return NextResponse.json({ challenges: data ?? [] });
+  }
+
+  const challenges = await Promise.all(
+    (data || []).map(async (challenge) => {
+      const [challenger, challenged] = await Promise.all([
+        supabaseAdmin!
+          .from("users")
+          .select("id, full_name, email")
+          .eq("id", challenge.challenger_id)
+          .single(),
+        supabaseAdmin!
+          .from("users")
+          .select("id, full_name, email")
+          .eq("id", challenge.challenged_id)
+          .single(),
+      ]);
+
+      return {
+        ...challenge,
+        challenger: challenger.data,
+        challenged: challenged.data,
+      };
+    })
+  );
+
+  return NextResponse.json({ challenges });
 }
 
 export async function POST(req: Request) {

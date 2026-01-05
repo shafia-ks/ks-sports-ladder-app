@@ -18,6 +18,7 @@ interface Member {
   user_id: string;
   current_rank: number;
   status: string;
+  hasActiveChallenge?: boolean;
   users?: {
     id: string;
     full_name: string | null;
@@ -61,10 +62,27 @@ export default function ChallengeCreatePage() {
     if (!selectedLadder) return;
     const fetchMembers = async () => {
       try {
+        // Fetch ladder members
         const res = await fetch(`/api/ladders/${selectedLadder}`);
         const json = await res.json();
         const activeMembers = json.members?.filter((m: Member) => m.status === "active" && m.user_id !== user?.id) ?? [];
-        setMembers(activeMembers);
+        
+        // Fetch active challenges to check busy status
+        const challengesRes = await fetch(`/api/challenges?ladderId=${selectedLadder}`);
+        const challengesData = await challengesRes.json();
+        const activeChallenges = challengesData.challenges?.filter(
+          (c: any) => c.status === "Pending" || c.status === "Accepted"
+        ) || [];
+        
+        // Mark members with active challenges
+        const membersWithStatus = activeMembers.map((m: Member) => ({
+          ...m,
+          hasActiveChallenge: activeChallenges.some(
+            (c: any) => c.challenger_id === m.user_id || c.challenged_id === m.user_id
+          ),
+        }));
+        
+        setMembers(membersWithStatus);
       } catch (err) {
         console.error("Failed to load members", err);
       }
@@ -154,11 +172,21 @@ export default function ChallengeCreatePage() {
             >
               <option value="">Select opponent</option>
               {members.map((member) => (
-                <option key={member.id} value={member.user_id}>
+                <option 
+                  key={member.id} 
+                  value={member.user_id}
+                  disabled={member.hasActiveChallenge}
+                >
                   #{member.current_rank} {member.users?.full_name || member.users?.email}
+                  {member.hasActiveChallenge ? " (Busy - has active challenge)" : ""}
                 </option>
               ))}
             </select>
+            {formData.opponent_id && members.find(m => m.user_id === formData.opponent_id)?.hasActiveChallenge && (
+              <p className="mt-1 text-xs text-amber-600">
+                ⚠️ This player has an active challenge. Please wait until it's resolved.
+              </p>
+            )}
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-700">Scheduled time</label>
