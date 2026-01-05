@@ -45,10 +45,9 @@ export default function LoginPage() {
       if (authError) {
         setError(authError.message);
         setLoading(false);
-      } else {
-        // Auth successful, let auth provider handle the redirect via useEffect
-        // Don't redirect here to avoid race conditions
       }
+      // Success case: loading state will be managed by the redirect in useEffect
+      // Keep loading=true to prevent form resubmission
     } catch (err) {
       setError("An error occurred. Please try again.");
       setLoading(false);

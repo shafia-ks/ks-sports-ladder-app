@@ -69,28 +69,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange(async (event: string, session: any) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
       if (event === "SIGNED_OUT") {
         setUser(null);
         setIsSignedIn(false);
-      } else if (session?.user) {
-        // Fetch updated profile
-        const { data: profile } = await client
-          .from("users")
-          .select("id, email, first_name, last_name, full_name, avatar_url, role")
-          .eq("id", session.user.id)
-          .single();
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (session?.user) {
+          // Fetch updated profile
+          const { data: profile } = await client
+            .from("users")
+            .select("id, email, first_name, last_name, full_name, avatar_url, role")
+            .eq("id", session.user.id)
+            .single();
 
-        if (profile) {
-          setUser({
-            id: profile.id,
-            email: profile.email,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            fullName: profile.full_name,
-            avatarUrl: profile.avatar_url,
-            role: profile.role || "player",
-          });
-          setIsSignedIn(true);
+          if (profile) {
+            setUser({
+              id: profile.id,
+              email: profile.email,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              fullName: profile.full_name,
+              avatarUrl: profile.avatar_url,
+              role: profile.role || "player",
+            });
+            setIsSignedIn(true);
+          }
         }
       }
     });
