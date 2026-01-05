@@ -92,16 +92,15 @@ export default function ResetPasswordForm() {
 
       if (updateError) {
         setError(updateError.message);
+        setLoading(false);
       } else {
         setSuccess(true);
-        // Redirect to dashboard after success
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+        // Give user feedback then redirect
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        router.push("/dashboard");
       }
     } catch (err) {
       setError("Failed to update password. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
