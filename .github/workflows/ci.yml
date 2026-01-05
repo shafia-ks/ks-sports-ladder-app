@@ -78,6 +78,14 @@ jobs:
         if: steps.check-secrets.outputs.skip != 'true'
         run: npx playwright install --with-deps
 
+      - name: Debug - List component files
+        if: steps.check-secrets.outputs.skip != 'true'
+        run: |
+          echo "Checking if problematic files exist:"
+          ls -la src/components/ui/page-header.tsx || echo "page-header.tsx NOT FOUND"
+          ls -la src/components/auth/protected-route.tsx || echo "protected-route.tsx NOT FOUND"
+          ls -la src/lib/auth/auth-context.ts || echo "auth-context.ts NOT FOUND"
+
       - name: Build Next.js app
         if: steps.check-secrets.outputs.skip != 'true'
         run: npm run build
