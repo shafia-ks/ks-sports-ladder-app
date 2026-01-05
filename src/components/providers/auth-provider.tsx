@@ -77,11 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
           // Fetch updated profile
-          const { data: profile } = await client
+          const { data: profile, error } = await client
             .from("users")
             .select("id, email, first_name, last_name, full_name, avatar_url, role")
             .eq("id", session.user.id)
             .single();
+
+          console.log('Profile fetch result:', { profile, error });
 
           if (profile) {
             setUser({
@@ -92,6 +94,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               fullName: profile.full_name,
               avatarUrl: profile.avatar_url,
               role: profile.role || "player",
+            });
+            setIsSignedIn(true);
+            console.log('Auth state updated, isSignedIn=true');
+          } else if (error) {
+            console.error('Profile fetch failed:', error);
+            // Set basic user info even if profile fetch fails
+            setUser({
+              id: session.user.id,
+              email: session.user.email || "",
+              role: "player",
             });
             setIsSignedIn(true);
           }
