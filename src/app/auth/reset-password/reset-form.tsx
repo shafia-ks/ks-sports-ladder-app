@@ -29,33 +29,36 @@ export default function ResetPasswordForm() {
       }
 
       try {
-        // Supabase automatically handles the token in the URL hash
-        // Just check if there's a session after the redirect
+        // First, clear any existing session to avoid conflicts
+        await supabase.auth.signOut({ scope: 'local' });
+        
+        // Wait a moment for Supabase to process the URL hash token
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Now check for the new session from the reset link
         const { data } = await supabase.auth.getSession();
         
         if (!data.session) {
-          // No session yet - might still be loading, wait a moment
-          setTimeout(async () => {
-            if (!supabase) return;
-            const { data: retryData } = await supabase.auth.getSession();
-            if (!retryData.session) {
-              setError("Reset link expired or invalid. Please request a new one.");
-              setTimeout(() => router.push("/login"), 3000);
-            }
-            setValidating(false);
-          }, 500);
-          return;
+          // Try one more time after another delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (!supabase) return;
+          const { data: retryData } = await supabase.auth.getSession();
+          
+          if (!retryData.session) {
+            setError("Reset link expired or invalid. Please request a new one.");
+            setTimeout(() => router.push("/login"), 3000);
+          }
         }
         
         setValidating(false);
       } catch (err) {
         console.error("Session check error:", err);
+        setError("Failed to process reset link.");
         setValidating(false);
       }
     };
 
-    // Small delay to let Supabase process the URL hash
-    setTimeout(checkSession, 300);
+    checkSession();
   }, [router]);
 
   // Validate password strength
