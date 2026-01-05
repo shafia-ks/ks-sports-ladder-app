@@ -11,11 +11,11 @@ export async function POST(req: Request) {
   // Verify cron secret for security
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" });
   }
 
   if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
+    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500, statusText: "Internal Server Error" });
   }
 
   try {
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     console.error("Error expiring challenges:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500, statusText: "Internal Server Error" }
     );
   }
 }
