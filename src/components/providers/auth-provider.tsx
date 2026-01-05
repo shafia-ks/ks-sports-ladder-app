@@ -24,49 +24,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } = await client.auth.getSession();
 
         if (session?.user) {
-          // Fetch user profile from users table
-          const { data: profile, error } = await client
+          // Set basic user immediately from session
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            role: "player",
+          });
+          setIsSignedIn(true);
+          setIsLoading(false);
+          
+          // Fetch full profile in background (don't block)
+          client
             .from("users")
             .select("id, email, first_name, last_name, full_name, avatar_url, role")
             .eq("id", session.user.id)
-            .single();
-
-          if (error) {
-            console.error("Profile fetch error:", error);
-            // Still set basic user from session
-            setUser({
-              id: session.user.id,
-              email: session.user.email || "",
-              role: "player",
+            .single()
+            .then(({ data: profile, error }) => {
+              if (error) {
+                console.error("Profile fetch error:", error);
+              } else if (profile) {
+                setUser({
+                  id: profile.id,
+                  email: profile.email,
+                  firstName: profile.first_name,
+                  lastName: profile.last_name,
+                  fullName: profile.full_name,
+                  avatarUrl: profile.avatar_url,
+                  role: profile.role || "player",
+                });
+              }
             });
-            setIsSignedIn(true);
-          } else if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              fullName: profile.full_name,
-              avatarUrl: profile.avatar_url,
-              role: profile.role || "player",
-            });
-            setIsSignedIn(true);
-          }
+        } else {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-      } finally {
         setIsLoading(false);
       }
     };
 
-    // Add timeout fallback
-    const timeoutId = setTimeout(() => {
-      console.warn("Auth check timed out, proceeding anyway");
-      setIsLoading(false);
-    }, 5000);
-
-    checkAuth().finally(() => clearTimeout(timeoutId));
+    checkAuth();
 
     // Listen for auth changes
     const {
