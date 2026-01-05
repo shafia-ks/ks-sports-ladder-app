@@ -9,17 +9,8 @@ export async function GET(
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 } as ResponseInit);
   }
 
-  // Check authentication from Authorization header
-  const authHeader = req.headers.get("authorization");
-  let user: any = null;
-
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
-    const {
-      data: { user: authUser },
-    } = await supabaseAdmin.auth.getUser(token);
-    user = authUser;
-  }
+  // Try to get user ID from custom header (sent by client)
+  const userId = req.headers.get("x-user-id");
 
   try {
     const { data: ladder, error: ladderError } = await supabaseAdmin
@@ -43,12 +34,13 @@ export async function GET(
     // Check if user is a member of this ladder or admin
     let isMember = false;
     let userRole = "player";
-    if (user) {
+    
+    if (userId) {
       const { data: userProfile } = await supabaseAdmin
         .from("users")
         .select("role")
-        .eq("id", user.id)
-        .single();
+        .eq("id", userId)
+        .maybeSingle();
       
       userRole = userProfile?.role || "player";
 
@@ -56,7 +48,7 @@ export async function GET(
         .from("ladder_memberships")
         .select("id, status")
         .eq("ladder_id", params.id)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .in("status", ["active", "pending"])
         .maybeSingle();
       

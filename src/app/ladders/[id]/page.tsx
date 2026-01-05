@@ -527,7 +527,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/ladders/${params.id}`);
+        // Add user ID header if user is signed in
+        const headers: Record<string, string> = {};
+        if (user?.id) {
+          headers['x-user-id'] = user.id;
+        }
+        
+        const res = await fetch(`/api/ladders/${params.id}`, { headers });
         const json = await res.json();
         if (!res.ok) {
           throw new Error(json.error || "Failed to load ladder");
@@ -572,7 +578,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       }
 
       // Refresh ladder data to show pending status
-      const refreshRes = await fetch(`/api/ladders/${params.id}`);
+      const refreshRes = await fetch(`/api/ladders/${params.id}`, {
+        headers: user?.id ? { 'x-user-id': user.id } : {}
+      });
       const refreshData = await refreshRes.json();
       setData(refreshData);
     } catch (err) {
