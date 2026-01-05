@@ -8,6 +8,7 @@ import { Swords, Loader2, Clock, Calendar, MapPin, MessageSquare, X } from "luci
 import { Avatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useMemberships } from "@/features/memberships/api";
 
 interface Challenge {
   id: string;
@@ -49,6 +50,9 @@ export default function ChallengesPage() {
     location: "",
     notes: "",
   });
+
+  const { data: membershipsData } = useMemberships(user?.id);
+  const hasActiveLadder = (membershipsData?.active ?? []).length > 0;
 
   useEffect(() => {
     if (user) {
@@ -185,10 +189,12 @@ export default function ChallengesPage() {
           title="Challenges"
           description="Track outgoing and incoming challenges with status, expiry, and actions."
           cta={
-            <Link href="/challenges/create" className="btn btn-primary">
-              <Swords className="h-4 w-4" />
-              Create challenge
-            </Link>
+            hasActiveLadder ? (
+              <Link href="/challenges/create" className="btn btn-primary">
+                <Swords className="h-4 w-4" />
+                Create challenge
+              </Link>
+            ) : undefined
           }
         />
 
@@ -198,6 +204,14 @@ export default function ChallengesPage() {
           </div>
         ) : (
           <>
+            {!hasActiveLadder && (
+              <div className="card p-6 text-center space-y-3">
+                <Swords className="h-10 w-10 mx-auto text-slate-300" />
+                <p className="font-semibold text-slate-900">Join a ladder to create challenges</p>
+                <p className="text-sm text-slate-600">You need at least one active ladder membership to challenge others.</p>
+                <Link href="/ladders" className="btn btn-primary inline-flex w-fit mx-auto">Browse ladders</Link>
+              </div>
+            )}
             {/* Active Challenges */}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">

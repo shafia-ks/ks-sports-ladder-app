@@ -33,6 +33,7 @@ export default function ChallengeCreatePage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [membershipError, setMembershipError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     opponent_id: "",
     scheduledAt: new Date().toISOString().slice(0, 16),
@@ -41,29 +42,36 @@ export default function ChallengeCreatePage() {
   });
 
   useEffect(() => {
-    const fetchLadders = async () => {
+    const fetchMemberships = async () => {
+      if (!user?.id) return;
       try {
-        const res = await fetch("/api/ladders");
+        setLoading(true);
+        setMembershipError(null);
+        const res = await fetch(`/api/memberships?user_id=${user.id}`);
         const json = await res.json();
-        setLadders(json.ladders ?? []);
-        if (json.ladders?.length > 0) {
-          setSelectedLadder(json.ladders[0].id);
-        }
+        if (!res.ok) throw new Error(json.error || "Failed to load memberships");
+        const activeLadders = (json.active ?? [])
+          .map((m: any) => m.ladders)
+          .filter(Boolean);
+        setLadders(activeLadders);
+        setSelectedLadder(activeLadders[0]?.id || "");
       } catch (err) {
-        console.error("Failed to load ladders", err);
+        setMembershipError(err instanceof Error ? err.message : "Failed to load memberships");
       } finally {
         setLoading(false);
       }
     };
-    fetchLadders();
-  }, []);
+    fetchMemberships();
+  }, [user?.id]);
 
   useEffect(() => {
     if (!selectedLadder) return;
     const fetchMembers = async () => {
       try {
         // Fetch ladder members
-        const res = await fetch(`/api/ladders/${selectedLadder}`);
+        const res = await fetch(`/api/ladders/${selectedLadder}`, {
+          headers: user?.id ? { "x-user-id": user.id } : {},
+        });
         const json = await res.json();
         const activeMembers = json.members?.filter((m: Member) => m.status === "active" && m.user_id !== user?.id) ?? [];
         
@@ -159,6 +167,17 @@ export default function ChallengeCreatePage() {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!ladders.length) {
+    return (
+      <div className="card p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">Join a ladder to create challenges</h2>
+        {membershipError && <p className="text-sm text-red-600">{membershipError}</p>}
+        <p className="text-sm text-slate-600">You must be an active member of a ladder before challenging others.</p>
+        <Link href="/ladders" className="btn btn-primary inline-flex w-fit">Browse ladders</Link>
       </div>
     );
   }

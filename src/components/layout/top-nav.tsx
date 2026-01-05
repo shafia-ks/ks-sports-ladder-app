@@ -33,6 +33,8 @@ const adminLinks = [
 export function TopNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [pendingJoins, setPendingJoins] = useState(0);
+  const [pendingInvites, setPendingInvites] = useState(0);
   const { user, isSignedIn, isLoading, signOut } = useAuth();
   const router = useRouter();
 
@@ -68,6 +70,45 @@ export function TopNav() {
       return () => clearInterval(interval);
     }
   }, [user?.role]);
+
+  // Fetch player pending joins and invitations
+  useEffect(() => {
+    if (user?.role === "player" && user?.id && user?.email) {
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      const fetchCounts = async () => {
+        try {
+          const [membershipsRes, invitationsRes] = await Promise.all([
+            fetch(`/api/memberships?user_id=${user.id}`),
+            fetch(`/api/invitations?email=${encodeURIComponent(user.email)}`),
+          ]);
+
+          if (membershipsRes.ok) {
+            const memberships = await membershipsRes.json();
+            const pendingCount = (memberships?.pending ?? []).length;
+            setPendingJoins(pendingCount);
+          }
+
+          if (invitationsRes.ok) {
+            const invites = await invitationsRes.json();
+            const inviteCount = (invites?.invitations ?? []).length;
+            setPendingInvites(inviteCount);
+          }
+          retryCount = 0;
+        } catch (error) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            console.warn("Unable to fetch player pending counts (will retry)");
+          }
+        }
+      };
+
+      fetchCounts();
+      const interval = setInterval(fetchCounts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.role, user?.id, user?.email]);
 
   const handleSignOut = async () => {
     setMobileOpen(false);
@@ -114,6 +155,11 @@ export function TopNav() {
               {link.href.pathname === "/admin/organizer-requests" && pendingRequests > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-600 text-xs font-bold text-white">
                   {pendingRequests}
+                </span>
+              )}
+              {link.href.pathname === "/ladders" && (pendingJoins + pendingInvites) > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white">
+                  {Math.min(pendingJoins + pendingInvites, 9)}
                 </span>
               )}
             </Link>
