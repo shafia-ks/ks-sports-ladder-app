@@ -77,37 +77,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
           console.log('Fetching profile for user:', session.user.id);
-          // Fetch updated profile
-          const { data: profile, error } = await client
+          
+          // Set timeout for profile fetch (5 seconds)
+          const profilePromise = client
             .from("users")
             .select("id, email, first_name, last_name, full_name, avatar_url, role")
             .eq("id", session.user.id)
             .single();
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+          );
+          
+          try {
+            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+            console.log('Profile fetch result:', { profile, error });
 
-          console.log('Profile fetch result:', { profile, error });
-
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              fullName: profile.full_name,
-              avatarUrl: profile.avatar_url,
-              role: profile.role || "player",
-            });
-            setIsSignedIn(true);
-            console.log('Auth state updated, isSignedIn=true');
-          } else {
-            // Profile doesn't exist or fetch failed - use session data as fallback
-            console.warn('Profile fetch failed, using session data:', error);
+            if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                fullName: profile.full_name,
+                avatarUrl: profile.avatar_url,
+                role: profile.role || "player",
+              });
+              setIsSignedIn(true);
+              console.log('Auth state updated, isSignedIn=true');
+            } else {
+              // Profile doesn't exist or fetch failed - use session data as fallback
+              console.warn('Profile fetch failed, using session data:', error);
+              setUser({
+                id: session.user.id,
+                email: session.user.email || "",
+                role: "player",
+              });
+              setIsSignedIn(true);
+              console.log('Auth state updated with fallback, isSignedIn=true');
+            }
+          } catch (err) {
+            console.error('Profile fetch error or timeout:', err);
+            // Use session data as fallback
             setUser({
               id: session.user.id,
               email: session.user.email || "",
               role: "player",
             });
             setIsSignedIn(true);
-            console.log('Auth state updated with fallback, isSignedIn=true');
+            console.log('Auth state updated after error, isSignedIn=true');
           }
         }
       }
