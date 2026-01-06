@@ -1138,7 +1138,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
           {/* Challenges Tab */}
           {tab === "challenges" && canAccessMembers && (
-            <ChallengesTabContent ladderId={params.id} userId={user?.id} />
+            <ChallengesTabContent ladderId={params.id} userId={undefined} />
           )}
 
           {/* Matches Tab */}

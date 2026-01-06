@@ -295,7 +295,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {hasActiveLadder && <RoleRequest currentRole="player" hasActivRequest={false} />}
+        {hasActiveLadder && <RoleRequest currentRole={user?.role as "player" | "organizer" | "admin" || "player"} hasActivRequest={false} />}
       </div>
     </ProtectedRoute>
   );
