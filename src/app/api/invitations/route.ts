@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
         hint: (error as any)?.hint,
         message: (error as any)?.message,
       });
-      throw error;
+      // Return empty array instead of throwing to prevent UI disruption
+      return NextResponse.json({ invitations: [] });
     }
 
     return NextResponse.json({ invitations: data ?? [] });
