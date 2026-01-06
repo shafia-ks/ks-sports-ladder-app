@@ -15,7 +15,7 @@ test.describe("Health endpoint", () => {
     // Assert env keys are present
     expect(env?.hasUrl, "NEXT_PUBLIC_SUPABASE_URL is missing").toBe(true);
     expect(env?.hasAnon, "NEXT_PUBLIC_SUPABASE_ANON_KEY is missing").toBe(true);
-    expect(env?.hasService, "SUPABASE_SERVICE_ROLE_KEY is missing").toBe(true);
+    expect(env?.hasService, "SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is missing").toBe(true);
 
     // Assert server-side client is available
     expect(
