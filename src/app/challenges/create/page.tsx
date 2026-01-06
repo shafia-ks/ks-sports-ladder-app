@@ -73,7 +73,9 @@ export default function ChallengeCreatePage() {
           headers: user?.id ? { "x-user-id": user.id } : {},
         });
         const json = await res.json();
-        const activeMembers = json.members?.filter((m: Member) => m.status === "active" && m.user_id !== user?.id) ?? [];
+        const activeMembers = json.members?.filter(
+          (m: Member) => m.status === "active" && m.user_id !== user?.id && m.current_rank != null && m.current_rank >= 0
+        ) ?? [];
         
         // Fetch active challenges to check busy status
         const challengesRes = await fetch(`/api/challenges?ladderId=${selectedLadder}`);
