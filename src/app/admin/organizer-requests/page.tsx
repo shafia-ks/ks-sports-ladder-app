@@ -19,6 +19,8 @@ interface OrganizerRequest {
   requested_at: string;
   reviewed_at?: string;
   rejection_reason?: string;
+  ladder_id?: string;
+  ladder_name?: string;
 }
 
 function OrganizerRequestsPage() {
@@ -38,7 +40,22 @@ function OrganizerRequestsPage() {
       const response = await fetch("/api/leader-requests");
       if (!response.ok) throw new Error("Failed to fetch requests");
       const data = await response.json();
-      setRequests(data.requests);
+      // Transform the API response to match our interface
+      const transformedRequests = data.requests.map((req: any) => ({
+        id: req.id,
+        user_id: req.user_id,
+        user_email: req.users?.email || "unknown@example.com",
+        user_name: req.users?.full_name || req.users?.email || "Unknown User",
+        requested_role: req.requested_role,
+        status: req.status,
+        reason: req.reason,
+        requested_at: req.requested_at,
+        reviewed_at: req.reviewed_at,
+        rejection_reason: req.rejection_reason,
+        ladder_id: req.ladder_id,
+        ladder_name: req.ladders?.name,
+      }));
+      setRequests(transformedRequests);
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
@@ -160,6 +177,9 @@ function OrganizerRequestsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-slate-900">{request.user_name}</h3>
                       <Badge variant="info">{request.requested_role}</Badge>
+                      {request.ladder_name && (
+                        <Badge variant="success">{request.ladder_name}</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-slate-500">{request.user_email}</p>
                   </div>
