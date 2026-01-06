@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setIsSignedIn(false);
         cachedProfile = null;
-      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
           // Skip profile fetch on token refresh if we already have a profile
           if (event === "TOKEN_REFRESHED" && cachedProfile?.id === session.user.id) {
