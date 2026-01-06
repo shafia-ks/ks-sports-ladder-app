@@ -863,6 +863,40 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </div>
               )}
 
+              {/* Organizers List - Always Visible */}
+              {organizerIds.length > 0 && (
+                <div className="card p-6">
+                  <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-brand-600" />
+                    Ladder Organizers
+                  </h2>
+                  <div className="space-y-2">
+                    {activeMembersSorted
+                      .filter((m) => organizerIds.includes(m.user_id))
+                      .map((organizer) => (
+                        <div
+                          key={organizer.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
+                        >
+                          <Avatar name={organizer.users?.full_name || organizer.users?.email || "?"} size="sm" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">
+                              {organizer.users?.full_name || organizer.users?.email}
+                            </p>
+                            {organizer.users?.email && organizer.users?.full_name && (
+                              <p className="text-xs text-slate-500">{organizer.users.email}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {organizer.users?.role === "admin" && renderRolePill("Admin")}
+                            {renderRolePill("Organizer")}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               {/* Player Stats - Always Visible */}
               {currentMember && (
                 <div className="card p-6">

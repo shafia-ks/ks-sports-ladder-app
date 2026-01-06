@@ -74,7 +74,7 @@ export default function ChallengeCreatePage() {
         });
         const json = await res.json();
         const activeMembers = json.members?.filter(
-          (m: Member) => m.status === "active" && m.user_id !== user?.id && m.current_rank != null && m.current_rank >= 0
+          (m: Member) => m.status === "active" && m.current_rank != null && m.current_rank >= 0
         ) ?? [];
         
         // Fetch active challenges to check busy status
@@ -218,7 +218,7 @@ export default function ChallengeCreatePage() {
               required
             >
               <option value="">Select opponent</option>
-              {members.map((member) => (
+              {members.filter(m => m.user_id !== user?.id).map((member) => (
                 <option 
                   key={member.id} 
                   value={member.user_id}
