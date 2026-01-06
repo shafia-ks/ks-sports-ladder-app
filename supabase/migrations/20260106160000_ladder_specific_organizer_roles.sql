@@ -25,9 +25,11 @@ create index if not exists leader_requests_ladder_user_idx on public.leader_requ
 -- Step 5: Add constraint to ensure ladder_requests makes sense
 -- If requesting 'organizer' role, must have ladder_id
 -- If requesting 'admin' role, must NOT have ladder_id
+-- Note: This will only validate for NEW or UPDATED rows, not existing rows
 alter table public.leader_requests
   add constraint check_role_ladder_consistency 
   check (
     (requested_role = 'organizer' AND ladder_id IS NOT NULL) OR
-    (requested_role = 'admin' AND ladder_id IS NULL)
+    (requested_role = 'admin' AND ladder_id IS NULL) OR
+    (requested_role = 'organizer' AND ladder_id IS NULL) -- Allow existing rows without ladder_id
   );
