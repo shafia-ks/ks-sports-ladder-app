@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         reviewed_at,
         reviewed_by,
         rejection_reason,
-        users(id, email, first_name, last_name),
+        users!leader_requests_user_id_fkey(id, email, first_name, last_name),
         ladders(id, name)
       `)
       .order("requested_at", { ascending: false });
