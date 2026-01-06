@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
-import { RoleRequest } from "@/components/ui/role-request";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useLadders } from "@/features/ladders/api";
 import { useMemberships } from "@/features/memberships/api";
@@ -294,8 +293,6 @@ export default function DashboardPage() {
             </ul>
           )}
         </div>
-
-        {hasActiveLadder && <RoleRequest currentRole={user?.role as "player" | "organizer" | "admin" || "player"} hasActivRequest={false} />}
       </div>
     </ProtectedRoute>
   );

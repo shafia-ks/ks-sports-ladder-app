@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { RoleRequest } from "@/components/ui/role-request";
 
 const SPORT_LABELS: Record<string, string> = {
   squash: "Squash",
@@ -990,6 +991,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     </Link>
                   </div>
                 </div>
+              )}
+
+              {/* Request to Become Organizer - Only for Players */}
+              {!isOrganizer && currentMember && user?.role === "player" && (
+                <RoleRequest 
+                  currentRole="player" 
+                  hasActivRequest={false} 
+                  ladder_id={params.id}
+                />
               )}
 
               {/* Recent Activity */}
