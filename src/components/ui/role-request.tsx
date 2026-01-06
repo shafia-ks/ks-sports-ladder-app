@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertCircle, Check } from "lucide-react";
 import { Badge } from "./badge";
+import { useAuth } from "@/lib/auth/auth-context";
 
 interface RoleRequestProps {
   currentRole: "player" | "organizer" | "admin";
@@ -10,6 +11,7 @@ interface RoleRequestProps {
 }
 
 export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -26,6 +28,7 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          user_id: user?.id,
           requested_role: requestedRole,
           reason: requestReason,
         }),
