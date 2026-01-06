@@ -14,6 +14,7 @@ export default function LaddersPage() {
   const { data, isLoading, error, refetch } = useLadders();
   const [memberships, setMemberships] = useState<any[]>([]);
   const [membershipLoading, setMembershipLoading] = useState(false);
+  const canCreateLadder = user?.role === "admin" || user?.role === "organizer";
   const ladders = data?.ladders ?? [];
 
   useEffect(() => {
@@ -82,10 +83,12 @@ export default function LaddersPage() {
           title="Ladders"
           description="Join a ladder and start competing with other players."
           cta={
-            <Link href="/ladders/create" className="btn btn-primary">
-              <Plus className="h-4 w-4" />
-              Create ladder
-            </Link>
+            canCreateLadder ? (
+              <Link href="/ladders/create" className="btn btn-primary">
+                <Plus className="h-4 w-4" />
+                Create ladder
+              </Link>
+            ) : null
           }
         />
 
@@ -115,12 +118,14 @@ export default function LaddersPage() {
                 Create a ladder or check back once one is available to join.
               </p>
             </div>
-            <div className="flex justify-center">
-              <Link href="/ladders/create" className="btn btn-primary">
-                <Plus className="h-4 w-4" />
-                Create ladder
-              </Link>
-            </div>
+            {canCreateLadder && (
+              <div className="flex justify-center">
+                <Link href="/ladders/create" className="btn btn-primary">
+                  <Plus className="h-4 w-4" />
+                  Create ladder
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
