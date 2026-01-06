@@ -2,8 +2,7 @@ node_modules
 .next
 out
 .env
-.env.local
-.env.*
+.env.*local
 coverage
 playwright-report
 junit.xml
