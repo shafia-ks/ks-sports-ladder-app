@@ -254,11 +254,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     role: freshProfile.role || "player",
                   });
                 }
-              }).catch(err => {
-                // Background refresh failed - ignore, cache is still valid
-                if (event === "SIGNED_IN") {
-                  console.error("Background profile refresh failed:", err);
-                }
+              }).catch(() => {
+                // Background refresh failed - ignore silently, cache is still valid
+                // No error logging needed for non-critical background task
+              });
               });
             }
             return;
