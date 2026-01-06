@@ -100,9 +100,16 @@ export default function UsersManagementPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to approve membership");
+      
+      // Optimistically remove from pending list
+      setPendingMemberships(prev => prev.filter(m => m.id !== membershipId));
+      
+      // Refetch to get updated counts
       await fetchUsers();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to approve");
+      // Revert optimistic update on error
+      await fetchUsers();
     } finally {
       setProcessingMembership(null);
     }
@@ -121,9 +128,16 @@ export default function UsersManagementPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to reject membership");
+      
+      // Optimistically remove from pending list
+      setPendingMemberships(prev => prev.filter(m => m.id !== membershipId));
+      
+      // Refetch to get updated counts
       await fetchUsers();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to reject");
+      // Revert optimistic update on error
+      await fetchUsers();
     } finally {
       setProcessingMembership(null);
     }

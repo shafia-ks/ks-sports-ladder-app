@@ -67,9 +67,9 @@ export function TopNav() {
     }
   }, [user?.role]);
 
-  // Fetch player pending joins and invitations
+  // Fetch player pending joins and invitations (admins can also participate as players)
   useEffect(() => {
-    if (user?.role === "player" && user?.id && user?.email) {
+    if ((user?.role === "player" || user?.role === "admin") && user?.id && user?.email) {
       let retryCount = 0;
       const maxRetries = 3;
 
