@@ -541,49 +541,49 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [joining, setJoining] = useState(false);
   const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches">("dashboard");
   const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [fixingRanks, setFixingRanks] = useState(false);
+
+  const fetchLadder = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const headers: Record<string, string> = {};
+      if (user?.id) {
+        headers["x-user-id"] = user.id;
+      }
+
+      const res = await fetch(`/api/ladders/${params.id}`, { headers });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to load ladder");
+      }
+      setData(json);
+
+      const canAccessStats =
+        user &&
+        (json.organizerIds?.includes(user.id) ||
+          json.members?.some((m: LadderMember) => m.user_id === user.id && m.status === "active") ||
+          user.role === "admin");
+
+      if (canAccessStats) {
+        try {
+          const statsRes = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
+          if (statsRes.ok) {
+            const statsJson = await statsRes.json();
+            setDashboardStats(statsJson);
+          }
+        } catch (err) {
+          console.error("Failed to load dashboard stats:", err);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load ladder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchLadder = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Add user ID header if user is signed in
-        const headers: Record<string, string> = {};
-        if (user?.id) {
-          headers['x-user-id'] = user.id;
-        }
-        
-        const res = await fetch(`/api/ladders/${params.id}`, { headers });
-        const json = await res.json();
-        if (!res.ok) {
-          throw new Error(json.error || "Failed to load ladder");
-        }
-        setData(json);
-
-        const canAccessStats =
-          user &&
-          (json.organizerIds?.includes(user.id) ||
-            json.members?.some((m: LadderMember) => m.user_id === user.id && m.status === "active") ||
-            user.role === "admin");
-
-        if (canAccessStats) {
-          try {
-            const statsRes = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
-            if (statsRes.ok) {
-              const statsJson = await statsRes.json();
-              setDashboardStats(statsJson);
-            }
-          } catch (err) {
-            console.error("Failed to load dashboard stats:", err);
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load ladder");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchLadder();
   }, [params.id, user]);
 
@@ -615,6 +615,23 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  const handleFixRanks = async () => {
+    setFixingRanks(true);
+    try {
+      const res = await fetch(`/api/ladders/${params.id}/fix-ranks`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to fix ranks");
+      }
+      await fetchLadder();
+      alert(json.message || "Ranks updated");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to fix ranks");
+    } finally {
+      setFixingRanks(false);
+    }
+  };
+
   const ladderName = data?.ladder?.name ?? "Ladder";
   const members = data?.members ?? [];
   const activeMembers = members.filter((m) => m.status === "active");
@@ -623,6 +640,12 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const memberCounts = data?.memberCounts ?? { active: activeMembers.length, pending: pendingMembers.length };
   const challengeCounts = data?.challengeCounts ?? { active: 0 };
   const matchCounts = data?.matchCounts ?? { confirmed: 0 };
+  const hasZeroRanks = activeMembers.some((m) => !m.current_rank || m.current_rank <= 0);
+  const activeMembersSorted = [...activeMembers].sort((a, b) => {
+    const rankA = a.current_rank && a.current_rank > 0 ? a.current_rank : Number.MAX_SAFE_INTEGER;
+    const rankB = b.current_rank && b.current_rank > 0 ? b.current_rank : Number.MAX_SAFE_INTEGER;
+    return rankA - rankB;
+  });
   
   // Check current user's membership status
   const userMembership = user ? members.find((m) => m.user_id === user.id) : null;
@@ -968,7 +991,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       Top Performers
                     </h2>
                     <div className="space-y-2">
-                      {activeMembers.slice(0, 5).map((member, idx) => (
+                      {activeMembersSorted.slice(0, 5).map((member, idx) => (
                         <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
                           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-600 text-white font-bold text-sm">
                             {idx + 1}
@@ -1009,8 +1032,29 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           {tab === "ranking" && canAccessMembers && (
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700">Ranking</p>
-                <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm font-semibold text-slate-700">Ranking</p>
+                  <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isOrganizer && hasZeroRanks && (
+                    <button
+                      onClick={handleFixRanks}
+                      disabled={fixingRanks}
+                      className="btn btn-xs border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                    >
+                      {fixingRanks ? "Fixing..." : "Fix ranks"}
+                    </button>
+                  )}
+                  {isOrganizer && (
+                    <Link
+                      href={`/organizer/${params.id}/rankings`}
+                      className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
+                      Edit rankings
+                    </Link>
+                  )}
+                </div>
               </div>
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -1021,7 +1065,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </tr>
                 </thead>
                 <tbody>
-                  {activeMembers.map((member) => (
+                  {activeMembersSorted.map((member) => (
                     <tr key={member.id} className="border-t border-slate-100">
                       <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
                       <td className="px-4 py-2">
