@@ -69,29 +69,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } = await client.auth.getSession();
 
         if (session?.user) {
-          // Set basic user immediately from session
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            role: "player",
-          });
+          // Fetch or create profile (block initial render to avoid role flicker)
+          const profile = await ensureProfile(session.user);
+
+          if (profile) {
+            setUser({
+              id: profile.id,
+              email: profile.email,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              fullName: profile.full_name,
+              avatarUrl: profile.avatar_url,
+              role: profile.role || "player",
+            });
+          } else {
+            // Fallback to session data
+            setUser({
+              id: session.user.id,
+              email: session.user.email || "",
+              role: "player",
+            });
+          }
+
           setIsSignedIn(true);
           setIsLoading(false);
-
-          // Fetch or create profile in background (don't block)
-          ensureProfile(session.user).then((profile) => {
-            if (profile) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                firstName: profile.first_name,
-                lastName: profile.last_name,
-                fullName: profile.full_name,
-                avatarUrl: profile.avatar_url,
-                role: profile.role || "player",
-              });
-            }
-          });
         } else {
           setIsLoading(false);
         }
