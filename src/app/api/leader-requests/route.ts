@@ -51,9 +51,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ requests: data ?? [] });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
     console.error("GET /api/leader-requests error:", errorMsg, error);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    return NextResponse.json({ error: errorMsg, details: error }, { status: 500 });
   }
 }
 
