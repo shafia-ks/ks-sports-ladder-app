@@ -34,7 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const firstName = sessionUser.user_metadata?.first_name || sessionUser.user_metadata?.firstName || "";
         const lastName = sessionUser.user_metadata?.last_name || sessionUser.user_metadata?.lastName || "";
-        const fullName = sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.fullName || `${firstName} ${lastName}`.trim();
+        const fullName =
+          sessionUser.user_metadata?.full_name ||
+          sessionUser.user_metadata?.fullName ||
+          `${firstName} ${lastName}`.trim();
 
         // Insert new profile only (don't update existing ones to preserve role)
         const { data: inserted, error: insertError } = await client
@@ -56,8 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         return inserted;
-
-
       } catch (err) {
         console.error("ensureProfile error:", err);
         return null;
@@ -111,25 +112,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange(async (event: string, session: any) => {
-      console.log('Auth state change:', event, session?.user?.email);
+      console.log("Auth state change:", event, session?.user?.email);
       
       if (event === "SIGNED_OUT") {
         setUser(null);
         setIsSignedIn(false);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
-          console.log('Fetching profile for user:', session.user.id);
+          console.log("Fetching profile for user:", session.user.id);
           
           // Set timeout for profile fetch (5 seconds)
           const timeoutPromise = new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+            setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
           );
+
+          const startedAt = Date.now();
           
           try {
             const profile = await Promise.race([
               ensureProfile(session.user),
               timeoutPromise,
             ]);
+
+            const durationMs = Date.now() - startedAt;
 
             if (profile) {
               setUser({
@@ -142,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: profile.role || "player",
               });
               setIsSignedIn(true);
-              console.log('Auth state updated with profile');
+              console.log("Auth state updated with profile", { durationMs });
             } else {
               setUser({
                 id: session.user.id,
@@ -150,10 +155,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: "player",
               });
               setIsSignedIn(true);
-              console.log('Auth state updated with fallback');
+              console.log("Auth state updated with fallback", { durationMs });
             }
           } catch (err) {
-            console.error('Profile fetch error or timeout:', err);
+            const durationMs = Date.now() - startedAt;
+            console.error("Profile fetch error or timeout", { err, durationMs });
             // Use session data as fallback
             setUser({
               id: session.user.id,
@@ -161,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: "player",
             });
             setIsSignedIn(true);
-            console.log('Auth state updated after error');
+            console.log("Auth state updated after error", { durationMs });
           }
         }
       }
@@ -185,19 +191,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsSignedIn(false);
       
       // Clear any cached data
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Clear local storage items related to auth
-        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem("supabase.auth.token");
         // Reload to clear any in-memory state
-        window.location.href = '/';
+        window.location.href = "/";
       }
     } catch (error) {
       console.error("Sign out error:", error);
       // Force clear state even if signOut fails
       setUser(null);
       setIsSignedIn(false);
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
       }
     }
   };
