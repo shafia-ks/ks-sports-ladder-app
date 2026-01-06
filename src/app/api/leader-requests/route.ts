@@ -51,8 +51,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ requests: data ?? [] });
   } catch (error) {
-    console.error("GET /api/leader-requests error:", error);
-    return NextResponse.json({ error: "Failed to fetch requests" }, { status: 500 });
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("GET /api/leader-requests error:", errorMsg, error);
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
