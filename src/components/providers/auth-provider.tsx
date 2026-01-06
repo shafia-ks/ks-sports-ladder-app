@@ -36,9 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const lastName = sessionUser.user_metadata?.last_name || sessionUser.user_metadata?.lastName || "";
         const fullName = sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.fullName || `${firstName} ${lastName}`.trim();
 
-        const { data: upserted, error: upsertError } = await client
+        // Insert new profile only (don't update existing ones to preserve role)
+        const { data: inserted, error: insertError } = await client
           .from("users")
-          .upsert({
+          .insert({
             id: sessionUser.id,
             email: sessionUser.email,
             first_name: firstName || null,
@@ -49,12 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select()
           .single();
 
-        if (upsertError) {
-          console.error("Profile upsert error:", upsertError);
+        if (insertError) {
+          console.error("Profile insert error:", insertError);
           return null;
         }
 
-        return upserted;
+        return inserted;
+
+
       } catch (err) {
         console.error("ensureProfile error:", err);
         return null;
