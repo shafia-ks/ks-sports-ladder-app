@@ -9,7 +9,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useLadders } from "@/features/ladders/api";
 import { useMemberships } from "@/features/memberships/api";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Loader2, Swords, AlertCircle, Trophy, Mail } from "lucide-react";
+import { Loader2, Swords, AlertCircle, Trophy, Mail, Settings } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
@@ -136,40 +136,29 @@ export default function DashboardPage() {
     );
   }
 
-  // Redirect admins to admin console
-  if (isAdmin) {
-    return (
-      <ProtectedRoute requiredRoles={["admin"]}>
-        <div className="space-y-6">
-          <PageHeader
-            title="Dashboard"
-            description="Welcome, Admin! Go to the admin console to manage the system."
-          />
-          <div className="card p-8 text-center space-y-4">
-            <p className="text-slate-600">You're being redirected to admin console...</p>
-            <Link href="/admin" className="btn btn-primary inline-block">
-              Go to Admin Console
-            </Link>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  const headerCta = isAdmin
+    ? (
+        <Link href="/admin" className="btn btn-primary">
+          <Settings className="h-4 w-4" />
+          Admin console
+        </Link>
+      )
+    : hasActiveLadder
+    ? (
+        <Link href="/challenges/create" className="btn btn-primary">
+          <Swords className="h-4 w-4" />
+          New challenge
+        </Link>
+      )
+    : undefined;
 
   return (
-    <ProtectedRoute requiredRoles={["player"]}>
+    <ProtectedRoute requiredRoles={["player", "admin"]}>
       <div className="space-y-6">
         <PageHeader
           title="Dashboard"
           description="Your ladders, challenges, and rankings at a glance."
-          cta={
-            hasActiveLadder ? (
-              <Link href="/challenges/create" className="btn btn-primary">
-                <Swords className="h-4 w-4" />
-                New challenge
-              </Link>
-            ) : undefined
-          }
+          cta={headerCta}
         />
 
         <div className="space-y-4">
