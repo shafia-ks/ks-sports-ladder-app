@@ -41,6 +41,18 @@ export async function GET(
 
     const organizerIds = (organizerRows ?? []).map((row) => row.user_id);
 
+    // Fetch organizer user details
+    let organizers: any[] = [];
+    if (organizerIds.length > 0) {
+      const { data: organizerUsers, error: organizerUsersError } = await supabaseAdmin
+        .from("users")
+        .select("id, full_name, first_name, last_name, email, role")
+        .in("id", organizerIds);
+
+      if (organizerUsersError) throw organizerUsersError;
+      organizers = organizerUsers ?? [];
+    }
+
     // Check if user is a member of this ladder or privileged
     let userRole = "player";
     let membership: { id: string; status: string } | null = null;
@@ -145,6 +157,7 @@ export async function GET(
       ladder,
       members: membersWithUsers,
       organizerIds,
+      organizers,
       memberCounts: {
         active: activeCountRes.count || 0,
         pending: pendingCountRes.count || 0,

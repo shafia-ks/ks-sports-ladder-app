@@ -52,6 +52,12 @@ interface LadderResponse {
   } | null;
   members: LadderMember[];
   organizerIds?: string[];
+  organizers?: Array<{
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    role: "player" | "organizer" | "admin";
+  }>;
   memberCounts?: { active: number; pending: number };
   challengeCounts?: { active: number };
   matchCounts?: { confirmed: number };
@@ -105,7 +111,10 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
   const fetchChallenges = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/challenges?ladderId=${ladderId}`);
+      const url = userId 
+        ? `/api/challenges?ladderId=${ladderId}&userId=${userId}`
+        : `/api/challenges?ladderId=${ladderId}`;
+      const res = await fetch(url);
       const data = await res.json();
       setChallenges(data.challenges || []);
     } catch (err) {
@@ -871,24 +880,22 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     Ladder Organizers
                   </h2>
                   <div className="space-y-2">
-                    {activeMembersSorted
-                      .filter((m) => organizerIds.includes(m.user_id))
-                      .map((organizer) => (
+                    {(data?.organizers || []).map((organizer) => (
                         <div
                           key={organizer.id}
                           className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
                         >
-                          <Avatar name={organizer.users?.full_name || organizer.users?.email || "?"} size="sm" />
+                          <Avatar name={organizer.full_name || organizer.email || "?"} size="sm" />
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-slate-900">
-                              {organizer.users?.full_name || organizer.users?.email}
+                              {organizer.full_name || organizer.email}
                             </p>
-                            {organizer.users?.email && organizer.users?.full_name && (
-                              <p className="text-xs text-slate-500">{organizer.users.email}</p>
+                            {organizer.email && organizer.full_name && (
+                              <p className="text-xs text-slate-500">{organizer.email}</p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            {organizer.users?.role === "admin" && renderRolePill("Admin")}
+                            {organizer.role === "admin" && renderRolePill("Admin")}
                             {renderRolePill("Organizer")}
                           </div>
                         </div>
