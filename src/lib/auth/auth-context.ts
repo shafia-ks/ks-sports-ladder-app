@@ -15,6 +15,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isSignedIn: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

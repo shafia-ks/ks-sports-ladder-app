@@ -222,14 +222,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
-          // Skip profile fetch on token refresh if we already have a cached profile
+          // Try localStorage first (instant load)
           const localCached = loadCachedProfile(session.user.id);
-          if (event === "TOKEN_REFRESHED" && localCached) {
-            return; // Already have valid cached data
-          }
-
-          // Try localStorage first (instant)
-          if (localCached && event !== "SIGNED_IN") {
+          
+          if (localCached) {
+            // Set user immediately from cache for instant UI
             setUser({
               id: localCached.id,
               email: localCached.email,
@@ -240,70 +237,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: localCached.role || "player",
             });
             setIsSignedIn(true);
-            return; // Don't fetch from database
+            
+            // Background refresh to detect role changes (non-blocking)
+            if (event !== "TOKEN_REFRESHED") {
+              ensureProfile(session.user, false).then(freshProfile => {
+                if (freshProfile && freshProfile.role !== localCached.role) {
+                  // Role changed in database - update UI immediately
+                  console.log("Role changed from", localCached.role, "to", freshProfile.role);
+                  setUser({
+                    id: freshProfile.id,
+                    email: freshProfile.email,
+                    firstName: freshProfile.first_name,
+                    lastName: freshProfile.last_name,
+                    fullName: freshProfile.full_name,
+                    avatarUrl: freshProfile.avatar_url,
+                    role: freshProfile.role || "player",
+                  });
+                }
+              }).catch(err => {
+                // Background refresh failed - ignore, cache is still valid
+                if (event === "SIGNED_IN") {
+                  console.error("Background profile refresh failed:", err);
+                }
+              });
+            }
+            return;
           }
 
-          // Only fetch from database on SIGNED_IN (not on INITIAL_SESSION or TOKEN_REFRESHED)
-          if (event === "SIGNED_IN") {
-            const startedAt = Date.now();
-            
-            try {
-              // Short timeout for SIGNED_IN - we want fresh data
-              const timeoutPromise = new Promise<any>((_, reject) =>
-                setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
-              );
+          // No cache - fetch from database (first-time load)
+          const startedAt = Date.now();
+          
+          try {
+            const timeoutPromise = new Promise<any>((_, reject) =>
+              setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
+            );
 
-              const profile = await Promise.race([
-                ensureProfile(session.user, false), // Don't use cache, fetch fresh
-                timeoutPromise,
-              ]);
+            const profile = await Promise.race([
+              ensureProfile(session.user, false),
+              timeoutPromise,
+            ]);
 
-              if (profile) {
-                setUser({
-                  id: profile.id,
-                  email: profile.email,
-                  firstName: profile.first_name,
-                  lastName: profile.last_name,
-                  fullName: profile.full_name,
-                  avatarUrl: profile.avatar_url,
-                  role: profile.role || "player",
-                });
-                setIsSignedIn(true);
-              } else {
-                // Use localStorage fallback
-                const fallback = loadCachedProfile(session.user.id);
-                if (fallback) {
-                  setUser({
-                    id: fallback.id,
-                    email: fallback.email,
-                    firstName: fallback.first_name,
-                    lastName: fallback.last_name,
-                    fullName: fallback.full_name,
-                    avatarUrl: fallback.avatar_url,
-                    role: fallback.role || "player",
-                  });
-                  setIsSignedIn(true);
-                }
-              }
-            } catch (err) {
-              const durationMs = Date.now() - startedAt;
-              console.error("Profile fetch error or timeout", { err, durationMs });
-              
-              // Use localStorage fallback on timeout
-              const fallback = loadCachedProfile(session.user.id);
-              if (fallback) {
-                setUser({
-                  id: fallback.id,
-                  email: fallback.email,
-                  firstName: fallback.first_name,
-                  lastName: fallback.last_name,
-                  fullName: fallback.full_name,
-                  avatarUrl: fallback.avatar_url,
-                  role: fallback.role || "player",
-                });
-                setIsSignedIn(true);
-              }
+            if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                fullName: profile.full_name,
+                avatarUrl: profile.avatar_url,
+                role: profile.role || "player",
+              });
+              setIsSignedIn(true);
             }
+          } catch (err) {
+            const durationMs = Date.now() - startedAt;
+            console.error("Profile fetch error or timeout", { err, durationMs });
+            // No cache and fetch failed - minimal user object
+            setUser({
+              id: session.user.id,
+              email: session.user.email || "",
+            } as AuthUser);
+            setIsSignedIn(true);
           }
         }
       }
@@ -330,6 +324,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         // Clear local storage items related to auth
         localStorage.removeItem("supabase.auth.token");
+        // Clear profile cache
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith("profile_")) {
+            localStorage.removeItem(key);
+          }
+        });
         // Reload to clear any in-memory state
         window.location.href = "/";
       }
@@ -344,11 +345,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshProfile = async () => {
+    const client = supabase;
+    if (!client) return;
+
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return;
+
+      // Clear localStorage cache for this user
+      localStorage.removeItem(`profile_${session.user.id}`);
+
+      // Fetch fresh profile
+      const { data: profile } = await client
+        .from("users")
+        .select("id, email, first_name, last_name, full_name, avatar_url, role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        // Save fresh profile to cache
+        localStorage.setItem(`profile_${session.user.id}`, JSON.stringify({
+          profile,
+          cachedAt: Date.now()
+        }));
+
+        // Update UI
+        setUser({
+          id: profile.id,
+          email: profile.email,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          fullName: profile.full_name,
+          avatarUrl: profile.avatar_url,
+          role: profile.role || "player",
+        });
+      }
+    } catch (error) {
+      console.error("Profile refresh error:", error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
     isSignedIn,
     signOut,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
