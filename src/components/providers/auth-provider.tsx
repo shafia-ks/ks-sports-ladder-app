@@ -258,7 +258,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Background refresh failed - ignore silently, cache is still valid
                 // No error logging needed for non-critical background task
               });
-              });
             }
             return;
           }
