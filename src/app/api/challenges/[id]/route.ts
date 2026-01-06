@@ -20,6 +20,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const parsed = updateSchema.safeParse(json);
   
   if (!parsed.success) {
+    console.error("[PATCH /api/challenges/:id] Validation failed:", parsed.error.issues);
     return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
   }
 
@@ -46,11 +47,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
   }
 
+  // Handle counter proposal fields (may be null, but should update if explicitly sent)
+  if ("counter_proposal_time" in parsed.data) updateData.counter_proposal_time = parsed.data.counter_proposal_time;
+  if ("counter_proposal_location" in parsed.data) updateData.counter_proposal_location = parsed.data.counter_proposal_location;
+  if ("counter_proposal_notes" in parsed.data) updateData.counter_proposal_notes = parsed.data.counter_proposal_notes;
+  
   if (parsed.data.scheduled_at) updateData.scheduled_at = parsed.data.scheduled_at;
   if (parsed.data.location) updateData.location = parsed.data.location;
-  if (parsed.data.counter_proposal_time) updateData.counter_proposal_time = parsed.data.counter_proposal_time;
-  if (parsed.data.counter_proposal_location) updateData.counter_proposal_location = parsed.data.counter_proposal_location;
-  if (parsed.data.counter_proposal_notes) updateData.counter_proposal_notes = parsed.data.counter_proposal_notes;
+
+  console.log("[PATCH /api/challenges/:id] updateData:", updateData, "requestBody:", json);
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
 
   const { data, error } = await supabaseAdmin
     .from("challenges")
@@ -60,6 +69,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .single();
 
   if (error) {
+    console.error("[PATCH /api/challenges/:id] DB error:", error.message, "updateData:", updateData);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

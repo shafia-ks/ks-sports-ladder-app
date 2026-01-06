@@ -1,22 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Badge } from "./badge";
 import { useAuth } from "@/lib/auth/auth-context";
 
 interface RoleRequestProps {
   currentRole: "player" | "organizer" | "admin";
   hasActivRequest: boolean;
+  ladder_id?: string; // If provided, this is a ladder-specific organizer request
 }
 
-export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) {
+export function RoleRequest({
+  currentRole,
+  hasActivRequest,
+  ladder_id,
+}: RoleRequestProps) {
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [requestReason, setRequestReason] = useState("");
-  const [requestedRole, setRequestedRole] = useState<"organizer" | "admin">("organizer");
+  const [requestedRole, setRequestedRole] = useState<"organizer" | "admin">(
+    "organizer"
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +38,7 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
           user_id: user?.id,
           requested_role: requestedRole,
           reason: requestReason,
+          ladder_id: ladder_id || null,
         }),
       });
 
@@ -61,11 +69,17 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
       <div className="flex items-start gap-3">
         <AlertCircle className="h-5 w-5 text-info-600 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h3 className="font-semibold text-slate-900">Become a Group Leader</h3>
+          <h3 className="font-semibold text-slate-900">
+            {ladder_id
+              ? "Request to Organize This Ladder"
+              : "Become a Group Leader"}
+          </h3>
           <p className="text-sm text-slate-600 mt-1">
             {hasActivRequest
-              ? "Your request is pending admin review. You&apos;ll be notified when a decision is made."
-              : "Request to become an organizer and create your own groups."}
+              ? "Your request is pending admin review. You'll be notified when a decision is made."
+              : ladder_id
+              ? "Request to become an organizer for this ladder."
+              : "Request to become a platform admin."}
           </p>
 
           {hasActivRequest && (
@@ -85,24 +99,32 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
                 </button>
               ) : (
                 <form onSubmit={handleSubmit} className="mt-3 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Role you&apos;re requesting *
-                    </label>
-                    <select
-                      value={requestedRole}
-                      onChange={(e) => setRequestedRole(e.target.value as "organizer" | "admin")}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      <option value="organizer">Group Leader (Organizer)</option>
-                      <option value="admin">Platform Admin</option>
-                    </select>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {requestedRole === "organizer"
-                        ? "Allows you to create and manage ladders"
-                        : "Full platform administration access"}
-                    </p>
-                  </div>
+                  {!ladder_id && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Role you&apos;re requesting *
+                      </label>
+                      <select
+                        value={requestedRole}
+                        onChange={(e) =>
+                          setRequestedRole(
+                            e.target.value as "organizer" | "admin"
+                          )
+                        }
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      >
+                        <option value="organizer">
+                          Group Leader (Organizer)
+                        </option>
+                        <option value="admin">Platform Admin</option>
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {requestedRole === "organizer"
+                          ? "Allows you to manage ladders"
+                          : "Full platform administration access"}
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -111,7 +133,11 @@ export function RoleRequest({ currentRole, hasActivRequest }: RoleRequestProps) 
                     <textarea
                       value={requestReason}
                       onChange={(e) => setRequestReason(e.target.value)}
-                      placeholder="Tell us why you want to become a group leader..."
+                      placeholder={
+                        ladder_id
+                          ? "Tell us why you want to organize this ladder..."
+                          : "Tell us why you want this role..."
+                      }
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       rows={3}
                       required

@@ -20,10 +20,10 @@ export async function PATCH(
       );
     }
 
-    // Get the request to find user
+    // Get the request to find user, requested role, and ladder
     const { data: request, error: fetchError } = await supabaseAdmin
       .from("leader_requests")
-      .select("user_id, requested_role")
+      .select("user_id, requested_role, ladder_id")
       .eq("id", params.id)
       .single();
 
@@ -46,22 +46,45 @@ export async function PATCH(
 
     if (updateError) throw updateError;
 
-    // If approved, update user role
+    // If approved, handle role assignment
     if (status === "approved") {
-      const { error: roleError } = await supabaseAdmin
-        .from("users")
-        .update({ role: request.requested_role })
-        .eq("id", request.user_id);
+      if (request.requested_role === "organizer" && request.ladder_id) {
+        // For organizer role, add to ladder_leaders table (ladder-specific)
+        const { error: leaderError } = await supabaseAdmin
+          .from("ladder_leaders")
+          .insert({
+            ladder_id: request.ladder_id,
+            user_id: request.user_id,
+          });
 
-      if (roleError) throw roleError;
+        if (leaderError && !leaderError.message.includes("duplicate")) {
+          throw leaderError;
+        }
 
-      // Create notification
-      await supabaseAdmin.from("notifications").insert({
-        user_id: request.user_id,
-        type: "role-promoted",
-        message: `Your request to become a ${request.requested_role} has been approved!`,
-        link: "/dashboard",
-      });
+        // Create notification
+        await supabaseAdmin.from("notifications").insert({
+          user_id: request.user_id,
+          type: "role-promoted",
+          message: `Your request to become an organizer has been approved!`,
+          link: `/ladders/${request.ladder_id}`,
+        });
+      } else if (request.requested_role === "admin") {
+        // For admin role, update global user role
+        const { error: roleError } = await supabaseAdmin
+          .from("users")
+          .update({ role: request.requested_role })
+          .eq("id", request.user_id);
+
+        if (roleError) throw roleError;
+
+        // Create notification
+        await supabaseAdmin.from("notifications").insert({
+          user_id: request.user_id,
+          type: "role-promoted",
+          message: `Your request to become an admin has been approved!`,
+          link: "/admin",
+        });
+      }
     } else {
       // Create rejection notification
       await supabaseAdmin.from("notifications").insert({

@@ -87,12 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: profile.role || "player",
             });
           } else {
-            // Fallback to session data
+            // Fallback: don't set role if profile fetch failed
+            // This prevents the "unauthorized" redirect on slow networks
             setUser({
               id: session.user.id,
               email: session.user.email || "",
-              role: "player",
-            });
+            } as any);
           }
 
           setIsSignedIn(true);
@@ -121,9 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           console.log("Fetching profile for user:", session.user.id);
           
-          // Set timeout for profile fetch (5 seconds)
+          // Set timeout for profile fetch (15 seconds - more reasonable for Supabase)
           const timeoutPromise = new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
+            setTimeout(() => reject(new Error("Profile fetch timeout")), 15000)
           );
 
           const startedAt = Date.now();
@@ -149,6 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsSignedIn(true);
               console.log("Auth state updated with profile", { durationMs });
             } else {
+              // Only fall back if profile fetch explicitly returned null (not on timeout)
+              console.warn("Profile fetch returned null, using fallback");
               setUser({
                 id: session.user.id,
                 email: session.user.email || "",
@@ -160,14 +162,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (err) {
             const durationMs = Date.now() - startedAt;
             console.error("Profile fetch error or timeout", { err, durationMs });
-            // Use session data as fallback
+            // CRITICAL: Don't downgrade role on timeout - keep user signed in with minimal info
+            // This prevents role flicker when database is slow
             setUser({
               id: session.user.id,
               email: session.user.email || "",
-              role: "player",
-            });
+              // Don't set role here - let it stay undefined/null to indicate incomplete auth state
+            } as any);
             setIsSignedIn(true);
-            console.log("Auth state updated after error", { durationMs });
+            console.log("Auth state updated after error (incomplete)", { durationMs });
           }
         }
       }
