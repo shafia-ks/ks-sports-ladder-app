@@ -32,20 +32,20 @@ export default function ResetPasswordForm() {
         // Check if there's a session from the reset link URL hash
         // Supabase automatically handles the token extraction, just need to wait for it
         await new Promise(resolve => setTimeout(resolve, 300));
-        
+
         const { data } = await supabase.auth.getSession();
-        
+
         if (!data.session) {
           // Try one more time after a brief delay
           await new Promise(resolve => setTimeout(resolve, 300));
           const { data: retryData } = await supabase.auth.getSession();
-          
+
           if (!retryData.session) {
             setError("Reset link expired or invalid. Please request a new one.");
             setTimeout(() => router.push("/login"), 2000);
           }
         }
-        
+
         setValidating(false);
       } catch (err) {
         console.error("Session check error:", err);
@@ -184,12 +184,11 @@ export default function ResetPasswordForm() {
               </div>
               {password && (
                 <div className="text-xs text-slate-600">
-                  Strength: <span className={`font-medium ${
-                    passwordStrength === "weak" ? "text-danger-600" :
-                    passwordStrength === "fair" ? "text-warning-600" :
-                    passwordStrength === "good" ? "text-info-600" :
-                    "text-success-600"
-                  }`}>
+                  Strength: <span className={`font-medium ${passwordStrength === "weak" ? "text-danger-600" :
+                      passwordStrength === "fair" ? "text-warning-600" :
+                        passwordStrength === "good" ? "text-info-600" :
+                          "text-success-600"
+                    }`}>
                     {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
                   </span>
                 </div>
@@ -237,7 +236,7 @@ export default function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading || !password || !confirmPassword}
-              className="w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Updating..." : "Update Password"}
             </button>

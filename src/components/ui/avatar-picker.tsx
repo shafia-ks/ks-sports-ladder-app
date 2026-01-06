@@ -82,7 +82,7 @@ export function AvatarPicker({
               disabled={uploading || isLoading}
               className="hidden"
             />
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 cursor-pointer disabled:opacity-50">
+            <span className="btn btn-primary cursor-pointer disabled:opacity-50">
               <Upload className="h-4 w-4" />
               {uploading ? "Uploading..." : "Upload photo"}
             </span>
@@ -118,9 +118,8 @@ export function AvatarGrid({ selectedColor, onSelectAvatar }: AvatarGridProps) {
             key={avatar.id}
             onClick={() => onSelectAvatar?.(avatar.id, avatar.color)}
             type="button"
-            className={`w-12 h-12 rounded-full ${avatar.color} text-white font-bold text-lg flex items-center justify-center hover:opacity-80 transition ${
-              selectedColor === avatar.color ? "ring-2 ring-offset-2 ring-slate-400" : ""
-            }`}
+            className={`w-12 h-12 rounded-full ${avatar.color} text-white font-bold text-lg flex items-center justify-center hover:opacity-80 transition ${selectedColor === avatar.color ? "ring-2 ring-offset-2 ring-slate-400" : ""
+              }`}
             title={`Avatar ${avatar.initials}`}
           >
             {avatar.initials}

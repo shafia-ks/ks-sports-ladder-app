@@ -76,14 +76,14 @@ export default function ChallengeCreatePage() {
         const activeMembers = json.members?.filter(
           (m: Member) => m.status === "active" && m.current_rank != null && m.current_rank >= 0
         ) ?? [];
-        
+
         // Fetch active challenges to check busy status
         const challengesRes = await fetch(`/api/challenges?ladderId=${selectedLadder}`);
         const challengesData = await challengesRes.json();
         const activeChallenges = challengesData.challenges?.filter(
           (c: any) => c.status === "Pending" || c.status === "Accepted"
         ) || [];
-        
+
         // Mark members with active challenges
         const membersWithStatus = activeMembers.map((m: Member) => ({
           ...m,
@@ -91,7 +91,7 @@ export default function ChallengeCreatePage() {
             (c: any) => c.challenger_id === m.user_id || c.challenged_id === m.user_id
           ),
         }));
-        
+
         setMembers(membersWithStatus);
       } catch (err) {
         console.error("Failed to load members", err);
@@ -219,8 +219,8 @@ export default function ChallengeCreatePage() {
             >
               <option value="">Select opponent</option>
               {members.filter(m => m.user_id !== user?.id).map((member) => (
-                <option 
-                  key={member.id} 
+                <option
+                  key={member.id}
                   value={member.user_id}
                   disabled={member.hasActiveChallenge}
                 >
@@ -269,7 +269,7 @@ export default function ChallengeCreatePage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            className="btn btn-primary disabled:opacity-50"
           >
             {submitting ? "Creating..." : "Submit challenge"}
           </button>

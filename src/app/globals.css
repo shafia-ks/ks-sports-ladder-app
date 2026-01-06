@@ -51,7 +51,7 @@ a {
 }
 
 .btn-primary {
-  @apply bg-brand-600 text-white hover:bg-brand-700;
+  @apply bg-brand-600 text-white hover:bg-brand-700 hover:text-white;
 }
 
 .btn-secondary {

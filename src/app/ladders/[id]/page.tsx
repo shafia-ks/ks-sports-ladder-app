@@ -111,7 +111,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
   const fetchChallenges = async () => {
     try {
       setLoading(true);
-      const url = userId 
+      const url = userId
         ? `/api/challenges?ladderId=${ladderId}&userId=${userId}`
         : `/api/challenges?ladderId=${ladderId}`;
       const res = await fetch(url);
@@ -159,16 +159,16 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
       alert("Please provide a cancellation reason");
       return;
     }
-    
+
     try {
       setCancelling(challengeId);
       const res = await fetch(`/api/challenges/${challengeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          status: "Cancelled", 
+        body: JSON.stringify({
+          status: "Cancelled",
           cancellation_reason: cancelReason,
-          cancelled_by: userId 
+          cancelled_by: userId
         }),
       });
       if (res.ok) {
@@ -256,12 +256,12 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
               const isChallenger = challenge.challenger_id === userId;
               const opponent = isChallenger ? challenge.challenged : challenge.challenger;
               const canCancel = isChallenger && challenge.status === "Pending";
-              
+
               return (
                 <div key={challenge.id} className="border border-slate-200 rounded-lg p-4 hover:border-brand-300 transition">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1">
-                      <Avatar 
+                      <Avatar
                         name={opponent?.full_name || opponent?.email || "?"}
                         email={opponent?.email}
                         size="md"
@@ -274,28 +274,28 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
                             {challenge.counter_proposal_location && ` at ${challenge.counter_proposal_location}`}
                           </div>
                         )}
-                        
+
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-medium text-slate-900">
                             {isChallenger ? "You challenged" : "Challenged you"}:  {opponent?.full_name || opponent?.email}
                           </p>
                           <StatusBadge status={challenge.status} />
                         </div>
-                        
+
                         {challenge.scheduled_at && (
                           <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(challenge.scheduled_at).toLocaleString()}
                           </div>
                         )}
-                        
+
                         {challenge.location && (
                           <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
                             <MapPin className="h-3 w-3" />
                             {challenge.location}
                           </div>
                         )}
-                        
+
                         {challenge.notes && (
                           <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
                             <MessageSquare className="h-3 w-3" />
@@ -335,7 +335,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
                           </button>
                         </>
                       )}
-                      
+
                       {canCancel && (
                         <button
                           onClick={() => setShowCancelModal(challenge.id)}
@@ -365,11 +365,11 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
             {pastChallenges.map((challenge) => {
               const isChallenger = challenge.challenger_id === userId;
               const opponent = isChallenger ? challenge.challenged : challenge.challenger;
-              
+
               return (
                 <div key={challenge.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                   <div className="flex items-center gap-3">
-                    <Avatar 
+                    <Avatar
                       name={opponent?.full_name || opponent?.email || "?"}
                       email={opponent?.email}
                       size="sm"
@@ -406,17 +406,16 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
             <p className="text-sm text-slate-600 mb-4">
               Please provide a reason for cancelling this challenge. This helps maintain transparency.
             </p>
-            
+
             <div className="space-y-3 mb-6">
               {["Injury", "Schedule Conflict", "Not Available", "Other"].map((reason) => (
                 <button
                   key={reason}
                   onClick={() => setCancelReason(reason)}
-                  className={`w-full text-left px-4 py-2 rounded-lg border transition ${
-                    cancelReason === reason
+                  className={`w-full text-left px-4 py-2 rounded-lg border transition ${cancelReason === reason
                       ? "border-brand-600 bg-brand-50 text-brand-900"
                       : "border-slate-200 hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   {reason}
                 </button>
@@ -655,13 +654,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     const rankB = b.current_rank && b.current_rank > 0 ? b.current_rank : Number.MAX_SAFE_INTEGER;
     return rankA - rankB;
   });
-  
+
   // Check current user's membership status
   const userMembership = user ? members.find((m) => m.user_id === user.id) : null;
   const currentMember = userMembership?.status === "active" ? userMembership : null;
   const isMember = userMembership?.status === "active";
   const isPending = userMembership?.status === "pending";
-  
+
   // Check if user is organizer/admin for this ladder
   const isOrganizer = user ? user.role === "admin" || organizerIds.includes(user.id) : false;
   const canAccessMembers = isMember || isOrganizer;
@@ -690,7 +689,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       return (
         <Link
           href="/login"
-          className="rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold hover:border-brand-200"
+          className="btn btn-secondary"
         >
           Sign in to join
         </Link>
@@ -718,7 +717,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       <button
         onClick={handleJoinLadder}
         disabled={joining}
-        className="rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold hover:border-brand-200 disabled:opacity-50"
+        className="btn btn-secondary disabled:opacity-50"
       >
         {joining ? "Joining..." : "Join ladder"}
       </button>
@@ -736,7 +735,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             {isMember && (
               <Link
                 href={`/challenges/create?ladder=${params.id}`}
-                className="rounded-full bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                className="btn btn-primary"
               >
                 Challenge
               </Link>
@@ -774,11 +773,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           <div className="flex gap-4 border-b border-slate-200">
             <button
               onClick={() => setTab("dashboard")}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
-                tab === "dashboard"
+              className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
                   ? "border-brand-600 text-brand-700"
                   : "border-transparent text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
@@ -787,32 +785,29 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               <>
                 <button
                   onClick={() => setTab("ranking")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${
-                    tab === "ranking"
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === "ranking"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   Ranking
                 </button>
                 <button
                   onClick={() => setTab("challenges")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
-                    tab === "challenges"
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "challenges"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <Swords className="h-4 w-4" />
                   Challenges
                 </button>
                 <button
                   onClick={() => setTab("matches")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
-                    tab === "matches"
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "matches"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <Target className="h-4 w-4" />
                   Matches
@@ -881,25 +876,25 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </h2>
                   <div className="space-y-2">
                     {(data?.organizers || []).map((organizer) => (
-                        <div
-                          key={organizer.id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
-                        >
-                          <Avatar name={organizer.full_name || organizer.email || "?"} size="sm" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-slate-900">
-                              {organizer.full_name || organizer.email}
-                            </p>
-                            {organizer.email && organizer.full_name && (
-                              <p className="text-xs text-slate-500">{organizer.email}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {organizer.role === "admin" && renderRolePill("Admin")}
-                            {renderRolePill("Organizer")}
-                          </div>
+                      <div
+                        key={organizer.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
+                      >
+                        <Avatar name={organizer.full_name || organizer.email || "?"} size="sm" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {organizer.full_name || organizer.email}
+                          </p>
+                          {organizer.email && organizer.full_name && (
+                            <p className="text-xs text-slate-500">{organizer.email}</p>
+                          )}
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2">
+                          {organizer.role === "admin" && renderRolePill("Admin")}
+                          {renderRolePill("Organizer")}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

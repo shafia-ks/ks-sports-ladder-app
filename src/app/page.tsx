@@ -68,13 +68,13 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href={primaryCta}
-                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-white shadow hover:bg-brand-700"
+                className="btn btn-primary shadow"
               >
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href={secondaryCta}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-slate-900 shadow-sm hover:border-brand-200"
+                className="btn btn-secondary shadow-sm"
               >
                 {secondaryLabel}
               </Link>
@@ -166,13 +166,13 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={primaryCta}
-              className="rounded-full bg-brand-600 text-white px-4 py-2 text-sm font-semibold hover:bg-brand-700"
+              className="btn btn-primary"
             >
               {primaryLabel}
             </Link>
             <Link
               href={secondaryCta}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:border-brand-200"
+              className="btn btn-secondary"
             >
               {secondaryLabel}
             </Link>

@@ -39,7 +39,7 @@ export function TopNav() {
     if (user?.role === "admin") {
       let retryCount = 0;
       const maxRetries = 3;
-      
+
       const fetchPendingCount = async () => {
         try {
           const response = await fetch("/api/leader-requests");
@@ -115,7 +115,7 @@ export function TopNav() {
   // Get links based on user role
   const getVisibleLinks = () => {
     if (!isSignedIn) return publicLinks;
-    
+
     switch (user?.role) {
       case "admin":
         // Admins see player navigation plus a dedicated Admin Console tab
@@ -193,7 +193,7 @@ export function TopNav() {
               ) : (
                 <Link
                   href={{ pathname: "/login" }}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors bg-brand-600 hover:bg-brand-700"
+                  className="btn btn-primary"
                 >
                   <LogIn className="h-4 w-4" />
                   <span>Sign in</span>
