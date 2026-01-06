@@ -179,10 +179,10 @@ export default function UsersManagementPage() {
                         <td className="px-4 py-3">
                           <div className="flex flex-col">
                             <span className="font-medium text-slate-900">
-                              {membership.users.full_name || "—"}
+                              {membership.users?.full_name || "—"}
                             </span>
                             <span className="text-xs text-slate-500">
-                              {membership.users.email}
+                              {membership.users?.email || "unknown@example.com"}
                             </span>
                           </div>
                         </td>

@@ -41,7 +41,10 @@ export async function GET(req: NextRequest) {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error("RLS or query error for invitations:", error);
+      throw error;
+    }
 
     return NextResponse.json({ invitations: data ?? [] });
   } catch (error) {
