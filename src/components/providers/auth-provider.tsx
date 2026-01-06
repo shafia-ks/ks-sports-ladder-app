@@ -19,13 +19,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isFetching = false;
     let cachedProfile: any = null;
 
-    const ensureProfile = async (sessionUser: any) => {
+    // Load profile from localStorage (persistent cache)
+    const loadCachedProfile = (userId: string) => {
+      try {
+        const cached = localStorage.getItem(`profile_${userId}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          // Check if cached data is less than 24 hours old
+          if (parsed.cachedAt && Date.now() - parsed.cachedAt < 24 * 60 * 60 * 1000) {
+            return parsed.profile;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load cached profile:", err);
+      }
+      return null;
+    };
+
+    // Save profile to localStorage
+    const saveCachedProfile = (userId: string, profile: any) => {
+      try {
+        localStorage.setItem(`profile_${userId}`, JSON.stringify({
+          profile,
+          cachedAt: Date.now()
+        }));
+      } catch (err) {
+        console.error("Failed to save cached profile:", err);
+      }
+    };
+
+    const ensureProfile = async (sessionUser: any, useCache: boolean = true) => {
+      // Check localStorage first (synchronous, instant)
+      if (useCache) {
+        const localCached = loadCachedProfile(sessionUser.id);
+        if (localCached) {
+          cachedProfile = localCached;
+          return localCached;
+        }
+      }
+
       // Prevent duplicate fetches
       if (isFetching) {
         return cachedProfile;
       }
       
-      // Return cached profile if available for this user
+      // Return in-memory cache if available
       if (cachedProfile && cachedProfile.id === sessionUser.id) {
         return cachedProfile;
       }
@@ -40,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (profile) {
           cachedProfile = profile;
+          saveCachedProfile(sessionUser.id, profile); // Save to localStorage
           isFetching = false;
           return profile;
         }
@@ -74,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           cachedProfile = inserted;
+          saveCachedProfile(sessionUser.id, inserted); // Save to localStorage
           isFetching = false;
           return inserted;
         }
@@ -97,7 +137,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } = await client.auth.getSession();
 
         if (session?.user) {
-          // Fetch or create profile (block initial render to avoid role flicker)
+          // Try localStorage first (instant, synchronous)
+          const cachedFromStorage = loadCachedProfile(session.user.id);
+          
+          if (cachedFromStorage) {
+            // Set user immediately from cache - no waiting
+            setUser({
+              id: cachedFromStorage.id,
+              email: cachedFromStorage.email,
+              firstName: cachedFromStorage.first_name,
+              lastName: cachedFromStorage.last_name,
+              fullName: cachedFromStorage.full_name,
+              avatarUrl: cachedFromStorage.avatar_url,
+              role: cachedFromStorage.role || "player",
+            });
+            setIsSignedIn(true);
+            setIsLoading(false);
+            
+            // Optionally refresh in background to verify (non-blocking)
+            ensureProfile(session.user, false).catch(err => 
+              console.error("Background profile refresh failed:", err)
+            );
+            return;
+          }
+
+          // No cache - fetch from database (first-time load)
           const profile = await ensureProfile(session.user);
 
           if (profile) {
@@ -145,59 +209,101 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setIsSignedIn(false);
         cachedProfile = null;
+        // Clear localStorage cache on sign out
+        try {
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith("profile_")) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (err) {
+          console.error("Failed to clear profile cache:", err);
+        }
       } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
-          // Skip profile fetch on token refresh if we already have a profile
-          if (event === "TOKEN_REFRESHED" && cachedProfile?.id === session.user.id) {
-            return;
+          // Skip profile fetch on token refresh if we already have a cached profile
+          const localCached = loadCachedProfile(session.user.id);
+          if (event === "TOKEN_REFRESHED" && localCached) {
+            return; // Already have valid cached data
           }
 
-          // Set timeout for profile fetch
-          const timeoutPromise = new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error("Profile fetch timeout")), 15000)
-          );
-
-          const startedAt = Date.now();
-          
-          try {
-            const profile = await Promise.race([
-              ensureProfile(session.user),
-              timeoutPromise,
-            ]);
-
-            const durationMs = Date.now() - startedAt;
-
-            if (profile) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                firstName: profile.first_name,
-                lastName: profile.last_name,
-                fullName: profile.full_name,
-                avatarUrl: profile.avatar_url,
-                role: profile.role || "player",
-              });
-              setIsSignedIn(true);
-            } else {
-              // Only fall back if profile fetch explicitly returned null (not on timeout)
-              // Don't set a default role - preserve existing cached role if available
-              setUser((prev) => ({
-                id: session.user.id,
-                email: session.user.email || "",
-                ...(prev?.role && { role: prev.role }), // Preserve existing role if cached
-              } as AuthUser));
-              setIsSignedIn(true);
-            }
-          } catch (err) {
-            const durationMs = Date.now() - startedAt;
-            console.error("Profile fetch error or timeout", { err, durationMs });
-            // Don't downgrade role on timeout - preserve existing cached role
-            setUser((prev) => ({
-              id: session.user.id,
-              email: session.user.email || "",
-              ...(prev?.role && { role: prev.role }), // Keep existing role if we have it
-            } as AuthUser));
+          // Try localStorage first (instant)
+          if (localCached && event !== "SIGNED_IN") {
+            setUser({
+              id: localCached.id,
+              email: localCached.email,
+              firstName: localCached.first_name,
+              lastName: localCached.last_name,
+              fullName: localCached.full_name,
+              avatarUrl: localCached.avatar_url,
+              role: localCached.role || "player",
+            });
             setIsSignedIn(true);
+            return; // Don't fetch from database
+          }
+
+          // Only fetch from database on SIGNED_IN (not on INITIAL_SESSION or TOKEN_REFRESHED)
+          if (event === "SIGNED_IN") {
+            const startedAt = Date.now();
+            
+            try {
+              // Short timeout for SIGNED_IN - we want fresh data
+              const timeoutPromise = new Promise<any>((_, reject) =>
+                setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
+              );
+
+              const profile = await Promise.race([
+                ensureProfile(session.user, false), // Don't use cache, fetch fresh
+                timeoutPromise,
+              ]);
+
+              if (profile) {
+                setUser({
+                  id: profile.id,
+                  email: profile.email,
+                  firstName: profile.first_name,
+                  lastName: profile.last_name,
+                  fullName: profile.full_name,
+                  avatarUrl: profile.avatar_url,
+                  role: profile.role || "player",
+                });
+                setIsSignedIn(true);
+              } else {
+                // Use localStorage fallback
+                const fallback = loadCachedProfile(session.user.id);
+                if (fallback) {
+                  setUser({
+                    id: fallback.id,
+                    email: fallback.email,
+                    firstName: fallback.first_name,
+                    lastName: fallback.last_name,
+                    fullName: fallback.full_name,
+                    avatarUrl: fallback.avatar_url,
+                    role: fallback.role || "player",
+                  });
+                  setIsSignedIn(true);
+                }
+              }
+            } catch (err) {
+              const durationMs = Date.now() - startedAt;
+              console.error("Profile fetch error or timeout", { err, durationMs });
+              
+              // Use localStorage fallback on timeout
+              const fallback = loadCachedProfile(session.user.id);
+              if (fallback) {
+                setUser({
+                  id: fallback.id,
+                  email: fallback.email,
+                  firstName: fallback.first_name,
+                  lastName: fallback.last_name,
+                  fullName: fallback.full_name,
+                  avatarUrl: fallback.avatar_url,
+                  role: fallback.role || "player",
+                });
+                setIsSignedIn(true);
+              }
+            }
           }
         }
       }
