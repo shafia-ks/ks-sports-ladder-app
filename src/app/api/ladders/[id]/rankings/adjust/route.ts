@@ -62,6 +62,7 @@ export async function POST(
         .update({ current_rank: r.rank })
         .eq("ladder_id", params.id)
         .eq("user_id", r.user_id)
+        .eq("status", "active")
     );
 
     const results = await Promise.all(updates);

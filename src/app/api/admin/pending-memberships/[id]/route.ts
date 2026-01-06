@@ -24,10 +24,38 @@ export async function PATCH(
       );
     }
 
+    // First, get the membership to find the ladder_id
+    const { data: membership, error: fetchError } = await supabaseAdmin
+      .from("ladder_memberships")
+      .select("ladder_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !membership) {
+      throw new Error("Membership not found");
+    }
+
     const updateData: any = { status };
+    
     if (status === "active") {
       updateData.accepted_at = new Date().toISOString();
       updateData.accepted_by = admin_id;
+
+      // Get the highest current rank in this ladder to assign the last position
+      const { data: existingMembers } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("current_rank")
+        .eq("ladder_id", membership.ladder_id)
+        .eq("status", "active")
+        .not("current_rank", "is", null)
+        .order("current_rank", { ascending: false })
+        .limit(1);
+
+      const lastRank = existingMembers && existingMembers.length > 0 
+        ? existingMembers[0].current_rank 
+        : 0;
+      
+      updateData.current_rank = lastRank + 1;
     }
 
     const { data, error } = await supabaseAdmin
