@@ -42,13 +42,28 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("RLS or query error for invitations:", error);
+      console.error("RLS or query error for invitations", {
+        email,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+        message: (error as any)?.message,
+      });
       throw error;
     }
 
     return NextResponse.json({ invitations: data ?? [] });
   } catch (error) {
-    console.error("GET /api/invitations error:", error);
+    console.error("GET /api/invitations error", {
+      email: (() => {
+        try {
+          return new URL(req.url).searchParams.get("email");
+        } catch {
+          return null;
+        }
+      })(),
+      error,
+    });
     return NextResponse.json(
       { error: "Failed to fetch invitations" },
       { status: 500 } as ResponseInit
