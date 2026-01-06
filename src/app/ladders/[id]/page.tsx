@@ -9,6 +9,20 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 
+const SPORT_LABELS: Record<string, string> = {
+  squash: "Squash",
+  tennis: "Tennis",
+  badminton: "Badminton",
+  racquetball: "Racquetball",
+  pickleball: "Pickleball",
+};
+
+const formatSport = (sport?: string | null) => {
+  if (!sport) return "Not set";
+  const key = sport.toLowerCase();
+  return SPORT_LABELS[key] || sport;
+};
+
 interface LadderMember {
   id: string;
   user_id: string;
@@ -20,6 +34,7 @@ interface LadderMember {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    role?: "player" | "organizer" | "admin";
   } | null;
 }
 
@@ -28,6 +43,7 @@ interface LadderResponse {
     id: string;
     name: string;
     description: string | null;
+    sport_id?: string | null;
     location: string | null;
     visibility: string;
     status: string;
@@ -35,6 +51,10 @@ interface LadderResponse {
     ranking_rules: any;
   } | null;
   members: LadderMember[];
+  organizerIds?: string[];
+  memberCounts?: { active: number; pending: number };
+  challengeCounts?: { active: number };
+  matchCounts?: { confirmed: number };
   error?: string;
 }
 
@@ -540,8 +560,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         }
         setData(json);
 
-        // Fetch dashboard stats
-        if (user) {
+        const canAccessStats =
+          user &&
+          (json.organizerIds?.includes(user.id) ||
+            json.members?.some((m: LadderMember) => m.user_id === user.id && m.status === "active") ||
+            user.role === "admin");
+
+        if (canAccessStats) {
           try {
             const statsRes = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
             if (statsRes.ok) {
@@ -594,6 +619,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const members = data?.members ?? [];
   const activeMembers = members.filter((m) => m.status === "active");
   const pendingMembers = members.filter((m) => m.status === "pending");
+  const organizerIds = data?.organizerIds ?? [];
+  const memberCounts = data?.memberCounts ?? { active: activeMembers.length, pending: pendingMembers.length };
+  const challengeCounts = data?.challengeCounts ?? { active: 0 };
+  const matchCounts = data?.matchCounts ?? { confirmed: 0 };
   
   // Check current user's membership status
   const userMembership = user ? members.find((m) => m.user_id === user.id) : null;
@@ -601,8 +630,28 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const isMember = userMembership?.status === "active";
   const isPending = userMembership?.status === "pending";
   
-  // Check if user is organizer of this ladder
-  const isOrganizer = user && currentMember ? true : false; // TODO: Add actual organizer check when ladder_leaders data is available
+  // Check if user is organizer/admin for this ladder
+  const isOrganizer = user ? user.role === "admin" || organizerIds.includes(user.id) : false;
+  const canAccessMembers = isMember || isOrganizer;
+
+  // Prevent non-members from navigating to member-only tabs
+  useEffect(() => {
+    if (!canAccessMembers && tab !== "dashboard") {
+      setTab("dashboard");
+    }
+  }, [canAccessMembers, tab]);
+
+  const getMemberRole = (member: LadderMember) => {
+    if (member.users?.role === "admin") return "Admin";
+    if (organizerIds.includes(member.user_id)) return "Organizer";
+    return "Player";
+  };
+
+  const renderRolePill = (role: string) => (
+    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+      {role}
+    </span>
+  );
 
   const renderJoinButton = () => {
     if (!user) {
@@ -652,15 +701,30 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         cta={
           <div className="flex gap-2">
             {renderJoinButton()}
-            <Link
-              href={`/challenges/create?ladder=${params.id}`}
-              className="rounded-full bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              Challenge
-            </Link>
+            {isMember && (
+              <Link
+                href={`/challenges/create?ladder=${params.id}`}
+                className="rounded-full bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+              >
+                Challenge
+              </Link>
+            )}
           </div>
         }
       />
+
+      {data?.ladder && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          {data.ladder.sport_id && (
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold uppercase tracking-wide text-[11px]">
+              {formatSport(data.ladder.sport_id)}
+            </span>
+          )}
+          {data.ladder.location && <span className="px-2 py-1 rounded-full bg-slate-50">📍 {data.ladder.location}</span>}
+          <span className="px-2 py-1 rounded-full bg-slate-50">Visibility: {data.ladder.visibility}</span>
+          <span className="px-2 py-1 rounded-full bg-slate-50">Status: {data.ladder.status}</span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="card p-5 text-center text-sm text-slate-600 flex items-center justify-center gap-2">
@@ -687,43 +751,95 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
             </button>
-            <button
-              onClick={() => setTab("ranking")}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${
-                tab === "ranking"
-                  ? "border-brand-600 text-brand-700"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Ranking
-            </button>
-            <button
-              onClick={() => setTab("challenges")}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
-                tab === "challenges"
-                  ? "border-brand-600 text-brand-700"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Swords className="h-4 w-4" />
-              Challenges
-            </button>
-            <button
-              onClick={() => setTab("matches")}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
-                tab === "matches"
-                  ? "border-brand-600 text-brand-700"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Target className="h-4 w-4" />
-              Matches
-            </button>
+            {canAccessMembers && (
+              <>
+                <button
+                  onClick={() => setTab("ranking")}
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${
+                    tab === "ranking"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Ranking
+                </button>
+                <button
+                  onClick={() => setTab("challenges")}
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+                    tab === "challenges"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Swords className="h-4 w-4" />
+                  Challenges
+                </button>
+                <button
+                  onClick={() => setTab("matches")}
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+                    tab === "matches"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Target className="h-4 w-4" />
+                  Matches
+                </button>
+              </>
+            )}
           </div>
 
           {/* Dashboard Tab */}
           {tab === "dashboard" && (
             <div className="space-y-6">
+              {!isMember && (
+                <div className="card p-6">
+                  <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-brand-600" />
+                    About this ladder
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="p-3 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500">Status</p>
+                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.status || "Unknown"}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500">Visibility</p>
+                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.visibility || "private"}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500">Location</p>
+                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.location || "Not set"}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-50">
+                      <p className="text-xs text-slate-500">Sport</p>
+                      <p className="text-sm font-semibold text-slate-900">{formatSport(data?.ladder?.sport_id)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="p-3 rounded-lg bg-white border border-slate-100">
+                      <p className="text-xs text-slate-500">Active members</p>
+                      <p className="text-lg font-semibold text-slate-900">{memberCounts.active}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white border border-slate-100">
+                      <p className="text-xs text-slate-500">Pending requests</p>
+                      <p className="text-lg font-semibold text-slate-900">{memberCounts.pending}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white border border-slate-100">
+                      <p className="text-xs text-slate-500">Active challenges</p>
+                      <p className="text-lg font-semibold text-slate-900">{challengeCounts.active}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white border border-slate-100">
+                      <p className="text-xs text-slate-500">Confirmed matches</p>
+                      <p className="text-lg font-semibold text-slate-900">{matchCounts.confirmed}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Join to view rankings, members, and challenges. {isPending ? "Your request is awaiting approval." : ""}
+                  </p>
+                </div>
+              )}
+
               {/* Player Stats - Always Visible */}
               {currentMember && (
                 <div className="card p-6">
@@ -757,7 +873,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </div>
               )}
 
-              {/* Organizer Stats - Only for Organizers */}
+              {/* Organizer Stats - Only for Organizers/Admins */}
               {isOrganizer && (
                 <div className="card p-6">
                   <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
@@ -818,73 +934,79 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               )}
 
               {/* Recent Activity */}
-              <div className="card p-6">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-brand-600" />
-                  Recent Activity
-                </h2>
-                {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
-                  <div className="space-y-3">
-                    {dashboardStats.recentActivity.map((activity: any, idx: number) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50">
-                        <div className="mt-0.5">
-                          {activity.type === 'match' && <Target className="h-4 w-4 text-green-600" />}
-                          {activity.type === 'challenge' && <Swords className="h-4 w-4 text-blue-600" />}
-                          {activity.type === 'member' && <Users className="h-4 w-4 text-purple-600" />}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-slate-900">{activity.description}</p>
-                          <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
-                        </div>
+              {canAccessMembers && (
+                <>
+                  <div className="card p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-brand-600" />
+                      Recent Activity
+                    </h2>
+                    {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
+                      <div className="space-y-3">
+                        {dashboardStats.recentActivity.map((activity: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50">
+                            <div className="mt-0.5">
+                              {activity.type === 'match' && <Target className="h-4 w-4 text-green-600" />}
+                              {activity.type === 'challenge' && <Swords className="h-4 w-4 text-blue-600" />}
+                              {activity.type === 'member' && <Users className="h-4 w-4 text-purple-600" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm text-slate-900">{activity.description}</p>
+                              <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center py-8">No recent activity</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-500 text-center py-8">No recent activity</p>
-                )}
-              </div>
 
-              {/* Top Performers */}
-              <div className="card p-6">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <Award className="h-5 w-5 text-brand-600" />
-                  Top Performers
-                </h2>
-                <div className="space-y-2">
-                  {activeMembers.slice(0, 5).map((member, idx) => (
-                    <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-600 text-white font-bold text-sm">
-                        {idx + 1}
-                      </div>
-                      <Avatar
-                        name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
-                        email={member.users?.email}
-                        src={undefined}
-                        size="sm"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-900">
-                          {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
-                        </p>
-                        <p className="text-xs text-slate-500">Rank #{member.current_rank ?? "-"}</p>
-                      </div>
-                      {currentMember?.user_id !== member.user_id && (
-                        <Link
-                          href={`/challenges/create?ladder=${params.id}&opponent=${member.user_id}`}
-                          className="text-xs font-semibold text-brand-700 hover:text-brand-800"
-                        >
-                          Challenge
-                        </Link>
-                      )}
+                  <div className="card p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Award className="h-5 w-5 text-brand-600" />
+                      Top Performers
+                    </h2>
+                    <div className="space-y-2">
+                      {activeMembers.slice(0, 5).map((member, idx) => (
+                        <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-600 text-white font-bold text-sm">
+                            {idx + 1}
+                          </div>
+                          <Avatar
+                            name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
+                            email={member.users?.email}
+                            src={undefined}
+                            size="sm"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-900">
+                              {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-slate-500">Rank #{member.current_rank ?? "-"}</p>
+                              {renderRolePill(getMemberRole(member))}
+                            </div>
+                          </div>
+                          {currentMember?.user_id !== member.user_id && (
+                            <Link
+                              href={`/challenges/create?ladder=${params.id}&opponent=${member.user_id}`}
+                              className="text-xs font-semibold text-brand-700 hover:text-brand-800"
+                            >
+                              Challenge
+                            </Link>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Ranking Tab */}
-          {tab === "ranking" && (
+          {tab === "ranking" && canAccessMembers && (
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                 <p className="text-sm font-semibold text-slate-700">Ranking</p>
@@ -915,6 +1037,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                               {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
                             </p>
                             <p className="text-xs text-slate-500">{member.users?.email}</p>
+                            <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
                           </div>
                         </div>
                       </td>
@@ -934,12 +1057,12 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           )}
 
           {/* Challenges Tab */}
-          {tab === "challenges" && (
+          {tab === "challenges" && canAccessMembers && (
             <ChallengesTabContent ladderId={params.id} userId={user?.id} />
           )}
 
           {/* Matches Tab */}
-          {tab === "matches" && (
+          {tab === "matches" && canAccessMembers && (
             <div className="py-12 text-center">
               <Target className="h-12 w-12 mx-auto text-slate-300 mb-3" />
               <p className="text-sm text-slate-600 mb-4">View and manage matches for this ladder</p>
@@ -954,7 +1077,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         </>
       )}
 
-      {pendingMembers.length > 0 && (
+      {isOrganizer && pendingMembers.length > 0 && (
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Pending Members</h2>
           <div className="space-y-2">
@@ -964,6 +1087,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <span className="text-sm font-medium text-slate-900">
                   {member.users?.full_name || member.users?.email || "Unknown"}
                 </span>
+                {renderRolePill(getMemberRole(member))}
                 <span className="ml-auto text-xs text-amber-700 flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   Awaiting approval

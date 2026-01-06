@@ -31,34 +31,49 @@ export async function GET(
       return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
     }
 
-    // Check if user is a member of this ladder or admin
-    let isMember = false;
+    // Ladder organizers
+    const { data: organizerRows, error: organizersError } = await supabaseAdmin
+      .from("ladder_leaders")
+      .select("user_id")
+      .eq("ladder_id", params.id);
+
+    if (organizersError) throw organizersError;
+
+    const organizerIds = (organizerRows ?? []).map((row) => row.user_id);
+
+    // Check if user is a member of this ladder or privileged
     let userRole = "player";
-    
+    let membership: { id: string; status: string } | null = null;
+
     if (userId) {
       const { data: userProfile } = await supabaseAdmin
         .from("users")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
-      
+
       userRole = userProfile?.role || "player";
 
-      const { data: membership } = await supabaseAdmin
+      const { data: membershipRow } = await supabaseAdmin
         .from("ladder_memberships")
         .select("id, status")
         .eq("ladder_id", params.id)
         .eq("user_id", userId)
-        .in("status", ["active", "pending"])
+        .eq("status", "active")
         .maybeSingle();
-      
-      isMember = !!membership || userRole === "admin";
+
+      membership = membershipRow ?? null;
     }
 
-    // Only return member list if user is a member or admin
+    const isOrganizer = userId ? organizerIds.includes(userId) : false;
+    const isPrivileged = userRole === "admin" || (userRole === "organizer" && isOrganizer);
+    const isMember = !!membership;
+    const canSeeMembers = isMember || isPrivileged;
+
+    // Only return member list if user is allowed
     let membersWithUsers: any[] = [];
-    
-    if (isMember) {
+
+    if (canSeeMembers) {
       const { data: members, error: membersError } = await supabaseAdmin
         .from("ladder_memberships")
         .select("id, user_id, current_rank, status, accepted_at, requested_at")
@@ -69,7 +84,6 @@ export async function GET(
 
       if (membersError) throw membersError;
 
-      // Only include user details for active members (GDPR compliance)
       membersWithUsers = members ?? [];
 
       if (members && members.length > 0) {
@@ -80,7 +94,7 @@ export async function GET(
         if (activeUserIds.length > 0) {
           const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
             .from("users")
-            .select("id, full_name, first_name, last_name, email")
+            .select("id, full_name, first_name, last_name, email, role")
             .in("id", activeUserIds);
 
           if (userProfilesError) throw userProfilesError;
@@ -94,7 +108,54 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ ladder, members: membersWithUsers });
+    // Counts for public insights
+    const [activeCountRes, pendingCountRes] = await Promise.all([
+      supabaseAdmin
+        .from("ladder_memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("ladder_id", params.id)
+        .eq("status", "active"),
+      supabaseAdmin
+        .from("ladder_memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("ladder_id", params.id)
+        .eq("status", "pending"),
+    ]);
+
+    if (activeCountRes.error) throw activeCountRes.error;
+    if (pendingCountRes.error) throw pendingCountRes.error;
+
+    const { count: activeChallengesCount, error: activeChallengesError } = await supabaseAdmin
+      .from("challenges")
+      .select("id", { count: "exact", head: true })
+      .eq("ladder_id", params.id)
+      .in("status", ["Pending", "Accepted"]);
+
+    if (activeChallengesError) throw activeChallengesError;
+
+    const { count: confirmedMatchesCount, error: confirmedMatchesError } = await supabaseAdmin
+      .from("matches")
+      .select("id", { count: "exact", head: true })
+      .eq("ladder_id", params.id)
+      .eq("status", "Confirmed");
+
+    if (confirmedMatchesError) throw confirmedMatchesError;
+
+    return NextResponse.json({
+      ladder,
+      members: membersWithUsers,
+      organizerIds,
+      memberCounts: {
+        active: activeCountRes.count || 0,
+        pending: pendingCountRes.count || 0,
+      },
+      challengeCounts: {
+        active: activeChallengesCount || 0,
+      },
+      matchCounts: {
+        confirmed: confirmedMatchesCount || 0,
+      },
+    });
   } catch (error) {
     console.error(`GET /api/ladders/${params.id} error:`, error);
     return NextResponse.json({ error: "Failed to load ladder" }, { status: 500 } as ResponseInit);

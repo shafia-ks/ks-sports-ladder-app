@@ -28,6 +28,7 @@ const adminLinks = [
   { href: { pathname: "/admin" }, label: "Dashboard", icon: LayoutDashboard },
   { href: { pathname: "/admin/users" }, label: "Users", icon: Users },
   { href: { pathname: "/admin/organizer-requests" }, label: "Requests", icon: FileText },
+  { href: { pathname: "/admin/ladders" }, label: "Ladders", icon: Trophy },
 ];
 
 export function TopNav() {

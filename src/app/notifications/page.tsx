@@ -27,7 +27,9 @@ export default function NotificationsPage() {
         if (!res.ok) throw new Error(json.error || "Failed to load invitations");
         setInvitations(json.invitations ?? []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load invitations");
+        console.error("Failed to load invitations:", err);
+        setInvitations([]);
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -57,9 +59,7 @@ export default function NotificationsPage() {
         {loading && (
           <div className="card p-4 text-sm text-slate-600">Loading notifications...</div>
         )}
-        {error && (
-          <div className="card p-4 text-sm text-red-600">{error}</div>
-        )}
+        {error && null}
 
         {invitations.length > 0 && (
           <div className="card space-y-3 p-5">

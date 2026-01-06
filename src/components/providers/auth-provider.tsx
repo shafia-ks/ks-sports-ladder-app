@@ -16,6 +16,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const ensureProfile = async (sessionUser: any) => {
+      try {
+        const { data: profile, error } = await client
+          .from("users")
+          .select("id, email, first_name, last_name, full_name, avatar_url, role")
+          .eq("id", sessionUser.id)
+          .single();
+
+        if (profile) {
+          return profile;
+        }
+
+        if (error && error.code && error.code !== "PGRST116") {
+          console.error("Profile fetch error:", error);
+        }
+
+        const firstName = sessionUser.user_metadata?.first_name || sessionUser.user_metadata?.firstName || "";
+        const lastName = sessionUser.user_metadata?.last_name || sessionUser.user_metadata?.lastName || "";
+        const fullName = sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.fullName || `${firstName} ${lastName}`.trim();
+
+        const { data: upserted, error: upsertError } = await client
+          .from("users")
+          .upsert({
+            id: sessionUser.id,
+            email: sessionUser.email,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            full_name: fullName || sessionUser.email,
+            role: "player",
+          })
+          .select()
+          .single();
+
+        if (upsertError) {
+          console.error("Profile upsert error:", upsertError);
+          return null;
+        }
+
+        return upserted;
+      } catch (err) {
+        console.error("ensureProfile error:", err);
+        return null;
+      }
+    };
+
     // Check current session
     const checkAuth = async () => {
       try {
@@ -32,28 +77,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           setIsSignedIn(true);
           setIsLoading(false);
-          
-          // Fetch full profile in background (don't block)
-          client
-            .from("users")
-            .select("id, email, first_name, last_name, full_name, avatar_url, role")
-            .eq("id", session.user.id)
-            .single()
-            .then(({ data: profile, error }) => {
-              if (error) {
-                console.error("Profile fetch error:", error);
-              } else if (profile) {
-                setUser({
-                  id: profile.id,
-                  email: profile.email,
-                  firstName: profile.first_name,
-                  lastName: profile.last_name,
-                  fullName: profile.full_name,
-                  avatarUrl: profile.avatar_url,
-                  role: profile.role || "player",
-                });
-              }
-            });
+
+          // Fetch or create profile in background (don't block)
+          ensureProfile(session.user).then((profile) => {
+            if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                fullName: profile.full_name,
+                avatarUrl: profile.avatar_url,
+                role: profile.role || "player",
+              });
+            }
+          });
         } else {
           setIsLoading(false);
         }
@@ -79,19 +117,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('Fetching profile for user:', session.user.id);
           
           // Set timeout for profile fetch (5 seconds)
-          const profilePromise = client
-            .from("users")
-            .select("id, email, first_name, last_name, full_name, avatar_url, role")
-            .eq("id", session.user.id)
-            .single();
-          
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise<any>((_, reject) =>
             setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
           );
           
           try {
-            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            console.log('Profile fetch result:', { profile, error });
+            const profile = await Promise.race([
+              ensureProfile(session.user),
+              timeoutPromise,
+            ]);
 
             if (profile) {
               setUser({
@@ -104,17 +138,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: profile.role || "player",
               });
               setIsSignedIn(true);
-              console.log('Auth state updated, isSignedIn=true');
+              console.log('Auth state updated with profile');
             } else {
-              // Profile doesn't exist or fetch failed - use session data as fallback
-              console.warn('Profile fetch failed, using session data:', error);
               setUser({
                 id: session.user.id,
                 email: session.user.email || "",
                 role: "player",
               });
               setIsSignedIn(true);
-              console.log('Auth state updated with fallback, isSignedIn=true');
+              console.log('Auth state updated with fallback');
             }
           } catch (err) {
             console.error('Profile fetch error or timeout:', err);
@@ -125,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: "player",
             });
             setIsSignedIn(true);
-            console.log('Auth state updated after error, isSignedIn=true');
+            console.log('Auth state updated after error');
           }
         }
       }

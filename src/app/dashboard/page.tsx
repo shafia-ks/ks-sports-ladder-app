@@ -47,7 +47,9 @@ export default function DashboardPage() {
         if (!res.ok) throw new Error(json.error || "Failed to load invitations");
         setInvitations(json.invitations ?? []);
       } catch (err) {
-        setInvitationsError(err instanceof Error ? err.message : "Failed to load invitations");
+        console.error("Failed to load invitations:", err);
+        setInvitations([]);
+        setInvitationsError(null);
       } finally {
         setInvitationsLoading(false);
       }
@@ -166,21 +168,12 @@ export default function DashboardPage() {
                 <Swords className="h-4 w-4" />
                 New challenge
               </Link>
-            ) : (
-              <Link href="/ladders" className="btn btn-secondary">
-                Browse ladders
-              </Link>
-            )
+            ) : undefined
           }
         />
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">My Ladders</h2>
-            <Link href="/ladders" className="rounded-full border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:border-brand-200">
-              Browse all
-            </Link>
-          </div>
+          <h2 className="text-lg font-semibold text-slate-900">My Ladders</h2>
 
           {isLoading && (
             <div className="grid gap-3 md:grid-cols-2">
@@ -202,9 +195,6 @@ export default function DashboardPage() {
             <div className="card space-y-3 p-5 text-center">
               <p className="text-sm font-semibold text-slate-800">No active ladders</p>
               <p className="text-sm text-slate-600">Join or browse available ladders to get started.</p>
-              <div className="flex justify-center gap-2">
-                <Link href="/ladders" className="btn btn-primary text-sm">Browse ladders</Link>
-              </div>
             </div>
           )}
 
@@ -292,9 +282,7 @@ export default function DashboardPage() {
         {invitationsLoading && (
           <div className="card p-4 text-sm text-slate-600">Loading invitations...</div>
         )}
-        {invitationsError && (
-          <div className="card p-4 text-sm text-red-600">{invitationsError}</div>
-        )}
+        {invitationsError && null}
 
         <div className="card space-y-3 p-5">
           <div className="flex items-start gap-2">
