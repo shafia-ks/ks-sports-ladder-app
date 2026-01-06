@@ -12,6 +12,7 @@ interface RankingMember {
   id: string;
   user_id: string;
   current_rank: number;
+  status: string;
   users: {
     id: string;
     email: string;
@@ -57,24 +58,20 @@ function ManualRankingsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ladderRes, membersRes] = await Promise.all([
-        fetch(`/api/ladders/${ladderId}`),
-        fetch(`/api/ladders/${ladderId}/members`),
-      ]);
+      const ladderRes = await fetch(`/api/ladders/${ladderId}`, {
+        headers: { "x-user-id": user?.id || "" }
+      });
 
       if (!ladderRes.ok) throw new Error("Failed to load ladder");
       
       const ladderData = await ladderRes.json();
-      setLadder(ladderData);
+      setLadder(ladderData.ladder);
 
-      if (membersRes.ok) {
-        const membersData = await membersRes.json();
-        const activeMembers = (membersData.members || [])
-          .filter((m: RankingMember) => m.current_rank != null)
-          .sort((a: RankingMember, b: RankingMember) => (a.current_rank || 0) - (b.current_rank || 0));
-        setMembers(activeMembers);
-        setOriginalMembers(JSON.parse(JSON.stringify(activeMembers)));
-      }
+      const activeMembers = (ladderData.members || [])
+        .filter((m: RankingMember) => m.status === "active" && m.current_rank != null && m.current_rank >= 0)
+        .sort((a: RankingMember, b: RankingMember) => (a.current_rank || 0) - (b.current_rank || 0));
+      setMembers(activeMembers);
+      setOriginalMembers(JSON.parse(JSON.stringify(activeMembers)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
