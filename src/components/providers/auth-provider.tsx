@@ -28,37 +28,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return profile;
         }
 
-        if (error && error.code && error.code !== "PGRST116") {
-          console.error("Profile fetch error:", error);
+        // If not found (PGRST116 = no rows), create it
+        if (error && error.code === "PGRST116") {
+          const firstName = sessionUser.user_metadata?.first_name || sessionUser.user_metadata?.firstName || "";
+          const lastName = sessionUser.user_metadata?.last_name || sessionUser.user_metadata?.lastName || "";
+          const fullName =
+            sessionUser.user_metadata?.full_name ||
+            sessionUser.user_metadata?.fullName ||
+            `${firstName} ${lastName}`.trim();
+
+          // Insert new profile only (don't update existing ones to preserve role)
+          const { data: inserted, error: insertError} = await client
+            .from("users")
+            .insert({
+              id: sessionUser.id,
+              email: sessionUser.email,
+              first_name: firstName || null,
+              last_name: lastName || null,
+              full_name: fullName || sessionUser.email,
+              role: "player",
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error("Profile insert error:", insertError);
+            return null;
+          }
+
+          return inserted;
         }
 
-        const firstName = sessionUser.user_metadata?.first_name || sessionUser.user_metadata?.firstName || "";
-        const lastName = sessionUser.user_metadata?.last_name || sessionUser.user_metadata?.lastName || "";
-        const fullName =
-          sessionUser.user_metadata?.full_name ||
-          sessionUser.user_metadata?.fullName ||
-          `${firstName} ${lastName}`.trim();
-
-        // Insert new profile only (don't update existing ones to preserve role)
-        const { data: inserted, error: insertError } = await client
-          .from("users")
-          .insert({
-            id: sessionUser.id,
-            email: sessionUser.email,
-            first_name: firstName || null,
-            last_name: lastName || null,
-            full_name: fullName || sessionUser.email,
-            role: "player",
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error("Profile insert error:", insertError);
-          return null;
-        }
-
-        return inserted;
+        // Other errors - log them
+        console.error("Profile fetch error:", error);
+        return null;
       } catch (err) {
         console.error("ensureProfile error:", err);
         return null;
