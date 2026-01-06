@@ -24,12 +24,7 @@ const organizerLinks = [
   { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
 ];
 
-const adminLinks = [
-  { href: { pathname: "/admin" }, label: "Dashboard", icon: LayoutDashboard },
-  { href: { pathname: "/admin/users" }, label: "Users", icon: Users },
-  { href: { pathname: "/admin/organizer-requests" }, label: "Requests", icon: FileText },
-  { href: { pathname: "/admin/ladders" }, label: "Ladders", icon: Trophy },
-];
+const adminConsoleLink = { href: { pathname: "/admin" }, label: "Admin Console", icon: Settings };
 
 export function TopNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -123,7 +118,8 @@ export function TopNav() {
     
     switch (user?.role) {
       case "admin":
-        return [...publicLinks, ...adminLinks];
+        // Admins see player navigation plus a dedicated Admin Console tab
+        return [...publicLinks, ...playerLinks, adminConsoleLink];
       case "organizer":
         return [...publicLinks, ...organizerLinks];
       case "player":
@@ -153,7 +149,7 @@ export function TopNav() {
             >
               <link.icon className="h-4 w-4" />
               {link.label}
-              {link.href.pathname === "/admin/organizer-requests" && pendingRequests > 0 && (
+              {link.href.pathname === "/admin" && pendingRequests > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-600 text-xs font-bold text-white">
                   {pendingRequests}
                 </span>
