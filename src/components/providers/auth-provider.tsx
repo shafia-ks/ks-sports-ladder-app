@@ -16,7 +16,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let isFetching = false;
+    let cachedProfile: any = null;
+
     const ensureProfile = async (sessionUser: any) => {
+      // Prevent duplicate fetches
+      if (isFetching) {
+        return cachedProfile;
+      }
+      
+      // Return cached profile if available for this user
+      if (cachedProfile && cachedProfile.id === sessionUser.id) {
+        return cachedProfile;
+      }
+
+      isFetching = true;
       try {
         const { data: profile, error } = await client
           .from("users")
@@ -25,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (profile) {
+          cachedProfile = profile;
+          isFetching = false;
           return profile;
         }
 
@@ -53,17 +69,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (insertError) {
             console.error("Profile insert error:", insertError);
+            isFetching = false;
             return null;
           }
 
+          cachedProfile = inserted;
+          isFetching = false;
           return inserted;
         }
 
         // Other errors - log them
         console.error("Profile fetch error:", error);
+        isFetching = false;
         return null;
       } catch (err) {
         console.error("ensureProfile error:", err);
+        isFetching = false;
         return null;
       }
     };
@@ -115,16 +136,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange(async (event: string, session: any) => {
-      console.log("Auth state change:", event, session?.user?.email);
+      // Only log significant events, not every token refresh
+      if (event !== "TOKEN_REFRESHED") {
+        console.log("Auth state change:", event, session?.user?.email);
+      }
       
       if (event === "SIGNED_OUT") {
         setUser(null);
         setIsSignedIn(false);
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        cachedProfile = null;
+      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         if (session?.user) {
-          console.log("Fetching profile for user:", session.user.id);
-          
-          // Set timeout for profile fetch (15 seconds - more reasonable for Supabase)
+          // Skip profile fetch on token refresh if we already have a profile
+          if (event === "TOKEN_REFRESHED" && cachedProfile?.id === session.user.id) {
+            return;
+          }
+
+          // Set timeout for profile fetch
           const timeoutPromise = new Promise<any>((_, reject) =>
             setTimeout(() => reject(new Error("Profile fetch timeout")), 15000)
           );
@@ -150,30 +178,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: profile.role || "player",
               });
               setIsSignedIn(true);
-              console.log("Auth state updated with profile", { durationMs });
             } else {
               // Only fall back if profile fetch explicitly returned null (not on timeout)
-              console.warn("Profile fetch returned null, using fallback");
               setUser({
                 id: session.user.id,
                 email: session.user.email || "",
                 role: "player",
               });
               setIsSignedIn(true);
-              console.log("Auth state updated with fallback", { durationMs });
             }
           } catch (err) {
             const durationMs = Date.now() - startedAt;
             console.error("Profile fetch error or timeout", { err, durationMs });
-            // CRITICAL: Don't downgrade role on timeout - keep user signed in with minimal info
-            // This prevents role flicker when database is slow
+            // Don't downgrade role on timeout - keep user signed in with minimal info
             setUser({
               id: session.user.id,
               email: session.user.email || "",
-              // Don't set role here - let it stay undefined/null to indicate incomplete auth state
             } as any);
             setIsSignedIn(true);
-            console.log("Auth state updated after error (incomplete)", { durationMs });
           }
         }
       }
