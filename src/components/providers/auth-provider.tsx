@@ -180,21 +180,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsSignedIn(true);
             } else {
               // Only fall back if profile fetch explicitly returned null (not on timeout)
-              setUser({
+              // Don't set a default role - preserve existing cached role if available
+              setUser((prev) => ({
                 id: session.user.id,
                 email: session.user.email || "",
-                role: "player",
-              });
+                ...(prev?.role && { role: prev.role }), // Preserve existing role if cached
+              } as AuthUser));
               setIsSignedIn(true);
             }
           } catch (err) {
             const durationMs = Date.now() - startedAt;
             console.error("Profile fetch error or timeout", { err, durationMs });
-            // Don't downgrade role on timeout - keep user signed in with minimal info
-            setUser({
+            // Don't downgrade role on timeout - preserve existing cached role
+            setUser((prev) => ({
               id: session.user.id,
               email: session.user.email || "",
-            } as any);
+              ...(prev?.role && { role: prev.role }), // Keep existing role if we have it
+            } as AuthUser));
             setIsSignedIn(true);
           }
         }
