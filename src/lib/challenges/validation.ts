@@ -22,8 +22,13 @@ export function validateChallenge(ctx: ChallengeValidationContext): string[] {
     errors.push("Challenge must involve two different players.");
   }
 
-  const rankDiff = ctx.challengedRank - ctx.challengerRank;
-  if (rankDiff < 0 || rankDiff > ctx.rules.maxPositionsUp) {
+  // Disallow challenging down the ladder; only challenge higher-ranked players (smaller rank numbers)
+  const positionsUp = ctx.challengerRank - ctx.challengedRank; // positive means challenged is above
+  if (positionsUp < 0) {
+    errors.push("You can only challenge players ranked above you.");
+  } else if (positionsUp === 0) {
+    errors.push("Challenge must involve two different players.");
+  } else if (positionsUp > ctx.rules.maxPositionsUp) {
     errors.push(`You can only challenge up to ${ctx.rules.maxPositionsUp} positions above your current rank.`);
   }
 
