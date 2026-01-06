@@ -43,7 +43,8 @@ Modern ladder challenge app for squash and racket sports. Next.js 14 App Router,
 
 ## Getting started
 1) Install deps: `npm install`
-2) Copy `.env.example` to `.env.local` and set Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+2) Copy `.env.example` to `.env.local` and set Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`).
+   > **Note on Migration**: We are migrating from `SUPABASE_SERVICE_ROLE_KEY` to `SUPABASE_SECRET_KEY`. The old key is still supported for backward compatibility but will print a warning in development. Please update your `.env` files to use `SUPABASE_SECRET_KEY`.
 3) Run dev server: `npm run dev`
 4) Run unit tests: `npm test`
 5) Run E2E (Playwright): `npm run e2e` (start dev server first)

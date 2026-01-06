@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 export async function GET() {
   const hasUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const hasAnon = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const hasService = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasService = Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   let dbOk: boolean | null = null;
   let dbError: string | null = null;
