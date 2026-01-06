@@ -71,14 +71,14 @@ export function RoleRequest({
         <div className="flex-1">
           <h3 className="font-semibold text-slate-900">
             {ladder_id
-              ? "Request to Organize This Ladder"
-              : "Become a Group Leader"}
+              ? "Request to Lead This Ladder"
+              : "Become a Platform Admin"}
           </h3>
           <p className="text-sm text-slate-600 mt-1">
             {hasActivRequest
               ? "Your request is pending admin review. You'll be notified when a decision is made."
               : ladder_id
-              ? "Request to become an organizer for this ladder."
+              ? "Request to become the Ladder Leader (organizer) for this ladder."
               : "Request to become a platform admin."}
           </p>
 
@@ -114,7 +114,7 @@ export function RoleRequest({
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       >
                         <option value="organizer">
-                          Group Leader (Organizer)
+                          Ladder Leader
                         </option>
                         <option value="admin">Platform Admin</option>
                       </select>
