@@ -565,6 +565,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
 
   const fetchLadder = async () => {
     setIsLoading(true);
@@ -714,12 +715,34 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       if (!res.ok) throw new Error(json.error || "Failed to update ladder");
 
       setSettingsSuccess("Settings updated");
+      setIsEditingSettings(false);
       await fetchLadder();
+      setTimeout(() => setSettingsSuccess(null), 3000);
     } catch (err) {
       setSettingsError(err instanceof Error ? err.message : "Failed to update settings");
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const handleCancelSettings = () => {
+    if (data?.ladder) {
+      const ladder = data.ladder;
+      setSettingsForms((prev) => ({
+        ...prev,
+        description: ladder?.description || "",
+        location: ladder?.location || "",
+        visibility: (ladder?.visibility || "public") as "public" | "private",
+        rankingType: ladder?.ranking_rules?.type || "default-swap-minimal-drop",
+        kFactor: ladder?.ranking_rules?.kFactor ?? 24,
+        maxDrop: ladder?.ranking_rules?.maxDrop ?? 1,
+        maxPositionsUp: ladder?.challenge_rules?.max_positions_up ?? 3,
+        expiryDays: ladder?.challenge_rules?.expiry_days ?? 7,
+        cooldownHours: ladder?.challenge_rules?.cooldown_hours ?? 0,
+      }));
+    }
+    setIsEditingSettings(false);
+    setSettingsError(null);
   };
 
   const ladderName = data?.ladder?.name ?? "Ladder";
@@ -1266,8 +1289,17 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             <form onSubmit={handleSettingsSave} className="card space-y-6 p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Ladder Settings</h2>
-                <div className="flex gap-2 text-sm">
-                  {settingsSuccess && <span className="text-green-700">{settingsSuccess}</span>}
+                <div className="flex gap-2 text-sm items-center">
+                  {settingsSuccess && <span className="text-green-700 font-medium">{settingsSuccess}</span>}
+                  {!isEditingSettings && !settingsSuccess && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSettings(true)}
+                      className="btn btn-primary btn-sm"
+                    >
+                      Edit
+                    </button>
+                  )}
                   {savingSettings && (
                     <span className="flex items-center gap-1 text-slate-600">
                       <Loader2 className="h-4 w-4 animate-spin" /> Saving
@@ -1291,7 +1323,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     value={settingsForms.description}
                     onChange={handleSettingsChange}
                     rows={3}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    disabled={!isEditingSettings}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1303,7 +1336,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     name="location"
                     value={settingsForms.location}
                     onChange={handleSettingsChange}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    disabled={!isEditingSettings}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1316,7 +1350,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     name="visibility"
                     value={settingsForms.visibility}
                     onChange={handleSettingsChange}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    disabled={!isEditingSettings}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   >
                     <option value="public">Public</option>
                     <option value="private">Private</option>
@@ -1335,13 +1370,14 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       { id: "slide-shift", label: "Slide Shift" },
                       { id: "points-elo", label: "Points/ELO" },
                     ].map((type) => (
-                      <label key={type.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+                      <label key={type.id} className={`flex items-center gap-3 rounded-lg border border-slate-200 p-3 ${isEditingSettings ? "hover:bg-slate-50 cursor-pointer" : "bg-slate-50 cursor-not-allowed"}`}>
                         <input
                           type="radio"
                           name="rankingType"
                           value={type.id}
                           checked={settingsForms.rankingType === type.id}
                           onChange={handleSettingsChange}
+                          disabled={!isEditingSettings}
                         />
                         <span className="text-sm font-medium text-slate-900">{type.label}</span>
                       </label>
@@ -1361,7 +1397,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       value={settingsForms.kFactor}
                       onChange={handleSettingsChange}
                       min="1"
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1375,7 +1412,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       value={settingsForms.maxDrop}
                       onChange={handleSettingsChange}
                       min="0"
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1395,7 +1433,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       value={settingsForms.maxPositionsUp}
                       onChange={handleSettingsChange}
                       min="0"
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1409,7 +1448,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       value={settingsForms.expiryDays}
                       onChange={handleSettingsChange}
                       min="0"
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1423,27 +1463,40 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       value={settingsForms.cooldownHours}
                       onChange={handleSettingsChange}
                       min="0"
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={savingSettings}
-                  className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
-                >
-                  {savingSettings ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Settings"
-                  )}
-                </button>
+                {isEditingSettings ? (
+                  <>
+                    <button
+                      type="submit"
+                      disabled={savingSettings}
+                      className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
+                    >
+                      {savingSettings ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelSettings}
+                      disabled={savingSettings}
+                      className="btn border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : null}
               </div>
             </form>
           )}
