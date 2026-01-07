@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createAuditLog } from "@/lib/supabase/audit";
+import { createNotification } from "@/lib/supabase/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -66,6 +68,35 @@ export async function PATCH(
       .single();
 
     if (error) throw error;
+
+      // Create audit log
+      await createAuditLog({
+        entityType: "ladder_membership",
+        entityId: id,
+        action: status === "active" ? "Membership approved" : "Membership rejected",
+        performedBy: admin_id || "system",
+      });
+
+      // Get ladder name for notification
+      const { data: ladder } = await supabaseAdmin
+        .from("ladders")
+        .select("name")
+        .eq("id", membership.ladder_id)
+        .single();
+
+      // Notify user
+      if (data) {
+        const message = status === "active"
+          ? `Your request to join ${ladder?.name || "the ladder"} has been approved!`
+          : `Your request to join ${ladder?.name || "the ladder"} was declined.`;
+      
+        await createNotification({
+          userId: data.user_id,
+          type: status === "active" ? "membership_approved" : "membership_rejected",
+          message,
+          link: status === "active" ? `/ladders/${membership.ladder_id}` : undefined,
+        });
+      }
 
     return NextResponse.json({ membership: data });
   } catch (error) {

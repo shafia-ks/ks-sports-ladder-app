@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createAuditLog } from "@/lib/supabase/audit";
 
 export async function GET() {
   if (!supabaseAdmin) {
@@ -69,6 +70,14 @@ export async function POST(req: NextRequest) {
       accepted_at: new Date().toISOString(),
       accepted_by: created_by,
     });
+
+      // Create audit log
+      await createAuditLog({
+        entityType: "ladder",
+        entityId: ladder.id,
+        action: `Ladder created: ${name}`,
+        performedBy: created_by,
+      });
 
     return NextResponse.json(ladder, { status: 201 });
   } catch (error) {

@@ -1,5 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createAuditLog } from "@/lib/supabase/audit";
+import { createNotification } from "@/lib/supabase/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -42,6 +44,40 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Create audit log
+    await createAuditLog({
+      entityType: "ladder_membership",
+      entityId: data.id,
+      action: "Join request submitted",
+      performedBy: user_id,
+    });
+
+    // Get ladder name and organizers
+    const { data: ladder } = await supabaseAdmin
+      .from("ladders")
+      .select("name, created_by")
+      .eq("id", params.id)
+      .single();
+
+    // Get all ladder leaders
+    const { data: leaders } = await supabaseAdmin
+      .from("ladder_leaders")
+      .select("user_id")
+      .eq("ladder_id", params.id);
+
+    // Notify all organizers/leaders
+    const organizerIds = [ladder?.created_by, ...(leaders?.map(l => l.user_id) || [])];
+    const uniqueOrganizers = [...new Set(organizerIds.filter(Boolean))];
+
+    for (const orgId of uniqueOrganizers) {
+      await createNotification({
+        userId: orgId as string,
+        type: "join_request",
+        message: `New join request for ${ladder?.name || "your ladder"}`,
+        link: `/admin/users`,
+      });
+    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createAuditLog } from "@/lib/supabase/audit";
+import { createNotification } from "@/lib/supabase/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -53,6 +54,14 @@ export async function PATCH(
         action: `Role changed to ${role}`,
         performedBy: params.id, // In production, get from auth context
       });
+
+        // Notify user of role change
+        await createNotification({
+          userId: params.id,
+          type: "role_changed",
+          message: `Your role has been updated to ${role}`,
+          link: role === "admin" ? "/admin" : role === "organizer" ? "/organizer" : "/dashboard",
+        });
 
       return NextResponse.json({ user: data });
     }
