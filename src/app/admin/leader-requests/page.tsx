@@ -60,11 +60,11 @@ export default function LeaderRequestsPage() {
 
       if (!response.ok) throw new Error("Failed to approve request");
 
-      setRequests((prev) =>
-        prev.map((req) =>
-          req.id === requestId ? { ...req, status: "approved" } : req
-        )
-      );
+      // Remove from pending list immediately
+      setRequests((prev) => prev.filter((req) => req.id !== requestId));
+      
+      // Optionally refetch to get updated data
+      await fetchRequests();
     } catch (error) {
       console.error("Error approving request:", error);
       alert("Failed to approve request");
@@ -93,11 +93,9 @@ export default function LeaderRequestsPage() {
 
       if (!response.ok) throw new Error("Failed to reject request");
 
-      setRequests((prev) =>
-        prev.map((req) =>
-          req.id === requestId ? { ...req, status: "rejected" } : req
-        )
-      );
+      // Remove from pending list immediately
+      setRequests((prev) => prev.filter((req) => req.id !== requestId));
+      
       setRejectionReason((prev) => {
         const updated = { ...prev };
         delete updated[requestId];
@@ -108,6 +106,9 @@ export default function LeaderRequestsPage() {
         delete updated[requestId];
         return updated;
       });
+      
+      // Optionally refetch to get updated data
+      await fetchRequests();
     } catch (error) {
       console.error("Error rejecting request:", error);
       alert("Failed to reject request");

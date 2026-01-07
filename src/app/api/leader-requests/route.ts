@@ -40,9 +40,12 @@ export async function GET(req: NextRequest) {
       query = query.eq("user_id", user_id);
     }
 
-    // Filter by status
+    // Filter by status (default to pending if not specified)
     if (status) {
       query = query.eq("status", status);
+    } else {
+      // Default: only show pending requests
+      query = query.eq("status", "pending");
     }
 
     const { data, error } = await query;
