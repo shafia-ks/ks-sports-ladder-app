@@ -29,6 +29,7 @@ interface LadderMember {
   user_id: string;
   current_rank: number | null;
   status: string;
+  is_busy?: boolean;
   users?: {
     id: string;
     full_name: string | null;
@@ -1233,7 +1234,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <tbody>
                   {activeMembersSorted.map((member) => {
                     const isBusy = member.is_busy || false;
-                    const isCurrentUser = member.user_id === userId;
+                    const isCurrentUser = member.user_id === user?.id;
                     
                     return (
                       <tr key={member.id} className="border-t border-slate-100">
@@ -1285,8 +1286,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       </tr>
                     );
                   })}
-                    </tr>
-                  ))}
                 </tbody>
               </table>
             </div>
