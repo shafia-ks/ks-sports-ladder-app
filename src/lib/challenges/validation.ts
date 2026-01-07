@@ -9,9 +9,6 @@ export interface ChallengeValidationContext {
   challengedBusy: boolean;
   challengerBanned?: boolean;
   challengedBanned?: boolean;
-  scheduledDateTime?: string;
-  location?: string;
-  notes?: string;
   rules: ChallengeRules;
 }
 

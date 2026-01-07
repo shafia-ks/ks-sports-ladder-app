@@ -28,6 +28,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Supabase env missing" }, { status: 500 });
   }
 
+  // Get challenge details first
+  const { data: challenge } = await supabaseAdmin
+    .from("challenges")
+    .select("challenger_id, challenged_id, ladder_id, status")
+    .eq("id", params.id)
+    .single();
+
+  if (!challenge) {
+    return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+  }
+
   const updateData: any = {};
   
   if (parsed.data.status) {
@@ -36,6 +47,34 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     // Set timestamps based on status
     if (parsed.data.status === "Accepted") {
       updateData.accepted_at = new Date().toISOString();
+      
+      // Auto-create match when challenge is accepted
+      const { data: matchData, error: matchError } = await supabaseAdmin
+        .from("matches")
+        .insert({
+          ladder_id: challenge.ladder_id,
+          player1_id: challenge.challenger_id,
+          player2_id: challenge.challenged_id,
+          challenge_id: params.id,
+          status: "in_progress",
+          sets: [],
+          confirmed_by: [],
+        })
+        .select("id")
+        .single();
+
+      if (matchError) {
+        console.error("[PATCH /api/challenges/:id] Match creation error:", matchError.message);
+        return NextResponse.json({ error: "Failed to create match" }, { status: 500 });
+      }
+
+      updateData.match_id = matchData.id;
+
+      // Cancel other pending challenges for both players
+      await supabaseAdmin.rpc("cancel_other_pending_challenges", { 
+        p_accepted_challenge_id: params.id 
+      });
+
     } else if (parsed.data.status === "Declined") {
       updateData.declined_at = new Date().toISOString();
     } else if (parsed.data.status === "Cancelled") {

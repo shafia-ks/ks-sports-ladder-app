@@ -1226,38 +1226,65 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   <tr>
                     <th className="px-4 py-2">Rank</th>
                     <th className="px-4 py-2">Player</th>
+                    <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeMembersSorted.map((member) => (
-                    <tr key={member.id} className="border-t border-slate-100">
-                      <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
-                            email={member.users?.email}
-                            src={undefined}
-                            size="sm"
-                          />
-                          <div>
-                            <p className="font-medium text-slate-900">
-                              {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
-                            </p>
-                            <p className="text-xs text-slate-500">{member.users?.email}</p>
-                            <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
+                  {activeMembersSorted.map((member) => {
+                    const isBusy = member.is_busy || false;
+                    const isCurrentUser = member.user_id === userId;
+                    
+                    return (
+                      <tr key={member.id} className="border-t border-slate-100">
+                        <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
+                              email={member.users?.email}
+                              src={undefined}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-slate-900">
+                                {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
+                              </p>
+                              <p className="text-xs text-slate-500">{member.users?.email}</p>
+                              <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <Link
-                          className="text-sm font-semibold text-brand-700"
-                          href={`/challenges/create?ladder=${params.id}&opponent=${member.user_id}`}
-                        >
-                          Challenge
-                        </Link>
-                      </td>
+                        </td>
+                        <td className="px-4 py-2">
+                          {isBusy ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                              <Swords className="h-3 w-3" />
+                              In Challenge
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                              <CheckCircle className="h-3 w-3" />
+                              Available
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          {!isCurrentUser && (
+                            <button
+                              disabled={isBusy}
+                              onClick={() => {
+                                // TODO: Implement one-click challenge
+                                alert("One-click challenge coming soon!");
+                              }}
+                              className="text-sm font-semibold text-brand-700 hover:text-brand-900 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                              {isBusy ? "Busy" : "Challenge"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                     </tr>
                   ))}
                 </tbody>

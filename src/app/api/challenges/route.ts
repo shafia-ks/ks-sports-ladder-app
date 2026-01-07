@@ -15,14 +15,12 @@ const challengeInput = z.object({
   challengedActiveChallenges: z.number().int().nonnegative(),
   challengerBusy: z.boolean(),
   challengedBusy: z.boolean(),
-  scheduledDateTime: z.string().optional(),
-  location: z.string().optional(),
-  notes: z.string().optional(),
   rules: z.object({
     maxPositionsUp: z.number().int().positive(),
     preventChallengingBusyPlayers: z.boolean(),
     maxActiveChallengesPerPlayer: z.number().int().positive(),
     expiryDays: z.number().int().positive(),
+    cooldownHours: z.number().int().nonnegative().optional(),
   }),
 });
 
@@ -105,6 +103,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
   }
 
+  // Check cooldown period
+  if (parsed.data.rules.cooldownHours) {
+    const cooldownCheck = await supabaseAdmin
+      .from("challenges")
+      .select("completed_at")
+      .eq("ladder_id", parsed.data.ladderId)
+      .eq("challenger_id", parsed.data.challengerId)
+      .eq("status", "Completed")
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (cooldownCheck.data) {
+      const lastCompleted = new Date(cooldownCheck.data.completed_at);
+      const cooldownEnd = new Date(lastCompleted.getTime() + parsed.data.rules.cooldownHours * 60 * 60 * 1000);
+      if (new Date() < cooldownEnd) {
+        const remainingHours = Math.ceil((cooldownEnd.getTime() - Date.now()) / (60 * 60 * 1000));
+        return NextResponse.json({ 
+          error: `You must wait ${remainingHours} more hour(s) before challenging again` 
+        }, { status: 422 });
+      }
+    }
+  }
+
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + parsed.data.rules.expiryDays);
 
@@ -114,10 +136,7 @@ export async function POST(req: Request) {
       ladder_id: parsed.data.ladderId,
       challenger_id: parsed.data.challengerId,
       challenged_id: parsed.data.challengedId,
-      status: "Pending",
-      scheduled_at: parsed.data.scheduledDateTime ?? null,
-      location: parsed.data.location ?? null,
-      notes: parsed.data.notes ?? null,
+      status: "pending",
       expires_at: expiresAt.toISOString(),
     })
     .select("id")
