@@ -200,9 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange(async (event: string, session: any) => {
-      // Only log significant events, not every token refresh
-      if (event !== "TOKEN_REFRESHED") {
-        console.log("Auth state change:", event, session?.user?.email);
+      // Skip token refresh and initial session events to prevent flicker
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        return;
       }
       
       if (event === "SIGNED_OUT") {
@@ -220,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           console.error("Failed to clear profile cache:", err);
         }
-      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+      } else if (event === "SIGNED_IN") {
         if (session?.user) {
           // Try localStorage first (instant load)
           const localCached = loadCachedProfile(session.user.id);
@@ -238,27 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             setIsSignedIn(true);
             
-            // Background refresh to detect role changes (non-blocking)
-            if (event !== "TOKEN_REFRESHED") {
-              ensureProfile(session.user, false).then(freshProfile => {
-                if (freshProfile && freshProfile.role !== localCached.role) {
-                  // Role changed in database - update UI immediately
-                  console.log("Role changed from", localCached.role, "to", freshProfile.role);
-                  setUser({
-                    id: freshProfile.id,
-                    email: freshProfile.email,
-                    firstName: freshProfile.first_name,
-                    lastName: freshProfile.last_name,
-                    fullName: freshProfile.full_name,
-                    avatarUrl: freshProfile.avatar_url,
-                    role: freshProfile.role || "player",
-                  });
-                }
-              }).catch(() => {
-                // Background refresh failed - ignore silently, cache is still valid
-                // No error logging needed for non-critical background task
-              });
-            }
+            // Skip background refresh - cache is fresh enough
             return;
           }
 
