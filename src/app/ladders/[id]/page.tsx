@@ -548,7 +548,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
-  const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches" | "settings">("dashboard");
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [fixingRanks, setFixingRanks] = useState(false);
 
@@ -813,6 +813,21 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   <Target className="h-4 w-4" />
                   Matches
                 </button>
+                {isOrganizer && (
+                  <button
+                    onClick={() => setTab("settings")}
+                    className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "settings"
+                        ? "border-brand-600 text-brand-700"
+                        : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -1162,6 +1177,37 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               >
                 View Matches
               </Link>
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {tab === "settings" && isOrganizer && (
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Ladder Settings</h2>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Ranking Rules</h3>
+                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words text-slate-700">
+                      {JSON.stringify(data?.ladder?.ranking_rules || {}, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Challenge Rules</h3>
+                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words text-slate-700">
+                      {JSON.stringify(data?.ladder?.challenge_rules || {}, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-200">
+                  <p className="text-sm text-slate-600 mb-3">For detailed settings management, visit the</p>
+                  <Link href={`/ladders/${params.id}/settings`} className="btn btn-primary">
+                    Detailed Settings Page
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
         </>
