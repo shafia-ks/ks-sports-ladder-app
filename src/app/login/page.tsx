@@ -37,7 +37,8 @@ export default function LoginPage() {
     }
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      // First, try to sign in
+      const { error: authError, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -45,7 +46,27 @@ export default function LoginPage() {
       if (authError) {
         setError(authError.message);
         setLoading(false);
+        return;
       }
+
+      // If sign in successful, check if email is confirmed and not disabled
+      if (data.user) {
+        if (!data.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          setError("Please confirm your email before signing in.");
+          setInfo("Check your inbox for a confirmation link.");
+          setLoading(false);
+          return;
+        }
+        const disabled = (data.user.app_metadata as any)?.disabled;
+        if (disabled) {
+          await supabase.auth.signOut();
+          setError("Your account has been disabled. Contact support.");
+          setLoading(false);
+          return;
+        }
+      }
+
       // Success case: loading state will be managed by the redirect in useEffect
       // Keep loading=true to prevent form resubmission
     } catch (err) {

@@ -121,6 +121,8 @@ export default function SignupPage() {
   const [sportsmanshipAccepted, setSportsmanshipAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
   const [showGdprModal, setShowGdprModal] = useState(false);
   const [showSportsmanshipModal, setShowSportsmanshipModal] = useState(false);
   const router = useRouter();
@@ -172,44 +174,35 @@ export default function SignupPage() {
     }
 
     try {
-      // Call signup API (uses service role to bypass RLS)
-      const signupRes = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName,
-        }),
+      // Use Supabase auth signUp to trigger email confirmation
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`,
+            gdpr_accepted: true,
+            sportsmanship_accepted: true,
+          },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       });
 
-      const signupData = await signupRes.json();
-
-      if (!signupRes.ok) {
-        setError(signupData.error || "Signup failed");
+      if (signUpError) {
+        setError(signUpError.message || "Signup failed");
         setLoading(false);
         return;
       }
 
-      console.log("Signup successful, logging in...");
-
-      // Auto-login after successful signup
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (loginError) {
-        setError("Account created, but login failed. Please sign in manually.");
-        router.push("/login");
-      } else {
-        router.push("/dashboard");
-      }
+      // Don't auto-login; show confirmation message instead
+      setSignupSuccess(true);
+      setSignupEmail(email);
+      setLoading(false);
     } catch (err) {
       console.error("Signup error:", err);
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -226,13 +219,37 @@ export default function SignupPage() {
           <p className="text-sm text-slate-600">Create your account</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSignup} className="space-y-4">
-          {error && (
-            <div className="rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
-              {error}
+        {/* Email Confirmation Success Message */}
+        {signupSuccess ? (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-success-200 bg-success-50 p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">✓</div>
+                <div>
+                  <h3 className="font-semibold text-success-900">Account created successfully!</h3>
+                  <p className="text-sm text-success-800 mt-1">
+                    A confirmation email has been sent to <strong>{signupEmail}</strong>.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-sm text-slate-700 space-y-2">
+                <p>• Check your inbox for the confirmation link</p>
+                <p>• Click the link to verify your email address</p>
+                <p>• You'll be able to log in once your email is confirmed</p>
+                <p className="text-xs text-slate-500 mt-3">Didn't receive the email? Check your spam folder or try signing up again.</p>
+              </div>
             </div>
-          )}
+            <Link href="/login" className="btn btn-primary w-full">
+              Go to sign in →
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleSignup} className="space-y-4">
+            {error && (
+              <div className="rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
+                {error}
+              </div>
+            )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -363,6 +380,7 @@ export default function SignupPage() {
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
+        )}
 
         {/* Divider */}
         <div className="relative">

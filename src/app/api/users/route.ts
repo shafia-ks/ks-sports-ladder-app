@@ -29,6 +29,11 @@ export async function GET() {
 
     const authUsers = authData?.users ?? [];
 
+    // Build map of disabled status from auth app_metadata
+    const disabledMap = new Map<string, boolean>(
+      authUsers.map((u) => [u.id, !!(u.app_metadata as any)?.disabled])
+    );
+
     // 2) Fetch profiles we already have
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("users")
@@ -73,11 +78,13 @@ export async function GET() {
     }
 
     // 4) Return consolidated profiles sorted by created_at desc
-    const users = Array.from(profileMap.values()).sort((a, b) => {
-      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return bDate - aDate;
-    });
+    const users = Array.from(profileMap.values())
+      .map((p) => ({ ...p, disabled: disabledMap.get(p.id) || false }))
+      .sort((a, b) => {
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bDate - aDate;
+      });
 
     return NextResponse.json({ users });
   } catch (err: any) {

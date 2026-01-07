@@ -15,6 +15,7 @@ interface User {
   created_at: string;
   gdpr_accepted: boolean;
   sportsmanship_accepted: boolean;
+  disabled?: boolean;
 }
 
 interface PendingMembership {
@@ -41,6 +42,7 @@ export default function UsersManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const [processingMembership, setProcessingMembership] = useState<string | null>(null);
+  const [disabling, setDisabling] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -147,6 +149,20 @@ export default function UsersManagementPage() {
     admin: "bg-danger-100 text-danger-700",
     organizer: "bg-warning-100 text-warning-700",
     player: "bg-slate-100 text-slate-600",
+  };
+
+  const disableUser = async (userId: string) => {
+    if (!confirm("Disable this user? They won't be able to sign in.")) return;
+    setDisabling(userId);
+    try {
+      const res = await fetch(`/api/users/${userId}/disable`, { method: "PATCH" });
+      if (!res.ok) throw new Error("Failed to disable user");
+      await fetchUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to disable user");
+    } finally {
+      setDisabling(null);
+    }
   };
 
   return (
@@ -260,6 +276,7 @@ export default function UsersManagementPage() {
                     <th className="px-4 py-3">User</th>
                     <th className="px-4 py-3">Role</th>
                     <th className="px-4 py-3">Joined</th>
+                    <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Compliance</th>
                     <th className="px-4 py-3">Actions</th>
                   </tr>
@@ -274,13 +291,34 @@ export default function UsersManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${roleColors[user.role] || roleColors.player}`}>
-                          <Shield className="h-3 w-3" />
-                          {user.role}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${roleColors[user.role] || roleColors.player}`}>
+                            <Shield className="h-3 w-3" />
+                            {user.role}
+                          </span>
+                          {user.disabled && (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-slate-200 text-slate-700" title="Disabled account">
+                              <UserX className="h-3 w-3" />
+                              disabled
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600">
                         {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        {user.disabled ? (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-danger-100 text-danger-700">
+                            <UserX className="h-3 w-3" />
+                            Disabled
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-success-100 text-success-700">
+                            <UserCheck className="h-3 w-3" />
+                            Active
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
@@ -293,8 +331,8 @@ export default function UsersManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {user.id !== currentUser?.id && (
-                          <div className="flex gap-2">
+                        {user.id !== currentUser?.id && !user.disabled && (
+                          <div className="flex gap-2 flex-wrap">
                             {user.role !== "admin" && (
                               <button
                                 onClick={() => updateUserRole(user.id, "admin")}
@@ -325,7 +363,18 @@ export default function UsersManagementPage() {
                                 {updating === user.id ? "..." : "→ Player"}
                               </button>
                             )}
+                            <button
+                              onClick={() => disableUser(user.id)}
+                              disabled={disabling === user.id}
+                              className="text-xs font-semibold text-danger-600 hover:text-danger-700"
+                              title="Disable account"
+                            >
+                              {disabling === user.id ? "..." : "Disable"}
+                            </button>
                           </div>
+                        )}
+                        {user.disabled && (
+                          <span className="text-xs text-slate-500">(Disabled)</span>
                         )}
                         {user.id === currentUser?.id && (
                           <span className="text-xs text-slate-500">(You)</span>
