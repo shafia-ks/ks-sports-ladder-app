@@ -551,6 +551,20 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches" | "settings">("dashboard");
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [fixingRanks, setFixingRanks] = useState(false);
+  const [settingsForms, setSettingsForms] = useState({
+    description: "",
+    location: "",
+    visibility: "public" as "public" | "private",
+    rankingType: "default-swap-minimal-drop",
+    kFactor: 24,
+    maxDrop: 1,
+    maxPositionsUp: 3,
+    expiryDays: 7,
+    cooldownHours: 0,
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
 
   const fetchLadder = async () => {
     setIsLoading(true);
@@ -596,6 +610,24 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     fetchLadder();
   }, [params.id, user]);
 
+  useEffect(() => {
+    if (data?.ladder) {
+      const ladder = data.ladder;
+      setSettingsForms((prev) => ({
+        ...prev,
+        description: ladder?.description || "",
+        location: ladder?.location || "",
+        visibility: (ladder?.visibility || "public") as "public" | "private",
+        rankingType: ladder?.ranking_rules?.type || "default-swap-minimal-drop",
+        kFactor: ladder?.ranking_rules?.kFactor ?? 24,
+        maxDrop: ladder?.ranking_rules?.maxDrop ?? 1,
+        maxPositionsUp: ladder?.challenge_rules?.max_positions_up ?? 3,
+        expiryDays: ladder?.challenge_rules?.expiry_days ?? 7,
+        cooldownHours: ladder?.challenge_rules?.cooldown_hours ?? 0,
+      }));
+    }
+  }, [data?.ladder]);
+
   const handleJoinLadder = async () => {
     if (!user) return;
     setJoining(true);
@@ -638,6 +670,55 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       alert(err instanceof Error ? err.message : "Failed to fix ranks");
     } finally {
       setFixingRanks(false);
+    }
+  };
+
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const numericFields = ["kFactor", "maxDrop", "maxPositionsUp", "expiryDays", "cooldownHours"];
+    setSettingsForms((prev) => ({
+      ...prev,
+      [name]: numericFields.includes(name) ? parseInt(value) : value,
+    }));
+  };
+
+  const handleSettingsSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsError(null);
+    setSettingsSuccess(null);
+    try {
+      const payload = {
+        description: settingsForms.description,
+        location: settingsForms.location,
+        visibility: settingsForms.visibility,
+        ranking_rules: {
+          type: settingsForms.rankingType,
+          kFactor: settingsForms.kFactor || undefined,
+          maxDrop: settingsForms.maxDrop || undefined,
+        },
+        challenge_rules: {
+          max_positions_up: settingsForms.maxPositionsUp,
+          expiry_days: settingsForms.expiryDays,
+          cooldown_hours: settingsForms.cooldownHours,
+        },
+      };
+
+      const res = await fetch(`/api/ladders/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to update ladder");
+
+      setSettingsSuccess("Settings updated");
+      await fetchLadder();
+    } catch (err) {
+      setSettingsError(err instanceof Error ? err.message : "Failed to update settings");
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -1182,33 +1263,189 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
           {/* Settings Tab */}
           {tab === "settings" && isOrganizer && (
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Ladder Settings</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Ranking Rules</h3>
-                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words text-slate-700">
-                      {JSON.stringify(data?.ladder?.ranking_rules || {}, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Challenge Rules</h3>
-                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words text-slate-700">
-                      {JSON.stringify(data?.ladder?.challenge_rules || {}, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-slate-200">
-                  <p className="text-sm text-slate-600 mb-3">For detailed settings management, visit the</p>
-                  <Link href={`/ladders/${params.id}/settings`} className="btn btn-primary">
-                    Detailed Settings Page
-                  </Link>
+            <form onSubmit={handleSettingsSave} className="card space-y-6 p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">Ladder Settings</h2>
+                <div className="flex gap-2 text-sm">
+                  {settingsSuccess && <span className="text-green-700">{settingsSuccess}</span>}
+                  {savingSettings && (
+                    <span className="flex items-center gap-1 text-slate-600">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Saving
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
+
+              {settingsError && (
+                <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">{settingsError}</div>
+              )}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700" htmlFor="description">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={settingsForms.description}
+                    onChange={handleSettingsChange}
+                    rows={3}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700" htmlFor="location">
+                    Location
+                  </label>
+                  <input
+                    id="location"
+                    name="location"
+                    value={settingsForms.location}
+                    onChange={handleSettingsChange}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700" htmlFor="visibility">
+                    Visibility
+                  </label>
+                  <select
+                    id="visibility"
+                    name="visibility"
+                    value={settingsForms.visibility}
+                    onChange={handleSettingsChange}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-base font-semibold text-slate-900 mb-3">Ranking Rules</h3>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-slate-700">Ranking System</label>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {[
+                      { id: "swap-positions", label: "Swap Positions" },
+                      { id: "default-swap-minimal-drop", label: "Default Swap (Minimal Drop)" },
+                      { id: "slide-shift", label: "Slide Shift" },
+                      { id: "points-elo", label: "Points/ELO" },
+                    ].map((type) => (
+                      <label key={type.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+                        <input
+                          type="radio"
+                          name="rankingType"
+                          value={type.id}
+                          checked={settingsForms.rankingType === type.id}
+                          onChange={handleSettingsChange}
+                        />
+                        <span className="text-sm font-medium text-slate-900">{type.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="kFactor">
+                      K-Factor
+                    </label>
+                    <input
+                      type="number"
+                      id="kFactor"
+                      name="kFactor"
+                      value={settingsForms.kFactor}
+                      onChange={handleSettingsChange}
+                      min="1"
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="maxDrop">
+                      Max Drop
+                    </label>
+                    <input
+                      type="number"
+                      id="maxDrop"
+                      name="maxDrop"
+                      value={settingsForms.maxDrop}
+                      onChange={handleSettingsChange}
+                      min="0"
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-base font-semibold text-slate-900 mb-3">Challenge Rules</h3>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="maxPositionsUp">
+                      Max Positions Up
+                    </label>
+                    <input
+                      type="number"
+                      id="maxPositionsUp"
+                      name="maxPositionsUp"
+                      value={settingsForms.maxPositionsUp}
+                      onChange={handleSettingsChange}
+                      min="0"
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="expiryDays">
+                      Expiry Days
+                    </label>
+                    <input
+                      type="number"
+                      id="expiryDays"
+                      name="expiryDays"
+                      value={settingsForms.expiryDays}
+                      onChange={handleSettingsChange}
+                      min="0"
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="cooldownHours">
+                      Cooldown Hours
+                    </label>
+                    <input
+                      type="number"
+                      id="cooldownHours"
+                      name="cooldownHours"
+                      value={settingsForms.cooldownHours}
+                      onChange={handleSettingsChange}
+                      min="0"
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
+                >
+                  {savingSettings ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Settings"
+                  )}
+                </button>
+              </div>
+            </form>
           )}
         </>
       )}
