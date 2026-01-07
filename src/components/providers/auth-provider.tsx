@@ -311,26 +311,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) return;
     
     try {
-      // Sign out from Supabase
-      await client.auth.signOut();
+      // Sign out from Supabase (global scope to clear all sessions)
+      await client.auth.signOut({ scope: "global" });
       
       // Clear local state
       setUser(null);
       setIsSignedIn(false);
       
-      // Clear any cached data
+      // Clear all auth-related storage to prevent auto-restore
       if (typeof window !== "undefined") {
-        // Clear local storage items related to auth
-        localStorage.removeItem("supabase.auth.token");
-        // Clear profile cache
+        // Clear ALL localStorage items (Supabase uses sb-* and auth-* keys)
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
-          if (key.startsWith("profile_")) {
+          if (key.startsWith("profile_") || key.startsWith("sb-") || key.includes("auth")) {
             localStorage.removeItem(key);
           }
         });
-        // Reload to clear any in-memory state
-        window.location.href = "/";
+        
+        // Clear sessionStorage completely
+        sessionStorage.clear();
+        
+        // Reload to clear in-memory state and redirect to login
+        window.location.href = "/login";
       }
     } catch (error) {
       console.error("Sign out error:", error);
@@ -338,7 +340,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsSignedIn(false);
       if (typeof window !== "undefined") {
-        window.location.href = "/";
+        // Still clear storage on error
+        try {
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith("profile_") || key.startsWith("sb-") || key.includes("auth")) {
+              localStorage.removeItem(key);
+            }
+          });
+          sessionStorage.clear();
+        } catch (e) {
+          // Ignore storage clear errors
+        }
+        window.location.href = "/login";
       }
     }
   };
