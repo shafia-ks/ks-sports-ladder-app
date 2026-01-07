@@ -1,11 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "khaderwiz@outlook.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Fatima@432";
 const PLAYER_EMAIL = process.env.PLAYER_EMAIL || "khader.mohmmad@outlook.com";
 const PLAYER_PASSWORD = process.env.PLAYER_PASSWORD || "Fatima@432";
 
-async function login(page, email: string, password: string) {
+async function login(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);

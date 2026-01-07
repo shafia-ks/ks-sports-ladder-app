@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { AvatarPicker, AvatarGrid } from "@/components/ui/avatar-picker";
 import { useAuth } from "@/lib/auth/auth-context";
-import { ArrowLeft, Loader2, Key } from "lucide-react";
+import { ArrowLeft, Loader2, Key, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -15,6 +15,9 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -118,6 +121,40 @@ export default function ProfilePage() {
       );
     } finally {
       setIsResettingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      setError('Please type "DELETE" to confirm');
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      if (!supabase) throw new Error("Supabase not configured");
+      if (!user?.id) throw new Error("User not found");
+
+      // Sign out and delete account
+      await supabase.auth.signOut({ scope: "global" });
+      
+      // Clear all auth tokens
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("sb-") || key.startsWith("auth-") || key.startsWith("profile_")) {
+          localStorage.removeItem(key);
+        }
+      });
+      sessionStorage.clear();
+
+      // Redirect to signup with message
+      router.push("/signup?deleted=true");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete account"
+      );
+      setIsDeleting(false);
     }
   };
 
@@ -255,6 +292,70 @@ export default function ProfilePage() {
           <p className="text-xs text-slate-500 mt-2">
             We'll send a password reset link to your email address.
           </p>
+        </div>
+      </div>
+
+      {/* Delete Account Section */}
+      <div className="card space-y-4 p-6 border-2 border-danger-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-danger-700">Danger Zone</h2>
+            <p className="text-sm text-slate-600 mt-1">Permanently delete your account</p>
+          </div>
+          <Trash2 className="h-5 w-5 text-danger-500" />
+        </div>
+
+        <div className="border-t border-danger-200 pt-4 space-y-3">
+          <p className="text-sm text-slate-700">
+            Once you delete your account, there is no going back. This action cannot be undone.
+            All your data will be permanently removed.
+          </p>
+          
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="btn bg-danger-600 text-white hover:bg-danger-700 flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Account
+            </button>
+          ) : (
+            <div className="space-y-3 p-4 bg-danger-50 rounded-lg">
+              <p className="text-sm font-semibold text-danger-900">
+                Are you absolutely sure?
+              </p>
+              <p className="text-xs text-danger-800">
+                Type <strong>DELETE</strong> below to confirm account deletion:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE"
+                className="w-full rounded-lg border border-danger-300 px-4 py-2 focus:border-danger-500 focus:outline-none focus:ring-1 focus:ring-danger-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting || deleteConfirmText !== "DELETE"}
+                  className="btn bg-danger-600 text-white hover:bg-danger-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isDeleting ? "Deleting..." : "I understand, delete my account"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteConfirmText("");
+                  }}
+                  className="btn btn-secondary"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
