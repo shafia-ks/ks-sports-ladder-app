@@ -726,6 +726,89 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  const handleQuickChallenge = async (challengedMemberId: string) => {
+    if (!user || !data?.ladder) {
+      alert("Please log in first");
+      return;
+    }
+
+    const challengedMember = activeMembers.find((m) => m.user_id === challengedMemberId);
+    const maxPositionsUp = data.ladder.challenge_rules?.max_positions_up ?? 3;
+
+    if (!challengedMember) {
+      alert("Member not found");
+      return;
+    }
+
+    // Validation: Only lower-ranked players can challenge higher-ranked players
+    if (!currentMember?.current_rank || !challengedMember.current_rank) {
+      alert("Invalid ranks");
+      return;
+    }
+
+    // Current user must have lower rank number (higher in ladder) to challenge
+    if (currentMember.current_rank >= challengedMember.current_rank) {
+      alert("You can only challenge players ranked above you");
+      return;
+    }
+
+    // Check max positions up rule
+    const positionsUp = currentMember.current_rank - challengedMember.current_rank;
+    if (positionsUp > maxPositionsUp) {
+      alert(`You can only challenge up to ${maxPositionsUp} positions above your current rank`);
+      return;
+    }
+
+    // Check if challenged player is busy
+    if (challengedMember.is_busy) {
+      alert("This player is currently engaged in an ongoing challenge or match");
+      return;
+    }
+
+    // Check if current player is busy
+    if (currentMember.is_busy) {
+      alert("You already have an ongoing challenge or pending match");
+      return;
+    }
+
+    try {
+      const payload = {
+        ladderId: params.id,
+        challengerId: user.id,
+        challengedId: challengedMemberId,
+        challengerRank: currentMember.current_rank,
+        challengedRank: challengedMember.current_rank,
+        challengerActiveChallenges: 0,
+        challengedActiveChallenges: 0,
+        challengerBusy: currentMember.is_busy || false,
+        challengedBusy: challengedMember.is_busy || false,
+        rules: {
+          maxPositionsUp,
+          preventChallengingBusyPlayers: true,
+          maxActiveChallengesPerPlayer: data.ladder.challenge_rules?.max_active_challenges_per_player || 3,
+          expiryDays: data.ladder.challenge_rules?.expiry_days || 7,
+          cooldownHours: data.ladder.challenge_rules?.cooldown_hours || 0,
+        },
+      };
+
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || json.errors?.[0]?.message || "Failed to create challenge");
+      }
+
+      alert("Challenge sent!");
+      await fetchLadder();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to send challenge");
+    }
+  };
+
   const handleCancelSettings = () => {
     if (data?.ladder) {
       const ladder = data.ladder;
@@ -1235,6 +1318,21 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   {activeMembersSorted.map((member) => {
                     const isBusy = member.is_busy || false;
                     const isCurrentUser = member.user_id === user?.id;
+                    const currentUserRank = currentMember?.current_rank || 0;
+                    const targetRank = member.current_rank || 0;
+                    const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
+                    
+                    // Can only challenge if:
+                    // 1. Not yourself
+                    // 2. Target is ranked ABOVE you (lower rank number)
+                    // 3. Within maxPositionsUp limit
+                    // 4. Target is not busy
+                    const canChallenge = !isCurrentUser && 
+                                       currentUserRank > 0 && 
+                                       targetRank > 0 &&
+                                       targetRank < currentUserRank && 
+                                       (currentUserRank - targetRank) <= maxPositionsUp &&
+                                       !isBusy;
                     
                     return (
                       <tr key={member.id} className="border-t border-slate-100">
@@ -1270,17 +1368,19 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                           )}
                         </td>
                         <td className="px-4 py-2 text-right">
-                          {!isCurrentUser && (
+                          {canChallenge ? (
                             <button
-                              disabled={isBusy}
-                              onClick={() => {
-                                // TODO: Implement one-click challenge
-                                alert("One-click challenge coming soon!");
-                              }}
-                              className="text-sm font-semibold text-brand-700 hover:text-brand-900 disabled:text-slate-400 disabled:cursor-not-allowed"
+                              onClick={() => handleQuickChallenge(member.user_id)}
+                              className="text-sm font-semibold text-brand-700 hover:text-brand-900"
                             >
-                              {isBusy ? "Busy" : "Challenge"}
+                              Challenge
                             </button>
+                          ) : (
+                            !isCurrentUser && (
+                              <span className="text-xs text-slate-400">
+                                {isBusy ? "Busy" : targetRank >= currentUserRank ? "Can't challenge down" : "Out of range"}
+                              </span>
+                            )
                           )}
                         </td>
                       </tr>
