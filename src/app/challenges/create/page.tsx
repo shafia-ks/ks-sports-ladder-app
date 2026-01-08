@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Loader2 } from "lucide-react";
 
@@ -186,6 +187,12 @@ export default function ChallengeCreatePage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Challenges", href: "/challenges" },
+        { label: "Create Challenge" }
+      ]} />
+
       <PageHeader
         title="Create challenge"
         description="Select ladder, opponent, and propose schedule. Validations enforced per ladder rules."
