@@ -1060,313 +1060,148 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
           {/* Dashboard Tab */}
           {tab === "dashboard" && (
-            <div className="space-y-6">
-              {/* Pending Member Approvals - Top of Dashboard for Organizers */}
-              {isOrganizer && pendingMembers.length > 0 && (
-                <div className="card p-6">
-                  <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-brand-600" />
-                    Pending Member Approvals
-                  </h2>
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      placeholder="Search by name or email..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm mb-2"
-                      onChange={e => setPendingSearch(e.target.value)}
-                      value={pendingSearch}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    {filteredPendingMembers.map((member) => {
-                      const displayName = member.users?.full_name || `${member.users?.first_name || ''} ${member.users?.last_name || ''}`.trim() || member.users?.email || "Unknown";
-                      return (
-                        <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
-                          <Avatar name={displayName} email={member.users?.email} size="md" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-base font-semibold text-slate-900 truncate">
-                                {displayName}
-                              </span>
-                              {renderRolePill(getMemberRole(member))}
-                              <span className="text-xs text-amber-700 flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> Awaiting approval
-                              </span>
-                            </div>
-                            {member.users?.email && (
-                              <span className="text-xs text-slate-500 truncate">{member.users.email}</span>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              className={`btn btn-success btn-sm flex items-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
-                              onClick={() => handleApproveMember(member.id)}
-                              disabled={approvingId === member.id}
-                            >
-                              {approvingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                              Approve
-                            </button>
-                            <button
-                              className={`btn btn-danger btn-sm flex items-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
-                              onClick={() => handleRejectMember(member.id)}
-                              disabled={rejectingId === member.id}
-                            >
-                              {rejectingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {filteredPendingMembers.length === 0 && (
-                      <div className="text-center text-sm text-slate-500 py-8">No pending requests found.</div>
-                    )}
-                  </div>
-                </div>
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content - 2/3 width */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Organizer Action Banner */}
+                {isOrganizer && pendingMembers.length > 0 && (
+                  <OrganizerActionBanner
+                    actions={[
+                      {
+                        id: "pending-approvals",
+                        label: `${pendingMembers.length} Pending Member Approvals`,
+                        count: pendingMembers.length,
+                        action: () => setTab("ranking"),
+                        buttonText: "Review"
+                      }
+                    ]}
+                  />
+                )}
 
-              {!isMember && (
-                <div className="card p-6">
-                  <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-brand-600" />
-                    About this ladder
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="p-3 rounded-lg bg-slate-50">
-                      <p className="text-xs text-slate-500">Status</p>
-                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.status || "Unknown"}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-slate-50">
-                      <p className="text-xs text-slate-500">Visibility</p>
-                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.visibility || "private"}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-slate-50">
-                      <p className="text-xs text-slate-500">Location</p>
-                      <p className="text-sm font-semibold text-slate-900">{data?.ladder?.location || "Not set"}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-slate-50">
-                      <p className="text-xs text-slate-500">Sport</p>
-                      <p className="text-sm font-semibold text-slate-900">{formatSport(data?.ladder?.sport_id)}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="p-3 rounded-lg bg-white border border-slate-100">
-                      <p className="text-xs text-slate-500">Active members</p>
-                      <p className="text-lg font-semibold text-slate-900">{memberCounts.active}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white border border-slate-100">
-                      <p className="text-xs text-slate-500">Pending requests</p>
-                      <p className="text-lg font-semibold text-slate-900">{memberCounts.pending}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white border border-slate-100">
-                      <p className="text-xs text-slate-500">Active challenges</p>
-                      <p className="text-lg font-semibold text-slate-900">{challengeCounts.active}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white border border-slate-100">
-                      <p className="text-xs text-slate-500">Confirmed matches</p>
-                      <p className="text-lg font-semibold text-slate-900">{matchCounts.confirmed}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    Join to view rankings, members, and challenges. {isPending ? "Your request is awaiting approval." : ""}
-                  </p>
-                </div>
-              )}
+                {/* Organizer Stats Grid */}
+                {isOrganizer && (
+                  <OrganizerStatsGrid
+                    stats={[
+                      {
+                        label: "Members",
+                        value: activeMembers.length,
+                        subtitle: "Active",
+                        icon: "users",
+                        badge: pendingMembers.length > 0 ? `${pendingMembers.length} pending` : undefined,
+                        action: () => setTab("ranking")
+                      },
+                      {
+                        label: "Challenges",
+                        value: challengeCounts.active,
+                        subtitle: "Active",
+                        icon: "swords",
+                        action: () => setTab("challenges")
+                      },
+                      {
+                        label: "Matches",
+                        value: matchCounts.confirmed,
+                        subtitle: "Confirmed",
+                        icon: "target",
+                        action: () => setTab("matches")
+                      },
+                      {
+                        label: "Activity",
+                        value: dashboardStats?.organizerStats?.recentMatches || 0,
+                        subtitle: "This Month",
+                        icon: "activity",
+                        action: () => { }
+                      }
+                    ]}
+                  />
+                )}
 
-              {/* Organizers List - Always Visible */}
-              {organizerIds.length > 0 && (
-                <div className="card p-6">
-                  <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-brand-600" />
-                    Ladder Organizers
-                  </h2>
-                  <div className="space-y-2">
-                    {(data?.organizers || []).map((organizer) => (
-                      <div
-                        key={organizer.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100"
-                      >
-                        <Avatar name={organizer.full_name || organizer.email || "?"} size="sm" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {organizer.full_name || organizer.email}
-                          </p>
-                          {organizer.email && organizer.full_name && (
-                            <p className="text-xs text-slate-500">{organizer.email}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {organizer.role === "admin" && renderRolePill("Admin")}
-                          {renderRolePill("Organizer")}
-                        </div>
+                {/* Player Hero Stats */}
+                {isMember && currentMember && (
+                  <HeroStats
+                    rank={currentMember.current_rank}
+                    wins={dashboardStats?.myStats?.wins || 0}
+                    losses={dashboardStats?.myStats?.losses || 0}
+                    winStreak={dashboardStats?.myStats?.streak || 0}
+                    ladderId={params.id}
+                  />
+                )}
+
+                {/* Top 5 Rankings */}
+                {isMember && (
+                  <Top5Rankings
+                    players={activeMembersSorted}
+                    currentUserId={user?.id}
+                    ladderId={params.id}
+                    canChallenge={(targetRank) => {
+                      const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
+                      return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
+                    }}
+                  />
+                )}
+
+                {/* Recent Activity */}
+                {canAccessMembers && dashboardStats?.recentActivity && (
+                  <RecentActivity
+                    activities={dashboardStats.recentActivity.map((activity: any, idx: number) => ({
+                      id: `activity-${idx}`,
+                      type: activity.type as "match" | "challenge" | "member",
+                      description: activity.description,
+                      time: activity.time
+                    }))}
+                  />
+                )}
+
+                {/* Request to Become Organizer - Only for Players */}
+                {!isOrganizer && currentMember && user?.role === "player" && (
+                  <RoleRequest
+                    currentRole="player"
+                    hasActivRequest={false}
+                    ladder_id={params.id}
+                  />
+                )}
+
+                {/* Non-member view */}
+                {!isMember && (
+                  <div className="card p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-brand-600" />
+                      About this ladder
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="p-3 rounded-lg bg-slate-50">
+                        <p className="text-xs text-slate-500">Sport</p>
+                        <p className="text-sm font-semibold text-slate-900">{formatSport(data?.ladder?.sport_id)}</p>
                       </div>
-                    ))}
+                      <div className="p-3 rounded-lg bg-slate-50">
+                        <p className="text-xs text-slate-500">Location</p>
+                        <p className="text-sm font-semibold text-slate-900">{data?.ladder?.location || "Not set"}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-slate-50">
+                        <p className="text-xs text-slate-500">Active members</p>
+                        <p className="text-lg font-semibold text-slate-900">{memberCounts.active}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-slate-50">
+                        <p className="text-xs text-slate-500">Active challenges</p>
+                        <p className="text-lg font-semibold text-slate-900">{challengeCounts.active}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      Join to view rankings, members, and challenges. {isPending ? "Your request is awaiting approval." : ""}
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Player Stats - Always Visible */}
-              {currentMember && (
-                <div className="card p-6">
-                  <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Award className="h-5 w-5 text-brand-600" />
-                    My Performance
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <StatCard
-                      label="Current Rank"
-                      value={currentMember.current_rank ? `#${currentMember.current_rank}` : "-"}
-                      icon={<Award className="h-5 w-5 text-brand-600" />}
-                      trend={dashboardStats?.myStats?.rankChange}
-                    />
-                    <StatCard
-                      label="Win Rate"
-                      value={dashboardStats?.myStats?.winRate ? `${dashboardStats.myStats.winRate}%` : "0%"}
-                      icon={<TrendingUp className="h-5 w-5 text-green-600" />}
-                    />
-                    <StatCard
-                      label="Total Matches"
-                      value={dashboardStats?.myStats?.totalMatches || 0}
-                      icon={<Target className="h-5 w-5 text-blue-600" />}
-                    />
-                    <StatCard
-                      label="Current Streak"
-                      value={dashboardStats?.myStats?.streak ? `${dashboardStats.myStats.streak}W` : "-"}
-                      icon={<Zap className="h-5 w-5 text-amber-600" />}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Organizer Stats - Only for Organizers/Admins */}
-              {isOrganizer && (
-                <div className="card p-6">
-                  <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-brand-600" />
-                    Ladder Management
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <StatCard
-                      label="Total Members"
-                      value={activeMembers.length}
-                      icon={<Users className="h-5 w-5 text-blue-600" />}
-                    />
-                    <StatCard
-                      label="Pending Approvals"
-                      value={pendingMembers.length}
-                      icon={<Clock className="h-5 w-5 text-amber-600" />}
-                      alert={pendingMembers.length > 0}
-                    />
-                    <StatCard
-                      label="Active Challenges"
-                      value={dashboardStats?.organizerStats?.activeChallenges || 0}
-                      icon={<Swords className="h-5 w-5 text-purple-600" />}
-                    />
-                    <StatCard
-                      label="Recent Matches"
-                      value={dashboardStats?.organizerStats?.recentMatches || 0}
-                      icon={<CheckCircle className="h-5 w-5 text-green-600" />}
-                    />
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Link
-                      href={`/organizer/${params.id}/rankings`}
-                      className="btn btn-secondary flex items-center gap-2"
-                    >
-                      <Award className="h-4 w-4" />
-                      Manage Rankings
-                    </Link>
-                    <Link
-                      href={`/organizer/${params.id}/matches`}
-                      className="btn btn-secondary flex items-center gap-2"
-                    >
-                      <Target className="h-4 w-4" />
-                      Manage Matches
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Request to Become Organizer - Only for Players */}
-              {!isOrganizer && currentMember && user?.role === "player" && (
-                <RoleRequest
-                  currentRole="player"
-                  hasActivRequest={false}
-                  ladder_id={params.id}
+              {/* Sidebar - 1/3 width */}
+              <div className="lg:col-span-1">
+                <LadderInfoSidebar
+                  sport={formatSport(data?.ladder?.sport_id)}
+                  location={data?.ladder?.location}
+                  memberCount={memberCounts.active}
+                  activeChallenges={challengeCounts.active}
+                  organizers={data?.organizers || []}
                 />
-              )}
-
-              {/* Recent Activity */}
-              {canAccessMembers && (
-                <>
-                  <div className="card p-6">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-brand-600" />
-                      Recent Activity
-                    </h2>
-                    {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
-                      <div className="space-y-3">
-                        {dashboardStats.recentActivity.map((activity: any, idx: number) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50">
-                            <div className="mt-0.5">
-                              {activity.type === 'match' && <Target className="h-4 w-4 text-green-600" />}
-                              {activity.type === 'challenge' && <Swords className="h-4 w-4 text-blue-600" />}
-                              {activity.type === 'member' && <Users className="h-4 w-4 text-purple-600" />}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm text-slate-900">{activity.description}</p>
-                              <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 text-center py-8">No recent activity</p>
-                    )}
-                  </div>
-
-                  <div className="card p-6">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                      <Award className="h-5 w-5 text-brand-600" />
-                      Top Performers
-                    </h2>
-                    <div className="space-y-2">
-                      {activeMembersSorted.slice(0, 5).map((member, idx) => (
-                        <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-600 text-white font-bold text-sm">
-                            {idx + 1}
-                          </div>
-                          <Avatar
-                            name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
-                            email={member.users?.email}
-                            src={undefined}
-                            size="sm"
-                          />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-slate-900">
-                              {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs text-slate-500">Rank #{member.current_rank ?? "-"}</p>
-                              {renderRolePill(getMemberRole(member))}
-                            </div>
-                          </div>
-                          {currentMember?.user_id !== member.user_id && (
-                            <Link
-                              href={`/challenges/create?ladder=${params.id}&opponent=${member.user_id}`}
-                              className="text-xs font-semibold text-brand-700 hover:text-brand-800"
-                            >
-                              Challenge
-                            </Link>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
+              </div>
             </div>
           )}
 
