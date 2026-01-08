@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useMemberships } from "@/features/memberships/api";
 import { Mail, AlertCircle } from "lucide-react";
+import { SkeletonList } from "@/components/ui/skeleton-card";
 
 export default function NotificationsPage() {
   const { user } = useAuth();
@@ -57,7 +58,12 @@ export default function NotificationsPage() {
         )}
 
         {loading && (
-          <div className="card p-4 text-sm text-slate-600">Loading notifications...</div>
+          <div className="space-y-4">
+            <div className="card p-5 space-y-3">
+              <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+              <SkeletonList items={3} />
+            </div>
+          </div>
         )}
         {error && null}
 
@@ -77,7 +83,7 @@ export default function NotificationsPage() {
                     <span className="font-semibold">{invitation.ladders?.name || "Ladder"}</span>
                     <span className="text-xs text-slate-500">Invited by organizer</span>
                   </div>
-                  <div className="text-xs text-slate-500">Expires {invitation.expires_at?.slice(0,10)}</div>
+                  <div className="text-xs text-slate-500">Expires {invitation.expires_at?.slice(0, 10)}</div>
                 </li>
               ))}
             </ul>

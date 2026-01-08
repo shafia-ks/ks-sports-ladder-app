@@ -36,7 +36,6 @@ const stats = [
 
 export default function HomePage() {
   const { isSignedIn } = useAuth();
-
   const primaryCta = isSignedIn ? "/dashboard" : "/login";
   const primaryLabel = isSignedIn ? "Go to dashboard" : "Sign in";
 
@@ -45,56 +44,71 @@ export default function HomePage() {
       <section className="card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-slate-50" />
         <div className="relative grid gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-4">
-            <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700 shadow">
-              <Shield className="h-4 w-4" />
-              Built for clubs and teams
-            </p>
-            <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
-              Modern ladder ops with real governance, not demo data.
-            </h1>
-            <p className="text-lg text-slate-700 max-w-2xl">
-              Create ladders, control challenges, manage disputes, and keep rankings fair. Role-based views for players, organizers, and admins—ready for production.
-            </p>
-            <div>
+
+          {/* Left Column: Hero Text */}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700 shadow">
+                <Shield className="h-4 w-4" />
+                Built for clubs and teams
+              </p>
+              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
+                Modern sports ladder ops with club grade controls and governance
+              </h1>
+              <p className="text-lg text-slate-700 max-w-2xl">
+                Create ladders, control challenges, manage disputes, and keep rankings fair. Role-based views for players, organizers, and admins—ready for production.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href={primaryCta} className="btn btn-primary shadow inline-flex items-center gap-2">
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm text-slate-700 sm:grid-cols-4 pt-2">
-              {stats.map((stat) => (
-                <div key={stat.label} className="rounded-lg border border-slate-200 bg-white/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">{stat.label}</p>
-                  <p className="text-sm font-semibold text-slate-900">{stat.value}</p>
-                </div>
-              ))}
+              {!isSignedIn && (
+                <span className="text-sm font-medium text-slate-600">
+                  Ready to challenge? Create an account or sign in.
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="card space-y-3 border-slate-100 bg-white/80 p-5 shadow-sm">
-            <div className="flex items-center justify-between text-sm font-semibold text-slate-600">
-              <span>Club-grade controls</span>
-            </div>
-            <p className="text-sm text-slate-700">
-              Role-based access, challenge governance, seasons, and audit-friendly notifications. Ready for multi-ladder clubs.
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-              <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2">
-                <p className="font-semibold text-slate-900">RBAC</p>
-                <p>Player / Organizer / Admin</p>
+          {/* Right Column: Feature Card */}
+          <div className="card border-slate-100 bg-white/80 p-6 shadow-sm">
+            <div className="grid gap-6 md:grid-cols-2 items-center relative">
+
+              {/* Top Right Icon */}
+              <div className="absolute -top-2 -right-2 p-2 bg-brand-50 rounded-full text-brand-600">
+                <ShieldCheck className="h-6 w-6" />
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2">
-                <p className="font-semibold text-slate-900">Workflows</p>
-                <p>Leader requests, approvals</p>
+
+              {/* Left Side: Content */}
+              <div className="space-y-3 pr-4">
+                <h3 className="text-lg font-semibold text-slate-900">Club-grade controls</h3>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  Role-based access, challenge governance, seasons, and audit-friendly notifications. Ready for multi-ladder clubs.
+                </p>
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2">
-                <p className="font-semibold text-slate-900">Rules</p>
-                <p>Challenge limits, expiry</p>
+
+              {/* Right Side: 2x2 Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
+                  <p className="font-semibold text-slate-900 mb-1">RBAC</p>
+                  <p className="leading-tight">Player / Org / Admin</p>
+                </div>
+                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
+                  <p className="font-semibold text-slate-900 mb-1">Workflows</p>
+                  <p className="leading-tight">Requests & Approvals</p>
+                </div>
+                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
+                  <p className="font-semibold text-slate-900 mb-1">Rules</p>
+                  <p className="leading-tight">Limits & Expiry</p>
+                </div>
+                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
+                  <p className="font-semibold text-slate-900 mb-1">Audit</p>
+                  <p className="leading-tight">Logs & Notifs</p>
+                </div>
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2">
-                <p className="font-semibold text-slate-900">Audit-ready</p>
-                <p>Notifications & logs</p>
-              </div>
+
             </div>
           </div>
         </div>

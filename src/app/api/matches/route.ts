@@ -53,6 +53,14 @@ export async function GET(req: Request) {
     query = query.eq("status", status);
   }
 
+  // Filter by user ID if provided (for profile/dashboard history)
+  if (req.url.includes("userId")) {
+    const userId = searchParams.get("userId");
+    if (userId) {
+      query = query.or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
+    }
+  }
+
   const { data, error } = await query;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

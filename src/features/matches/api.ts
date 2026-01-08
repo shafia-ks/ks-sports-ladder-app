@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LadderRankingEntry } from "@/lib/ranking/ranking-engine";
 import { RankingRuleType } from "@/types/domain";
 
-async function fetchMatches() {
-  const res = await fetch("/api/matches");
+async function fetchMatches(userId?: string) {
+  const url = userId ? `/api/matches?userId=${encodeURIComponent(userId)}` : "/api/matches";
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to load matches");
   return res.json();
 }
@@ -32,8 +33,11 @@ async function submitMatch(data: {
   return res.json();
 }
 
-export function useMatches() {
-  return useQuery({ queryKey: ["matches"], queryFn: fetchMatches });
+export function useMatches(userId?: string) {
+  return useQuery({
+    queryKey: ["matches", userId],
+    queryFn: () => fetchMatches(userId)
+  });
 }
 
 export function useSubmitMatch() {

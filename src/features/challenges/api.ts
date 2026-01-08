@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChallengeValidationContext } from "@/lib/challenges/validation";
 
-async function fetchChallenges() {
-  const res = await fetch("/api/challenges");
+async function fetchChallenges(userId?: string) {
+  const url = userId ? `/api/challenges?userId=${encodeURIComponent(userId)}` : "/api/challenges";
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to load challenges");
   return res.json();
 }
@@ -20,8 +21,11 @@ async function createChallenge(data: ChallengeValidationContext) {
   return res.json();
 }
 
-export function useChallenges() {
-  return useQuery({ queryKey: ["challenges"], queryFn: fetchChallenges });
+export function useChallenges(userId?: string) {
+  return useQuery({
+    queryKey: ["challenges", userId],
+    queryFn: () => fetchChallenges(userId)
+  });
 }
 
 export function useCreateChallenge() {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 
 interface Ladder {
   id: string;
@@ -26,6 +28,7 @@ interface Member {
 
 export default function MatchSubmitPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [ladders, setLadders] = useState<Ladder[]>([]);
   const [selectedLadder, setSelectedLadder] = useState<string>("");
   const [members, setMembers] = useState<Member[]>([]);
@@ -74,7 +77,11 @@ export default function MatchSubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLadder || !formData.player1_id || !formData.player2_id) {
-      alert("Please select ladder and both players");
+      toast.push({
+        title: "Validation Error",
+        description: "Please select a ladder and both players.",
+        variant: "error"
+      });
       return;
     }
 
@@ -111,14 +118,26 @@ export default function MatchSubmitPage() {
 
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error || "Failed to submit match");
+        toast.push({
+          title: "Submission Failed",
+          description: json.error || "Failed to submit match",
+          variant: "error"
+        });
         return;
       }
 
-      alert("Match submitted for confirmation!");
+      toast.push({
+        title: "Match Submitted",
+        description: "Your result has been recorded and is pending confirmation.",
+        variant: "success"
+      });
       window.location.href = "/matches";
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to submit match");
+      toast.push({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to submit match",
+        variant: "error"
+      });
     } finally {
       setSubmitting(false);
     }
@@ -126,8 +145,9 @@ export default function MatchSubmitPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-slate-200 rounded animate-pulse mb-2" />
+        <SkeletonCard rows={8} />
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Loader2, Settings, Users, Mail, Plus, FileText } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 
 interface Ladder {
   id: string;
@@ -31,7 +32,7 @@ function OrganizerDashboard() {
       const res = await fetch("/api/ladders");
       if (!res.ok) throw new Error("Failed to load ladders");
       const data = await res.json();
-      
+
       // Filter to only ladders where user is an organizer
       if (user?.id) {
         const myLadders = data.ladders?.filter((ladder: any) => {
@@ -63,9 +64,9 @@ function OrganizerDashboard() {
       </div>
 
       {loading && (
-        <div className="card p-6 text-center text-sm text-slate-600 flex items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading your ladders...
+        <div className="grid gap-4">
+          <SkeletonCard rows={3} />
+          <SkeletonCard rows={3} />
         </div>
       )}
 
@@ -97,11 +98,10 @@ function OrganizerDashboard() {
                     <p className="text-xs text-slate-500 mt-1">📍 {ladder.location}</p>
                   )}
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  ladder.status === "active"
-                    ? "bg-success-100 text-success-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${ladder.status === "active"
+                  ? "bg-success-100 text-success-700"
+                  : "bg-slate-100 text-slate-600"
+                  }`}>
                   {ladder.status}
                 </span>
               </div>
