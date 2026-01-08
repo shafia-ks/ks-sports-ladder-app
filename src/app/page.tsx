@@ -27,13 +27,6 @@ const featureList = [
   },
 ];
 
-const stats = [
-  { label: "Clubs ready", value: "Multi-ladder" },
-  { label: "RBAC", value: "Player / Org / Admin" },
-  { label: "Governance", value: "Expiry • Limits" },
-  { label: "Audit", value: "Notifications & logs" },
-];
-
 export default function HomePage() {
   const { isSignedIn } = useAuth();
   const primaryCta = isSignedIn ? "/dashboard" : "/login";
@@ -64,66 +57,48 @@ export default function HomePage() {
               <Link href={primaryCta} className="btn btn-primary shadow inline-flex items-center gap-2">
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </Link>
-              {!isSignedIn && (
-                <span className="text-sm font-medium text-slate-600">
-                  Ready to challenge? Create an account or sign in.
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Right Column: Feature Card */}
-          <div className="card border-slate-100 bg-white/80 p-6 shadow-sm">
-            <div className="grid gap-6 md:grid-cols-2 items-center relative">
-
-              {/* Top Right Icon */}
-              <div className="absolute -top-2 -right-2 p-2 bg-brand-50 rounded-full text-brand-600">
-                <ShieldCheck className="h-6 w-6" />
+          {/* Right Column: 4 Key Features 2x2 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {featureList.map((item) => (
+              <div key={item.title} className="card p-3 border-slate-200 bg-white/60 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2 mb-1 text-brand-700">
+                  <item.icon className="h-4 w-4" />
+                  <p className="text-xs font-bold uppercase tracking-wide">{item.title}</p>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{item.body}</p>
               </div>
-
-              {/* Left Side: Content */}
-              <div className="space-y-3 pr-4">
-                <h3 className="text-lg font-semibold text-slate-900">Club-grade controls</h3>
-                <p className="text-sm text-slate-700 leading-relaxed">
-                  Role-based access, challenge governance, seasons, and audit-friendly notifications. Ready for multi-ladder clubs.
-                </p>
-              </div>
-
-              {/* Right Side: 2x2 Grid */}
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
-                  <p className="font-semibold text-slate-900 mb-1">RBAC</p>
-                  <p className="leading-tight">Player / Org / Admin</p>
-                </div>
-                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
-                  <p className="font-semibold text-slate-900 mb-1">Workflows</p>
-                  <p className="leading-tight">Requests & Approvals</p>
-                </div>
-                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
-                  <p className="font-semibold text-slate-900 mb-1">Rules</p>
-                  <p className="leading-tight">Limits & Expiry</p>
-                </div>
-                <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-2 text-center">
-                  <p className="font-semibold text-slate-900 mb-1">Audit</p>
-                  <p className="leading-tight">Logs & Notifs</p>
-                </div>
-              </div>
-
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {featureList.map((item) => (
-          <div key={item.title} className="card p-4 space-y-2">
-            <div className="flex items-center gap-2 text-brand-700">
-              <item.icon className="h-4 w-4" />
-              <p className="text-sm font-semibold uppercase tracking-wide">{item.title}</p>
-            </div>
-            <p className="text-sm text-slate-700">{item.body}</p>
+      {/* CTA Row "Ready to challenge?" */}
+      <section className="card border-brand-100 bg-brand-50/50 p-6 md:p-8">
+        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-slate-900">Ready to challenge?</h2>
+            <p className="text-slate-600">Join your local club ladder or start your own today.</p>
           </div>
-        ))}
+          <div className="flex items-center gap-3">
+            {!isSignedIn ? (
+              <>
+                <Link href="/login?mode=signup" className="btn btn-primary">
+                  Create account
+                </Link>
+                <Link href="/login" className="btn btn-secondary bg-white">
+                  Sign in
+                </Link>
+              </>
+            ) : (
+              <Link href="/dashboard" className="btn btn-primary">
+                Go to Dashboard
+              </Link>
+            )}
+          </div>
+        </div>
       </section>
     </div>
   );
