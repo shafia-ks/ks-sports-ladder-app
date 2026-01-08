@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleRequest } from "@/components/ui/role-request";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const SPORT_LABELS: Record<string, string> = {
   squash: "Squash",
@@ -966,6 +967,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "My Ladders", href: "/ladders" },
+          { label: ladderName }
+        ]}
+      />
       <PageHeader
         title={ladderName}
         description={data?.ladder?.description || "Ranking overview and membership."}
