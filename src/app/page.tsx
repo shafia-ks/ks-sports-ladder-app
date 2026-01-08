@@ -97,7 +97,7 @@ export default function HomePage() {
                 <Link href="/signup" className="btn bg-green-600 hover:bg-green-700 text-white border-transparent shadow-sm">
                   Create account
                 </Link>
-                <Link href="/login" className="btn btn-primary shadow-sm">
+                <Link href="/login" className="btn btn-secondary shadow-sm">
                   Sign in
                 </Link>
               </>
