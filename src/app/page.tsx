@@ -51,10 +51,10 @@ export default function HomePage() {
                 <Shield className="h-4 w-4" />
                 Built for clubs and teams
               </p>
-              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl text-justify break-words hyphens-auto">
+              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
                 Modern sports ladder ops with club grade controls and governance
               </h1>
-              <p className="text-lg text-slate-700 max-w-2xl text-justify break-words hyphens-auto">
+              <p className="text-lg text-slate-700 max-w-2xl">
                 Create ladders, control challenges, manage disputes, and keep rankings fair. Role-based views for players, organizers, and admins—ready for production.
               </p>
             </div>
@@ -77,7 +77,7 @@ export default function HomePage() {
                   <item.icon className="h-4 w-4" />
                   <p className="text-xs font-bold uppercase tracking-wide">{item.title}</p>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed text-justify">{item.body}</p>
+                <p className="text-xs text-slate-600 leading-relaxed">{item.body}</p>
               </div>
             ))}
           </div>
@@ -97,7 +97,7 @@ export default function HomePage() {
                 <Link href="/signup" className="btn bg-green-600 hover:bg-green-700 text-white border-transparent shadow-sm">
                   Create account
                 </Link>
-                <Link href="/login" className="btn btn-secondary bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm">
+                <Link href="/login" className="btn btn-primary shadow-sm">
                   Sign in
                 </Link>
               </>
