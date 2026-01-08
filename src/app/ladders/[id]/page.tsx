@@ -985,13 +985,83 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       )}
 
       {isLoading && (
-        <div className="card p-5 text-center text-sm text-slate-600 flex items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading ladder...
+        <div className="space-y-6">
+          {/* Skeleton for tab navigation */}
+          <div className="flex gap-4 border-b border-slate-200 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-10 w-24 bg-slate-200 rounded-t"></div>
+            ))}
+          </div>
+
+          {/* Skeleton for dashboard content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Hero stats skeleton */}
+              <div className="card p-6 animate-pulse">
+                <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                <div className="grid grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-8 bg-slate-200 rounded"></div>
+                      <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top 5 skeleton */}
+              <div className="card p-6 animate-pulse">
+                <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar skeleton */}
+            <div className="lg:col-span-1">
+              <div className="card p-6 animate-pulse">
+                <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                      <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {error && (
-        <div className="card p-5 text-center text-sm text-red-600">{error}</div>
+        <div className="card p-6 border-l-4 border-danger-500 bg-danger-50">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-danger-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-danger-900 mb-1">
+                Failed to load ladder
+              </h3>
+              <p className="text-sm text-danger-800">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 text-sm font-semibold text-danger-700 hover:text-danger-900 underline"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {!isLoading && !error && (
