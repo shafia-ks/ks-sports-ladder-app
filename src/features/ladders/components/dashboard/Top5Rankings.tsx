@@ -19,9 +19,10 @@ interface Top5RankingsProps {
     currentUserId?: string;
     ladderId: string;
     canChallenge: (targetRank: number) => boolean;
+    onChallenge: (playerId: string) => void;
 }
 
-export function Top5Rankings({ players, currentUserId, ladderId, canChallenge }: Top5RankingsProps) {
+export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge }: Top5RankingsProps) {
     const top5 = players.slice(0, 5);
 
     const getDisplayName = (player: Player) => {
@@ -65,13 +66,13 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge }:
                             {!isCurrentUser && (
                                 <div>
                                     {eligible ? (
-                                        <Link
-                                            href={`/challenges/create?ladder=${ladderId}&opponent=${player.user_id}`}
+                                        <button
+                                            onClick={() => onChallenge(player.user_id)}
                                             className="btn btn-primary btn-sm flex items-center gap-1"
                                         >
                                             <Swords className="h-3 w-3" />
                                             Challenge
-                                        </Link>
+                                        </button>
                                     ) : (
                                         <button
                                             disabled
