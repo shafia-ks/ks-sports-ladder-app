@@ -7,9 +7,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Avatar } from "@/components/ui/avatar";
 
-const publicLinks = [
-  { href: { pathname: "/" }, label: "Home", icon: Home },
-];
+// No public links - landing page is separate
 
 // Navigation links by role
 const playerLinks = [
@@ -114,17 +112,17 @@ export function TopNav() {
 
   // Get links based on user role
   const getVisibleLinks = () => {
-    if (!isSignedIn) return publicLinks;
+    if (!isSignedIn) return [];
 
     switch (user?.role) {
       case "admin":
         // Admins see player navigation plus a dedicated Admin Console tab
-        return [...publicLinks, ...playerLinks, adminConsoleLink];
+        return [...playerLinks, adminConsoleLink];
       case "organizer":
-        return [...publicLinks, ...organizerLinks];
+        return organizerLinks;
       case "player":
       default:
-        return [...publicLinks, ...playerLinks];
+        return playerLinks;
     }
   };
 
@@ -133,11 +131,8 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href={{ pathname: "/" }} className="flex items-center gap-3 font-semibold text-brand-700">
-          <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-bold text-brand-800">
-            Ladder
-          </span>
-          <span className="hidden sm:inline text-slate-900">KS Sports Ladder</span>
+        <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-2 font-semibold text-brand-700">
+          <span className="text-lg text-slate-900">KS Sports Ladder</span>
         </Link>
 
         <nav className="hidden gap-1 md:flex">
