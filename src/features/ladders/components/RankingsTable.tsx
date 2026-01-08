@@ -97,8 +97,69 @@ export function RankingsTable({
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile Card View */}
+            <div className="block md:hidden divide-y divide-slate-100">
+                {filteredPlayers.map((player) => {
+                    const isCurrentUser = player.user_id === currentUserId;
+                    const eligible = player.current_rank && currentUserRank
+                        ? canChallenge(player.current_rank, currentUserRank)
+                        : false;
+                    const displayName = getDisplayName(player);
+                    const rankBadge = getRankBadge(player.current_rank || 0);
+
+                    return (
+                        <div
+                            key={player.id}
+                            className={`p-4 ${isCurrentUser ? "bg-brand-50" : "bg-white"}`}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${rankBadge.bg} ${rankBadge.text}`}>
+                                        {rankBadge.medal || `#${player.current_rank}`}
+                                    </div>
+                                    <Avatar name={displayName} email={player.users?.email} size="sm" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {displayName}
+                                            {isCurrentUser && (
+                                                <span className="ml-2 text-xs text-brand-600 font-normal">(You)</span>
+                                            )}
+                                        </p>
+                                        {player.users?.email && (
+                                            <p className="text-xs text-slate-500">{player.users.email}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            {!isCurrentUser && (
+                                <div className="mt-3">
+                                    {eligible ? (
+                                        <Link
+                                            href={`/challenges/create?ladder=${ladderId}&opponent=${player.user_id}`}
+                                            className="btn btn-primary btn-sm w-full inline-flex items-center justify-center gap-1"
+                                        >
+                                            <Swords className="h-3 w-3" />
+                                            Challenge
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            disabled
+                                            className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed w-full inline-flex items-center justify-center gap-1"
+                                            title="Out of challenge range"
+                                        >
+                                            <Lock className="h-3 w-3" />
+                                            Out of Range
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
