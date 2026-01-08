@@ -38,6 +38,9 @@ const nextConfig = {
     optimizeCss: true,
   },
 
+  // Output configuration
+  output: 'standalone',
+
   // TypeScript configuration
   typescript: {
     tsconfigPath: './tsconfig.json',
