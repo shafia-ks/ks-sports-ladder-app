@@ -135,21 +135,12 @@ export default function DashboardPage() {
     );
   }
 
-  const headerCta = isAdmin
-    ? (
-        <Link href="/admin" className="btn btn-primary">
-          <Settings className="h-4 w-4" />
-          Admin console
-        </Link>
-      )
-    : hasActiveLadder
-    ? (
-        <Link href="/challenges/create" className="btn btn-primary">
-          <Swords className="h-4 w-4" />
-          New challenge
-        </Link>
-      )
-    : undefined;
+  const headerCta = hasActiveLadder ? (
+    <Link href="/challenges/create" className="btn btn-primary">
+      <Swords className="h-4 w-4" />
+      New challenge
+    </Link>
+  ) : undefined;
 
   return (
     <ProtectedRoute requiredRoles={["player", "admin"]}>
