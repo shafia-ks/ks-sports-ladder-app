@@ -11,6 +11,22 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleRequest } from "@/components/ui/role-request";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
+// Extracted components
+import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
+import { Top5Rankings } from "@/features/ladders/components/dashboard/Top5Rankings";
+import { LadderInfoSidebar } from "@/features/ladders/components/dashboard/LadderInfoSidebar";
+import { RecentActivity } from "@/features/ladders/components/dashboard/RecentActivity";
+import { OrganizerActionBanner } from "@/features/ladders/components/dashboard/OrganizerActionBanner";
+import { OrganizerStatsGrid } from "@/features/ladders/components/dashboard/OrganizerStatsGrid";
+import { PendingApprovals } from "@/features/ladders/components/PendingApprovals";
+import { RankingsTable } from "@/features/ladders/components/RankingsTable";
+
+// Extracted hooks and utilities
+import { useLadderData } from "@/features/ladders/hooks/useLadderData";
+import { useLadderActions } from "@/features/ladders/hooks/useLadderActions";
+import { useLadderMembers } from "@/features/ladders/hooks/useLadderMembers";
+import { canChallenge as canChallengeUtil } from "@/features/ladders/utils/challengeRules";
+
 const SPORT_LABELS: Record<string, string> = {
   squash: "Squash",
   tennis: "Tennis",
@@ -591,11 +607,28 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
   const { user } = useAuth();
-  const [data, setData] = useState<LadderResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [joining, setJoining] = useState(false);
+
+  // Use custom hooks for data fetching
+  const { data, isLoading, error, refetch: fetchLadder } = useLadderData(params.id, user?.id);
+
+  // Use custom hooks for actions
+  const actions = useLadderActions(params.id, fetchLadder);
+  const { joining, approveMember, rejectMember, joinLadder } = actions;
+
+  // Use custom hooks for member management
+  const memberData = useLadderMembers(data?.members || [], user?.id);
+  const {
+    activeMembers,
+    pendingMembers,
+    activeMembersSorted,
+    isMember,
+    isPending,
+    currentUserRank,
+    currentMember
+  } = memberData;
+
   const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches" | "settings">("dashboard");
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [fixingRanks, setFixingRanks] = useState(false);
@@ -615,47 +648,30 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
 
-  const fetchLadder = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const headers: Record<string, string> = {};
-      if (user?.id) {
-        headers["x-user-id"] = user.id;
-      }
-
-      const res = await fetch(`/api/ladders/${params.id}`, { headers });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || "Failed to load ladder");
-      }
-      setData(json);
+  // Fetch dashboard stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id || !data?.ladder) return;
 
       const canAccessStats =
-        user &&
-        (json.organizerIds?.includes(user.id) ||
-          json.members?.some((m: LadderMember) => m.user_id === user.id && m.status === "active") ||
-          user.role === "admin");
+        data.members?.some((m: any) => m.user_id === user.id && m.status === "active") ||
+        data.organizerIds?.includes(user.id);
 
-      if (canAccessStats) {
-        try {
-          const statsRes = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
-          setDashboardStats(await statsRes.json());
-        } catch (err) {
-          // ignore dashboard stats error
+      if (!canAccessStats) return;
+
+      try {
+        const res = await fetch(`/api/ladders/${params.id}/dashboard-stats?user_id=${user.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          setDashboardStats(json.stats || null);
         }
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats:", err);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load ladder");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  // Top-level useEffect for ladder fetch
-  useEffect(() => {
-    fetchLadder();
-  }, [params.id]);
+    fetchStats();
+  }, [params.id, user?.id, data]);
 
   // Top-level useEffect for settingsForms initialization
   useEffect(() => {
@@ -677,29 +693,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
   const handleJoinLadder = async () => {
     if (!user) return;
-    setJoining(true);
     try {
-      const res = await fetch(`/api/ladders/${params.id}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
-      });
-
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || "Failed to join ladder");
-      }
-
-      // Refresh ladder data to show pending status
-      const refreshRes = await fetch(`/api/ladders/${params.id}`, {
-        headers: user?.id ? { 'x-user-id': user.id } : {}
-      });
-      const refreshData = await refreshRes.json();
-      setData(refreshData);
+      await joinLadder(user.id);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to join ladder");
-    } finally {
-      setJoining(false);
     }
   };
 
@@ -876,31 +873,19 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
   const ladderName = data?.ladder?.name ?? "Ladder";
   const members = data?.members ?? [];
-  const activeMembers = members.filter((m) => m.status === "active");
-  const pendingMembers = members.filter((m) => m.status === "pending");
   const organizerIds = data?.organizerIds ?? [];
   const memberCounts = data?.memberCounts ?? { active: activeMembers.length, pending: pendingMembers.length };
   const challengeCounts = data?.challengeCounts ?? { active: 0 };
   const matchCounts = data?.matchCounts ?? { confirmed: 0 };
   const hasZeroRanks = activeMembers.some((m) => !m.current_rank || m.current_rank <= 0);
-  const activeMembersSorted = [...activeMembers].sort((a, b) => {
-    const rankA = a.current_rank && a.current_rank > 0 ? a.current_rank : Number.MAX_SAFE_INTEGER;
-    const rankB = b.current_rank && b.current_rank > 0 ? b.current_rank : Number.MAX_SAFE_INTEGER;
-    return rankA - rankB;
-  });
-  // Filter pending members by search (after pendingMembers is defined)
+
+  // Filter pending members by search
   const filteredPendingMembers = pendingMembers.filter((member) => {
     const name = member.users?.full_name?.toLowerCase() || "";
     const email = member.users?.email?.toLowerCase() || "";
     const search = pendingSearch.toLowerCase();
     return name.includes(search) || email.includes(search);
   });
-
-  // Check current user's membership status
-  const userMembership = user ? members.find((m) => m.user_id === user.id) : null;
-  const currentMember = userMembership?.status === "active" ? userMembership : null;
-  const isMember = userMembership?.status === "active";
-  const isPending = userMembership?.status === "pending";
 
   // Check if user is organizer/admin for this ladder
   const isOrganizer = user ? user.role === "admin" || organizerIds.includes(user.id) : false;
