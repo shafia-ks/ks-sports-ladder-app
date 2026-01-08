@@ -1130,16 +1130,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   Ranking
                 </button>
                 <button
-                  onClick={() => setTab("challenges")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "challenges"
-                    ? "border-brand-600 text-brand-700"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
-                    }`}
-                >
-                  <Swords className="h-4 w-4" />
-                  Challenges
-                </button>
-                <button
                   onClick={() => setTab("matches")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "matches"
                     ? "border-brand-600 text-brand-700"
@@ -1201,13 +1191,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         action: () => setTab("ranking")
                       },
                       {
-                        label: "Challenges",
-                        value: challengeCounts.active,
-                        subtitle: "Active",
-                        icon: "swords",
-                        action: () => setTab("challenges")
-                      },
-                      {
                         label: "Matches",
                         value: matchCounts.confirmed,
                         subtitle: "Confirmed",
@@ -1246,6 +1229,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
                       return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
                     }}
+                    onChallenge={handleQuickChallenge}
                   />
                 )}
 
@@ -1427,11 +1411,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </tbody>
               </table>
             </div>
-          )}
-
-          {/* Challenges Tab */}
-          {tab === "challenges" && canAccessMembers && (
-            <ChallengesTabContent ladderId={params.id} userId={undefined} />
           )}
 
           {/* Matches Tab */}

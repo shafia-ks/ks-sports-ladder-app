@@ -21,6 +21,7 @@ interface RankingsTableProps {
     ladderId: string;
     canChallenge: (targetRank: number, myRank: number | null) => boolean;
     currentUserRank: number | null;
+    onChallenge: (playerId: string) => void;
 }
 
 export function RankingsTable({
@@ -28,7 +29,8 @@ export function RankingsTable({
     currentUserId,
     ladderId,
     canChallenge,
-    currentUserRank
+    currentUserRank,
+    onChallenge
 }: RankingsTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterOption, setFilterOption] = useState<"all" | "challengeable">("all");
@@ -134,135 +136,122 @@ export function RankingsTable({
                             {!isCurrentUser && (
                                 <div className="mt-3">
                                     {eligible ? (
-                                        <Link
-                                            href={`/challenges/create?ladder=${ladderId}&opponent=${player.user_id}`}
-                                            className="btn btn-primary btn-sm w-full inline-flex items-center justify-center gap-1"
-                                        >
-                                            <Swords className="h-3 w-3" />
-                                            Challenge
-                                        </Link>
-                                    ) : (
+                                        {
+                                            eligible?(
                                         <button
-                                            disabled
-                                            className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed w-full inline-flex items-center justify-center gap-1"
-                                            title="Out of challenge range"
+                                            onClick = {() => onChallenge(player.user_id)}
+                                    className="btn btn-primary btn-sm w-full inline-flex items-center justify-center gap-1"
                                         >
-                                            <Lock className="h-3 w-3" />
-                                            Out of Range
-                                        </button>
+                                    <Swords className="h-3 w-3" />
+                                    Challenge
+                                </button>
+                            ) : (
+                            <button
+                                disabled
+                                className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed w-full inline-flex items-center justify-center gap-1"
+                                title="Out of challenge range"
+                            >
+                                <Lock className="h-3 w-3" />
+                                Out of Range
+                            </button>
                                     )}
-                                </div>
-                            )}
                         </div>
-                    );
+                    )
+                }
+                        </div>
+            );
                 })}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                Rank
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                Player
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                Trend
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                Action
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {filteredPlayers.map((player) => {
-                            const isCurrentUser = player.user_id === currentUserId;
-                            const eligible = player.current_rank && currentUserRank
-                                ? canChallenge(player.current_rank, currentUserRank)
-                                : false;
-                            const displayName = getDisplayName(player);
-                            const rankBadge = getRankBadge(player.current_rank || 0);
-
-                            return (
-                                <tr
-                                    key={player.id}
-                                    className={`hover:bg-slate-50 transition-colors ${isCurrentUser ? "bg-brand-50" : ""
-                                        }`}
-                                >
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${rankBadge.bg} ${rankBadge.text}`}>
-                                                {rankBadge.medal || `#${player.current_rank}`}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar name={displayName} email={player.users?.email} size="sm" />
-                                            <div>
-                                                <p className="text-sm font-semibold text-slate-900">
-                                                    {displayName}
-                                                    {isCurrentUser && (
-                                                        <span className="ml-2 text-xs text-brand-600 font-normal">(You)</span>
-                                                    )}
-                                                </p>
-                                                {player.users?.email && (
-                                                    <p className="text-xs text-slate-500">{player.users.email}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        {/* Placeholder for trend - can be enhanced later */}
-                                        <span className="text-slate-400">—</span>
-                                    </td>
-                                    <td className="px-4 py-4 text-right">
-                                        {!isCurrentUser && (
-                                            <>
-                                                {eligible ? (
-                                                    <Link
-                                                        href={`/challenges/create?ladder=${ladderId}&opponent=${player.user_id}`}
-                                                        className="btn btn-primary btn-sm inline-flex items-center gap-1"
-                                                    >
-                                                        <Swords className="h-3 w-3" />
-                                                        Challenge
-                                                    </Link>
-                                                ) : (
-                                                    <button
-                                                        disabled
-                                                        className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed inline-flex items-center gap-1"
-                                                        title="Out of challenge range"
-                                                    >
-                                                        <Lock className="h-3 w-3" />
-                                                        Out of Range
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-
-            {filteredPlayers.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
-                    <p className="text-sm">No players found</p>
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm("")}
-                            className="text-xs text-brand-600 hover:text-brand-700 mt-2"
-                        >
-                            Clear search
-                        </button>
-                    )}
-                </div>
-            )}
         </div>
+
+            {/* Desktop Table View */ }
+    <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Rank
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Player
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Trend
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Action
+                    </th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+                {filteredPlayers.map((player) => {
+                    const isCurrentUser = player.user_id === currentUserId;
+                    const eligible = player.current_rank && currentUserRank
+                        ? canChallenge(player.current_rank, currentUserRank)
+                        : false;
+                    const displayName = getDisplayName(player);
+                    const rankBadge = getRankBadge(player.current_rank || 0);
+
+                    return (
+                        <tr
+                            key={player.id}
+                            className={`hover:bg-slate-50 transition-colors ${isCurrentUser ? "bg-brand-50" : ""
+                                }`}
+                        >
+                            <td className="px-4 py-4">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${rankBadge.bg} ${rankBadge.text}`}>
+                                        {rankBadge.medal || `#${player.current_rank}`}
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                    <Avatar name={displayName} email={player.users?.email} size="sm" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {displayName}
+                                            {isCurrentUser && (
+                                                <span className="ml-2 text-xs text-brand-600 font-normal">(You)</span>
+                                            )}
+                                        </p>
+                                        {player.users?.email && (
+                                            <p className="text-xs text-slate-500">{player.users.email}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                                {/* Placeholder for trend - can be enhanced later */}
+                                <Lock className="h-3 w-3" />
+                                Out of Range
+                            </button>
+                                        )}
+                        </>
+                    )
+                }
+                            </td>
+        </tr>
+        );
+                })}
+    </tbody>
+        </table >
+    </div >
+
+    {
+        filteredPlayers.length === 0 && (
+            <div className="text-center py-12 text-slate-500">
+                <p className="text-sm">No players found</p>
+                {searchTerm && (
+                    <button
+                        onClick={() => setSearchTerm("")}
+                        className="text-xs text-brand-600 hover:text-brand-700 mt-2"
+                    >
+                        Clear search
+                    </button>
+                )}
+            </div>
+        )
+    }
+        </div >
     );
 }
