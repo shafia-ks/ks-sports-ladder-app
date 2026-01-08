@@ -29,8 +29,14 @@ const featureList = [
 
 export default function HomePage() {
   const { isSignedIn } = useAuth();
-  const primaryCta = isSignedIn ? "/dashboard" : "/login";
-  const primaryLabel = isSignedIn ? "Go to dashboard" : "Sign in";
+
+  // Primary hero CTA logic (only dashboard when signed in)
+  // User requested removing "Sign in" below text for non-users, so we only show this if signed in?
+  // User said "remove sign in below text create ladders...". 
+  // If signed in, "Go to dashboard" is useful. If not, maybe show nothing or just not "Sign in"?
+  // Re-reading: "2) remove sign in below text create ladders..."
+  // I will hide the hero button entirely for non-signed-in users, or remove it as requested.
+  // Actually, typical pattern is if signed in -> Dashboard. If not -> maybe nothing since bottom banner has it?
 
   return (
     <div className="space-y-8">
@@ -45,19 +51,22 @@ export default function HomePage() {
                 <Shield className="h-4 w-4" />
                 Built for clubs and teams
               </p>
-              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
+              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl text-justify break-words hyphens-auto">
                 Modern sports ladder ops with club grade controls and governance
               </h1>
-              <p className="text-lg text-slate-700 max-w-2xl">
+              <p className="text-lg text-slate-700 max-w-2xl text-justify break-words hyphens-auto">
                 Create ladders, control challenges, manage disputes, and keep rankings fair. Role-based views for players, organizers, and admins—ready for production.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href={primaryCta} className="btn btn-primary shadow inline-flex items-center gap-2">
-                {primaryLabel} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            {/* CTA Button: Only show if signed in, otherwise empty as per request to remove "Sign in" below text */}
+            {isSignedIn && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link href="/dashboard" className="btn btn-primary shadow inline-flex items-center gap-2">
+                  Go to dashboard <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Right Column: 4 Key Features 2x2 */}
@@ -68,7 +77,7 @@ export default function HomePage() {
                   <item.icon className="h-4 w-4" />
                   <p className="text-xs font-bold uppercase tracking-wide">{item.title}</p>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">{item.body}</p>
+                <p className="text-xs text-slate-600 leading-relaxed text-justify">{item.body}</p>
               </div>
             ))}
           </div>
@@ -85,10 +94,10 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             {!isSignedIn ? (
               <>
-                <Link href="/login?mode=signup" className="btn btn-primary">
+                <Link href="/signup" className="btn bg-green-600 hover:bg-green-700 text-white border-transparent shadow-sm">
                   Create account
                 </Link>
-                <Link href="/login" className="btn btn-secondary bg-white">
+                <Link href="/login" className="btn btn-secondary bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm">
                   Sign in
                 </Link>
               </>
