@@ -823,13 +823,16 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
 
     // Validation: Only lower-ranked players can challenge higher-ranked players
+    // In ladder rankings: rank #1 is BETTER than rank #3
+    // So a player at rank #3 can challenge rank #1 or #2 (lower numbers = better ranks)
     if (!currentMember?.current_rank || !challengedMember.current_rank) {
       alert("Invalid ranks");
       return;
     }
 
-    // Current user must have lower rank number (higher in ladder) to challenge
-    if (currentMember.current_rank >= challengedMember.current_rank) {
+    // Current user must have HIGHER rank number (worse position) to challenge upward
+    // Example: rank #3 (current) can challenge rank #1 (target) because 3 > 1
+    if (currentMember.current_rank <= challengedMember.current_rank) {
       alert("You can only challenge players ranked above you");
       return;
     }
