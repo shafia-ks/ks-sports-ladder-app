@@ -37,14 +37,73 @@ export default function ProfilePage() {
         full_name: user.fullName || "",
         email: user.email || "",
         avatar_url: user.avatarUrl || "",
-        avatar_color: user.avatarUrl || "",
+        avatar_color: "", // Don't initialize with avatarUrl
       });
     }
   }, [user]);
 
   const handleAvatarUpload = async (file: File) => {
-    // TODO: Implement avatar upload to Supabase storage
-    console.log("Avatar upload not yet implemented:", file.name);
+    try {
+      if (!supabase) throw new Error("Supabase not configured");
+      if (!user?.id) throw new Error("User not found");
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("File size must be less than 5MB");
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error("File must be an image");
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      // Create unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update user profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update form data
+      setFormData(prev => ({
+        ...prev,
+        avatar_url: publicUrl,
+        avatar_color: "" // Clear color when uploading image
+      }));
+
+      setSuccess("Avatar uploaded successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to upload avatar";
+      setError(errorMessage);
+      console.error("Avatar upload error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,14 +152,14 @@ export default function ProfilePage() {
 
   const handleResetPassword = async () => {
     if (!user?.email) return;
-    
+
     setIsResettingPassword(true);
     setError(null);
     setSuccess(null);
 
     try {
       if (!supabase) throw new Error("Supabase not configured");
-      
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         user.email,
         {
@@ -139,7 +198,7 @@ export default function ProfilePage() {
 
       // Sign out and delete account
       await supabase.auth.signOut({ scope: "global" });
-      
+
       // Clear all auth tokens
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("sb-") || key.startsWith("auth-") || key.startsWith("profile_")) {
@@ -310,7 +369,7 @@ export default function ProfilePage() {
             Once you delete your account, there is no going back. This action cannot be undone.
             All your data will be permanently removed.
           </p>
-          
+
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
