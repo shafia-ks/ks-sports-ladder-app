@@ -236,7 +236,14 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Toast feedback, after state declaration and inside LadderDetailPage */}
+      {toast && (
+        <div className={`fixed top-6 left-1/2 z-50 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 font-semibold text-sm ${toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+          {toast.type === "success" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          {toast.message}
+        </div>
+      )}
       {/* Active Challenges */}
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
@@ -544,6 +551,52 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
 }
 
 export default function LadderDetailPage({ params }: { params: { id: string } }) {
+    // Toast state for feedback (must be first)
+    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+    // State for pending member approval UI
+    const [pendingSearch, setPendingSearch] = useState("");
+    const [approvingId, setApprovingId] = useState<string | null>(null);
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
+
+    // Approve member handler
+    const handleApproveMember = async (memberId: string) => {
+      setApprovingId(memberId);
+      try {
+        const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/approve`, { method: "POST" });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to approve member");
+        setToast({ type: "success", message: "Member approved!" });
+        await fetchLadder();
+      } catch (err) {
+        setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to approve member" });
+      } finally {
+        setApprovingId(null);
+      }
+    };
+
+    // Reject member handler
+    const handleRejectMember = async (memberId: string) => {
+      setRejectingId(memberId);
+      try {
+        const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/reject`, { method: "POST" });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to reject member");
+        setToast({ type: "success", message: "Member rejected." });
+        await fetchLadder();
+      } catch (err) {
+        setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to reject member" });
+      } finally {
+        setRejectingId(null);
+      }
+    };
+
+    // Toast auto-dismiss
+    useEffect(() => {
+      if (toast) {
+        const timer = setTimeout(() => setToast(null), 3000);
+        return () => clearTimeout(timer);
+      }
+    }, [toast]);
   const { user } = useAuth();
   const [data, setData] = useState<LadderResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -593,12 +646,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       if (canAccessStats) {
         try {
           const statsRes = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
-          if (statsRes.ok) {
-            const statsJson = await statsRes.json();
-            setDashboardStats(statsJson);
-          }
+          setDashboardStats(await statsRes.json());
         } catch (err) {
-          console.error("Failed to load dashboard stats:", err);
+          // ignore dashboard stats error
         }
       }
     } catch (err) {
@@ -608,27 +658,28 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  // Top-level useEffect for ladder fetch
   useEffect(() => {
     fetchLadder();
-  }, [params.id, user]);
+  }, [params.id]);
 
+  // Top-level useEffect for settingsForms initialization
   useEffect(() => {
-    if (data?.ladder) {
-      const ladder = data.ladder;
+    if (data && data.ladder) {
       setSettingsForms((prev) => ({
         ...prev,
-        description: ladder?.description || "",
-        location: ladder?.location || "",
-        visibility: (ladder?.visibility || "public") as "public" | "private",
-        rankingType: ladder?.ranking_rules?.type || "default-swap-minimal-drop",
-        kFactor: ladder?.ranking_rules?.kFactor ?? 24,
-        maxDrop: ladder?.ranking_rules?.maxDrop ?? 1,
-        maxPositionsUp: ladder?.challenge_rules?.max_positions_up ?? 3,
-        expiryDays: ladder?.challenge_rules?.expiry_days ?? 7,
-        cooldownHours: ladder?.challenge_rules?.cooldown_hours ?? 0,
+        description: data.ladder?.description || "",
+        location: data.ladder?.location || "",
+        visibility: (data.ladder?.visibility === "private" ? "private" : "public"),
+        rankingType: data.ladder?.ranking_rules?.type || "default-swap-minimal-drop",
+        kFactor: typeof data.ladder?.ranking_rules?.kFactor === "number" ? data.ladder.ranking_rules.kFactor : 24,
+        maxDrop: typeof data.ladder?.ranking_rules?.maxDrop === "number" ? data.ladder.ranking_rules.maxDrop : 1,
+        maxPositionsUp: typeof data.ladder?.challenge_rules?.max_positions_up === "number" ? data.ladder.challenge_rules.max_positions_up : 3,
+        expiryDays: typeof data.ladder?.challenge_rules?.expiry_days === "number" ? data.ladder.challenge_rules.expiry_days : 7,
+        cooldownHours: typeof data.ladder?.challenge_rules?.cooldown_hours === "number" ? data.ladder.challenge_rules.cooldown_hours : 0,
       }));
     }
-  }, [data?.ladder]);
+  }, [data]);
 
   const handleJoinLadder = async () => {
     if (!user) return;
@@ -842,6 +893,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     const rankA = a.current_rank && a.current_rank > 0 ? a.current_rank : Number.MAX_SAFE_INTEGER;
     const rankB = b.current_rank && b.current_rank > 0 ? b.current_rank : Number.MAX_SAFE_INTEGER;
     return rankA - rankB;
+  });
+  // Filter pending members by search (after pendingMembers is defined)
+  const filteredPendingMembers = pendingMembers.filter((member) => {
+    const name = member.users?.full_name?.toLowerCase() || "";
+    const email = member.users?.email?.toLowerCase() || "";
+    const search = pendingSearch.toLowerCase();
+    return name.includes(search) || email.includes(search);
   });
 
   // Check current user's membership status
@@ -1631,21 +1689,60 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
       {isOrganizer && pendingMembers.length > 0 && (
         <div className="card p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Pending Members</h2>
-          <div className="space-y-2">
-            {pendingMembers.map((member) => (
-              <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <Avatar name={member.users?.full_name || member.users?.email || "?"} size="sm" />
-                <span className="text-sm font-medium text-slate-900">
-                  {member.users?.full_name || member.users?.email || "Unknown"}
-                </span>
-                {renderRolePill(getMemberRole(member))}
-                <span className="ml-auto text-xs text-amber-700 flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  Awaiting approval
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-brand-600" />
+            Pending Member Approvals
+          </h2>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm mb-2"
+              onChange={e => setPendingSearch(e.target.value)}
+              value={pendingSearch}
+            />
+          </div>
+          <div className="space-y-3">
+            {filteredPendingMembers.map((member) => (
+              <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
+                <Avatar name={member.users?.full_name || member.users?.email || "?"} size="md" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold text-slate-900 truncate">
+                      {member.users?.full_name || member.users?.email || "Unknown"}
+                    </span>
+                    {renderRolePill(getMemberRole(member))}
+                  </div>
+                  {member.users?.email && (
+                    <span className="text-xs text-slate-500 truncate">{member.users.email}</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className={`btn btn-success btn-sm flex items-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
+                    onClick={() => handleApproveMember(member.id)}
+                    disabled={approvingId === member.id}
+                  >
+                    {approvingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                    Approve
+                  </button>
+                  <button
+                    className={`btn btn-danger btn-sm flex items-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
+                    onClick={() => handleRejectMember(member.id)}
+                    disabled={rejectingId === member.id}
+                  >
+                    {rejectingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    Reject
+                  </button>
+                </div>
+                <span className="ml-2 text-xs text-amber-700 flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> Awaiting approval
                 </span>
               </div>
             ))}
+            {filteredPendingMembers.length === 0 && (
+              <div className="text-center text-sm text-slate-500 py-8">No pending requests found.</div>
+            )}
           </div>
         </div>
       )}
