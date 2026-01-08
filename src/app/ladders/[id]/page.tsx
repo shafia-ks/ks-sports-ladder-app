@@ -237,13 +237,6 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
 
   return (
     <div className="space-y-6 relative">
-      {/* Toast feedback, after state declaration and inside LadderDetailPage */}
-      {toast && (
-        <div className={`fixed top-6 left-1/2 z-50 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 font-semibold text-sm ${toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-          {toast.type === "success" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-          {toast.message}
-        </div>
-      )}
       {/* Active Challenges */}
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
@@ -422,8 +415,8 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
                   key={reason}
                   onClick={() => setCancelReason(reason)}
                   className={`w-full text-left px-4 py-2 rounded-lg border transition ${cancelReason === reason
-                      ? "border-brand-600 bg-brand-50 text-brand-900"
-                      : "border-slate-200 hover:border-slate-300"
+                    ? "border-brand-600 bg-brand-50 text-brand-900"
+                    : "border-slate-200 hover:border-slate-300"
                     }`}
                 >
                   {reason}
@@ -551,52 +544,52 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
 }
 
 export default function LadderDetailPage({ params }: { params: { id: string } }) {
-    // Toast state for feedback (must be first)
-    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-    // State for pending member approval UI
-    const [pendingSearch, setPendingSearch] = useState("");
-    const [approvingId, setApprovingId] = useState<string | null>(null);
-    const [rejectingId, setRejectingId] = useState<string | null>(null);
+  // Toast state for feedback (must be first)
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  // State for pending member approval UI
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
-    // Approve member handler
-    const handleApproveMember = async (memberId: string) => {
-      setApprovingId(memberId);
-      try {
-        const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/approve`, { method: "POST" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to approve member");
-        setToast({ type: "success", message: "Member approved!" });
-        await fetchLadder();
-      } catch (err) {
-        setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to approve member" });
-      } finally {
-        setApprovingId(null);
-      }
-    };
+  // Approve member handler
+  const handleApproveMember = async (memberId: string) => {
+    setApprovingId(memberId);
+    try {
+      const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/approve`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to approve member");
+      setToast({ type: "success", message: "Member approved!" });
+      await fetchLadder();
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to approve member" });
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
-    // Reject member handler
-    const handleRejectMember = async (memberId: string) => {
-      setRejectingId(memberId);
-      try {
-        const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/reject`, { method: "POST" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to reject member");
-        setToast({ type: "success", message: "Member rejected." });
-        await fetchLadder();
-      } catch (err) {
-        setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to reject member" });
-      } finally {
-        setRejectingId(null);
-      }
-    };
+  // Reject member handler
+  const handleRejectMember = async (memberId: string) => {
+    setRejectingId(memberId);
+    try {
+      const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/reject`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to reject member");
+      setToast({ type: "success", message: "Member rejected." });
+      await fetchLadder();
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to reject member" });
+    } finally {
+      setRejectingId(null);
+    }
+  };
 
-    // Toast auto-dismiss
-    useEffect(() => {
-      if (toast) {
-        const timer = setTimeout(() => setToast(null), 3000);
-        return () => clearTimeout(timer);
-      }
-    }, [toast]);
+  // Toast auto-dismiss
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
   const { user } = useAuth();
   const [data, setData] = useState<LadderResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1021,8 +1014,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             <button
               onClick={() => setTab("dashboard")}
               className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
-                  ? "border-brand-600 text-brand-700"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
+                ? "border-brand-600 text-brand-700"
+                : "border-transparent text-slate-600 hover:text-slate-900"
                 }`}
             >
               <LayoutDashboard className="h-4 w-4" />
@@ -1033,8 +1026,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <button
                   onClick={() => setTab("ranking")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === "ranking"
-                      ? "border-brand-600 text-brand-700"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                    ? "border-brand-600 text-brand-700"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Ranking
@@ -1042,8 +1035,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <button
                   onClick={() => setTab("challenges")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "challenges"
-                      ? "border-brand-600 text-brand-700"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                    ? "border-brand-600 text-brand-700"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   <Swords className="h-4 w-4" />
@@ -1052,8 +1045,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <button
                   onClick={() => setTab("matches")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "matches"
-                      ? "border-brand-600 text-brand-700"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                    ? "border-brand-600 text-brand-700"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   <Target className="h-4 w-4" />
@@ -1063,8 +1056,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   <button
                     onClick={() => setTab("settings")}
                     className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "settings"
-                        ? "border-brand-600 text-brand-700"
-                        : "border-transparent text-slate-600 hover:text-slate-900"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
                       }`}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1256,9 +1249,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
               {/* Request to Become Organizer - Only for Players */}
               {!isOrganizer && currentMember && user?.role === "player" && (
-                <RoleRequest 
-                  currentRole="player" 
-                  hasActivRequest={false} 
+                <RoleRequest
+                  currentRole="player"
+                  hasActivRequest={false}
                   ladder_id={params.id}
                 />
               )}
@@ -1379,19 +1372,19 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     const currentUserRank = currentMember?.current_rank || 0;
                     const targetRank = member.current_rank || 0;
                     const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
-                    
+
                     // Can only challenge if:
                     // 1. Not yourself
                     // 2. Target is ranked ABOVE you (lower rank number)
                     // 3. Within maxPositionsUp limit
                     // 4. Target is not busy
-                    const canChallenge = !isCurrentUser && 
-                                       currentUserRank > 0 && 
-                                       targetRank > 0 &&
-                                       targetRank < currentUserRank && 
-                                       (currentUserRank - targetRank) <= maxPositionsUp &&
-                                       !isBusy;
-                    
+                    const canChallenge = !isCurrentUser &&
+                      currentUserRank > 0 &&
+                      targetRank > 0 &&
+                      targetRank < currentUserRank &&
+                      (currentUserRank - targetRank) <= maxPositionsUp &&
+                      !isBusy;
+
                     return (
                       <tr key={member.id} className="border-t border-slate-100">
                         <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
