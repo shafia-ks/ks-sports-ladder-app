@@ -1074,6 +1074,67 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           {/* Dashboard Tab */}
           {tab === "dashboard" && (
             <div className="space-y-6">
+              {/* Pending Member Approvals - Top of Dashboard for Organizers */}
+              {isOrganizer && pendingMembers.length > 0 && (
+                <div className="card p-6">
+                  <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-brand-600" />
+                    Pending Member Approvals
+                  </h2>
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm mb-2"
+                      onChange={e => setPendingSearch(e.target.value)}
+                      value={pendingSearch}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    {filteredPendingMembers.map((member) => (
+                      <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
+                        <Avatar name={member.users?.full_name || member.users?.email || "?"} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-base font-semibold text-slate-900 truncate">
+                              {member.users?.full_name || `${member.users?.first_name || ''} ${member.users?.last_name || ''}`.trim() || member.users?.email || "Unknown"}
+                            </span>
+                            {renderRolePill(getMemberRole(member))}
+                            <span className="text-xs text-amber-700 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Awaiting approval
+                            </span>
+                          </div>
+                          {member.users?.email && (
+                            <span className="text-xs text-slate-500 truncate">{member.users.email}</span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            className={`btn btn-success btn-sm flex items-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
+                            onClick={() => handleApproveMember(member.id)}
+                            disabled={approvingId === member.id}
+                          >
+                            {approvingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                            Approve
+                          </button>
+                          <button
+                            className={`btn btn-danger btn-sm flex items-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
+                            onClick={() => handleRejectMember(member.id)}
+                            disabled={rejectingId === member.id}
+                          >
+                            {rejectingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredPendingMembers.length === 0 && (
+                      <div className="text-center text-sm text-slate-500 py-8">No pending requests found.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {!isMember && (
                 <div className="card p-6">
                   <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
@@ -1220,15 +1281,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
                   {/* Quick Actions */}
                   <div className="mt-6 flex flex-wrap gap-3">
-                    {pendingMembers.length > 0 && (
-                      <Link
-                        href={`/organizer/${params.id}/members`}
-                        className="btn btn-primary flex items-center gap-2"
-                      >
-                        <Users className="h-4 w-4" />
-                        Approve Members ({pendingMembers.length})
-                      </Link>
-                    )}
                     <Link
                       href={`/organizer/${params.id}/rankings`}
                       className="btn btn-secondary flex items-center gap-2"
@@ -1680,65 +1732,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         </>
       )}
 
-      {isOrganizer && pendingMembers.length > 0 && (
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-brand-600" />
-            Pending Member Approvals
-          </h2>
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm mb-2"
-              onChange={e => setPendingSearch(e.target.value)}
-              value={pendingSearch}
-            />
-          </div>
-          <div className="space-y-3">
-            {filteredPendingMembers.map((member) => (
-              <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
-                <Avatar name={member.users?.full_name || member.users?.email || "?"} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold text-slate-900 truncate">
-                      {member.users?.full_name || member.users?.email || "Unknown"}
-                    </span>
-                    {renderRolePill(getMemberRole(member))}
-                  </div>
-                  {member.users?.email && (
-                    <span className="text-xs text-slate-500 truncate">{member.users.email}</span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className={`btn btn-success btn-sm flex items-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
-                    onClick={() => handleApproveMember(member.id)}
-                    disabled={approvingId === member.id}
-                  >
-                    {approvingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                    Approve
-                  </button>
-                  <button
-                    className={`btn btn-danger btn-sm flex items-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""}`}
-                    onClick={() => handleRejectMember(member.id)}
-                    disabled={rejectingId === member.id}
-                  >
-                    {rejectingId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                    Reject
-                  </button>
-                </div>
-                <span className="ml-2 text-xs text-amber-700 flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Awaiting approval
-                </span>
-              </div>
-            ))}
-            {filteredPendingMembers.length === 0 && (
-              <div className="text-center text-sm text-slate-500 py-8">No pending requests found.</div>
-            )}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
