@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Shield, Sparkles, ShieldCheck, Timer, BarChart3, Users } from "lucide-react";
+import { ArrowRight, Shield, ShieldCheck, Timer, BarChart3, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function HomePage() {

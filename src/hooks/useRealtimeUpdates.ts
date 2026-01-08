@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/react-query/query-keys';
 
@@ -12,17 +12,14 @@ export function useRealtimeLadder(ladderId: string, enabled: boolean = true) {
     useEffect(() => {
         if (!enabled || !ladderId) return;
 
-        // Note: Supabase client would be imported here
-        // For now, we'll set up the structure
-
-        const handleUpdate = useCallback((payload: any) => {
+        const handleUpdate = (payload: any) => {
             console.log('[Realtime] Ladder update received:', payload);
 
             // Invalidate ladder query to refetch data
             queryClient.invalidateQueries({
                 queryKey: queryKeys.ladder(ladderId)
             });
-        }, [ladderId, queryClient]);
+        };
 
         // TODO: Set up Supabase realtime subscription
         // const channel = supabase
@@ -52,14 +49,14 @@ export function useRealtimeChallenges(ladderId: string, enabled: boolean = true)
     useEffect(() => {
         if (!enabled || !ladderId) return;
 
-        const handleUpdate = useCallback((payload: any) => {
+        const handleUpdate = (payload: any) => {
             console.log('[Realtime] Challenge update received:', payload);
 
             // Invalidate challenges query
             queryClient.invalidateQueries({
                 queryKey: queryKeys.challenges(ladderId)
             });
-        }, [ladderId, queryClient]);
+        };
 
         // TODO: Set up Supabase realtime subscription for challenges
 
@@ -78,7 +75,7 @@ export function useRealtimeNotifications(userId: string, enabled: boolean = true
     useEffect(() => {
         if (!enabled || !userId) return;
 
-        const handleUpdate = useCallback((payload: any) => {
+        const handleUpdate = (payload: any) => {
             console.log('[Realtime] Notification received:', payload);
 
             // Invalidate notifications query
@@ -93,7 +90,7 @@ export function useRealtimeNotifications(userId: string, enabled: boolean = true
                     icon: '/icon.svg'
                 });
             }
-        }, [userId, queryClient]);
+        };
 
         // TODO: Set up Supabase realtime subscription for notifications
 
