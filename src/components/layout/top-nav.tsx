@@ -135,7 +135,7 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-3 font-semibold text-brand-700">
-          <div className="relative h-8 w-8 overflow-hidden rounded-lg shadow-sm">
+          <div className="relative h-8 w-8 md:h-9 md:w-9 overflow-hidden rounded-lg shadow-sm">
             <Image
               src="/app-icon-base.png"
               alt="Logo"
@@ -143,7 +143,7 @@ export function TopNav() {
               className="object-cover"
             />
           </div>
-          <span className="text-lg text-slate-900">KS Sports Ladder</span>
+          <span className="text-base md:text-xl font-bold text-slate-900 tracking-tight">KS Sports Ladder</span>
         </Link>
 
         <nav className="hidden gap-1 md:flex">
@@ -181,8 +181,10 @@ export function TopNav() {
                   >
                     <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
                   </Link>
-                  <div className="flex flex-col items-start">
-                    <p className="text-xs font-medium text-slate-800">{user.fullName || user.email}</p>
+                  <div className="hidden lg:flex flex-col items-start">
+                    <p className="text-xs font-medium text-slate-800 max-w-[150px] truncate">
+                      {user.fullName || user.email}
+                    </p>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
                       {user.role}
                     </span>
