@@ -241,7 +241,7 @@ export default function ChallengesPage() {
                         key={challenge.id}
                         className="border border-slate-200 rounded-lg p-4 hover:border-brand-300 transition"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                           <div className="flex items-start gap-3 flex-1">
                             <Avatar
                               name={opponent?.full_name || opponent?.email || "?"}
@@ -295,24 +295,18 @@ export default function ChallengesPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex gap-2 w-full sm:w-auto">
                             {!isChallenger && challenge.status === "Pending" && (
                               <>
                                 <button
                                   onClick={() => handleAccept(challenge.id)}
-                                  className="btn btn-sm btn-primary"
+                                  className="btn btn-sm btn-primary flex-1 sm:flex-none"
                                 >
                                   Accept
                                 </button>
                                 <button
-                                  onClick={() => setShowCounterProposal(challenge.id)}
-                                  className="btn btn-sm border border-brand-300 text-brand-700 hover:bg-brand-50"
-                                >
-                                  Counter
-                                </button>
-                                <button
                                   onClick={() => handleDecline(challenge.id)}
-                                  className="btn btn-sm border border-slate-300 text-slate-700 hover:bg-slate-50"
+                                  className="btn btn-sm border border-slate-300 text-slate-700 hover:bg-slate-50 flex-1 sm:flex-none"
                                 >
                                   Decline
                                 </button>
@@ -322,7 +316,7 @@ export default function ChallengesPage() {
                             {canCancel && (
                               <button
                                 onClick={() => setShowCancelModal(challenge.id)}
-                                className="btn btn-sm border border-red-300 text-red-700 hover:bg-red-50"
+                                className="btn btn-sm border border-red-300 text-red-700 hover:bg-red-50 w-full sm:w-auto"
                               >
                                 <X className="h-3 w-3" />
                                 Cancel
@@ -407,11 +401,10 @@ export default function ChallengesPage() {
                     <button
                       key={reason}
                       onClick={() => setCancelReason(reason)}
-                      className={`w-full text-left px-4 py-2 rounded-lg border transition ${
-                        cancelReason === reason
+                      className={`w-full text-left px-4 py-2 rounded-lg border transition ${cancelReason === reason
                           ? "border-brand-600 bg-brand-50 text-brand-900"
                           : "border-slate-200 hover:border-slate-300"
-                      }`}
+                        }`}
                     >
                       {reason}
                     </button>

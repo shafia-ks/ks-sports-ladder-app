@@ -208,6 +208,17 @@ export function TopNav() {
             </>
           )}
 
+          {/* Mobile profile avatar - shown before menu button */}
+          {!isLoading && isSignedIn && user && (
+            <Link
+              href={{ pathname: "/profile" }}
+              className="mr-2 md:hidden"
+              title="Profile settings"
+            >
+              <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
+            </Link>
+          )}
+
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="rounded-lg p-2 hover:bg-slate-100 md:hidden"
