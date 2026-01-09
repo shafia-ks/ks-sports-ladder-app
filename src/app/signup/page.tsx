@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Trophy, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useEffect } from "react";
@@ -212,8 +213,13 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="rounded-full bg-brand-600 p-3">
-            <Trophy className="h-6 w-6 text-white" />
+          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-md">
+            <Image
+              src="/app-icon-base.png"
+              alt="KS Sports Ladder"
+              fill
+              className="object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Sports Ladder</h1>
           <p className="text-sm text-slate-600">Create your account</p>
@@ -251,135 +257,135 @@ export default function SignupPage() {
               </div>
             )}
 
-          <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-slate-700">
+                  First Name *
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John"
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="lastName" className="block text-sm font-medium text-slate-700">
+                  Last Name *
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe"
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <label htmlFor="firstName" className="block text-sm font-medium text-slate-700">
-                First Name *
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                Email *
               </label>
               <input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="John"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
                 required
                 className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
+
             <div className="space-y-2">
-              <label htmlFor="lastName" className="block text-sm font-medium text-slate-700">
-                Last Name *
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                Password *
               </label>
               <input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Doe"
+                id="password"
+                type="password"
+                value={password}
+                onChange={handlePasswordChange}
+                placeholder="••••••••"
+                required
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              {password && <PasswordStrength validation={passwordValidation} />}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
+                Confirm Password *
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
                 required
                 className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-              Email *
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+            {/* GDPR Checkbox */}
+            <div className="flex items-start gap-2">
+              <input
+                id="gdpr"
+                type="checkbox"
+                checked={gdprAccepted}
+                onChange={(e) => setGdprAccepted(e.target.checked)}
+                className="mt-1 rounded border-slate-300"
+              />
+              <label htmlFor="gdpr" className="text-xs text-slate-600">
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowGdprModal(true)}
+                  className="font-semibold text-brand-600 hover:underline"
+                >
+                  Privacy Policy
+                </button>
+                {" "}(GDPR Compliant) *
+              </label>
+            </div>
 
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-              Password *
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              placeholder="••••••••"
-              required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-            {password && <PasswordStrength validation={passwordValidation} />}
-          </div>
+            {/* Sportsmanship Checkbox */}
+            <div className="flex items-start gap-2">
+              <input
+                id="sportsmanship"
+                type="checkbox"
+                checked={sportsmanshipAccepted}
+                onChange={(e) => setSportsmanshipAccepted(e.target.checked)}
+                className="mt-1 rounded border-slate-300"
+              />
+              <label htmlFor="sportsmanship" className="text-xs text-slate-600">
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowSportsmanshipModal(true)}
+                  className="font-semibold text-brand-600 hover:underline"
+                >
+                  Code of Conduct
+                </button>
+                {" "}*
+              </label>
+            </div>
 
-          <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
-              Confirm Password *
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
-
-          {/* GDPR Checkbox */}
-          <div className="flex items-start gap-2">
-            <input
-              id="gdpr"
-              type="checkbox"
-              checked={gdprAccepted}
-              onChange={(e) => setGdprAccepted(e.target.checked)}
-              className="mt-1 rounded border-slate-300"
-            />
-            <label htmlFor="gdpr" className="text-xs text-slate-600">
-              I agree to the{" "}
-              <button
-                type="button"
-                onClick={() => setShowGdprModal(true)}
-                className="font-semibold text-brand-600 hover:underline"
-              >
-                Privacy Policy
-              </button>
-              {" "}(GDPR Compliant) *
-            </label>
-          </div>
-
-          {/* Sportsmanship Checkbox */}
-          <div className="flex items-start gap-2">
-            <input
-              id="sportsmanship"
-              type="checkbox"
-              checked={sportsmanshipAccepted}
-              onChange={(e) => setSportsmanshipAccepted(e.target.checked)}
-              className="mt-1 rounded border-slate-300"
-            />
-            <label htmlFor="sportsmanship" className="text-xs text-slate-600">
-              I agree to the{" "}
-              <button
-                type="button"
-                onClick={() => setShowSportsmanshipModal(true)}
-                className="font-semibold text-brand-600 hover:underline"
-              >
-                Code of Conduct
-              </button>
-              {" "}*
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full"
-          >
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-full"
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </button>
+          </form>
         )}
 
         {/* Divider */}
