@@ -61,8 +61,8 @@ export async function GET() {
           email: u.email,
           full_name: fullName || u.email || null,
           role: "player",
-          gdpr_accepted: false,
-          sportsmanship_accepted: false,
+          gdpr_accepted: meta.gdpr_accepted || false,
+          sportsmanship_accepted: meta.sportsmanship_accepted || false,
           created_at: u.created_at,
         };
       });

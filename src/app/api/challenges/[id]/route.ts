@@ -50,50 +50,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (parsed.data.status === "Accepted") {
         updateData.accepted_at = new Date().toISOString();
 
-        // Auto-create match when challenge is accepted
-        const { data: matchData, error: matchError } = await supabaseAdmin
-          .from("matches")
-          .insert({
-            ladder_id: challenge.ladder_id,
-            player1_id: challenge.challenger_id,
-            player2_id: challenge.challenged_id,
-            challenge_id: params.id,
-            status: "pending",
-            sets: [],
-            confirmed_by: [],
-          })
-          .select("id")
-          .single();
+        // NOTE: We do NOT auto-create a match when challenge is accepted.
+        // Matches are created when players submit results via the matches API.
+        // A challenge being "Accepted" just means both players agreed to play.
+        // The actual match record (with scores/winner) is created later.
 
-        if (matchError) {
-          console.error("[PATCH /api/challenges/:id] Match creation error:", matchError.message);
-          return NextResponse.json({ error: "Failed to create match: " + matchError.message }, { status: 500 });
-        }
+        console.log("[PATCH /api/challenges/:id] Challenge accepted, but match creation deferred until result submission");
 
-        updateData.match_id = matchData.id;
-
-        // --- TEMPORARILY DISABLED AUTO-CANCEL to isolate 500 error ---
-        // Cancel other pending challenges for both players
-        /* 
-        const playerIds = [challenge.challenger_id, challenge.challenged_id];
-        const playerFilter = `challenger_id.in.(${playerIds.join(",")}),challenged_id.in.(${playerIds.join(",")})`;
-
-        const { error: cancelError } = await supabaseAdmin
-          .from("challenges")
-          .update({
-            status: "Cancelled",
-            cancelled_at: new Date().toISOString(),
-            cancellation_reason: "Another challenge was accepted",
-          })
-          .eq("status", "Pending")
-          .neq("id", params.id)
-          .or(playerFilter);
-
-        if (cancelError) {
-          console.error("Failed to auto-cancel pending challenges:", cancelError);
-        }
-        */
-        // -----------------------------------------------------------
 
       } else if (parsed.data.status === "Declined") {
         updateData.declined_at = new Date().toISOString();
