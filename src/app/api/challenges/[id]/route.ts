@@ -50,13 +50,68 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (parsed.data.status === "Accepted") {
         updateData.accepted_at = new Date().toISOString();
 
-        // NOTE: We do NOT auto-create a match when challenge is accepted.
-        // Matches are created when players submit results via the matches API.
-        // A challenge being "Accepted" just means both players agreed to play.
-        // The actual match record (with scores/winner) is created later.
+        // Auto-create match when challenge is accepted
+        // This creates a "scheduled" match visible to all ladder members
+        // Players will later submit results to update winner and rankings
+        console.log("[PATCH /api/challenges/:id] Creating scheduled match for accepted challenge");
 
-        console.log("[PATCH /api/challenges/:id] Challenge accepted, but match creation deferred until result submission");
+        const matchInsertData = {
+          ladder_id: challenge.ladder_id,
+          player1_id: challenge.challenger_id,
+          player2_id: challenge.challenged_id,
+          challenge_id: params.id,
+          status: "pending", // Match is scheduled but not yet played
+          winner_id: null, // Will be set when result is submitted
+          set_scores: null, // Will be set when result is submitted  
+          played_at: null, // Will be set when result is submitted
+        };
 
+        console.log("[PATCH /api/challenges/:id] Match data:", matchInsertData);
+
+        const { data: matchData, error: matchError } = await supabaseAdmin
+          .from("matches")
+          .insert(matchInsertData)
+          .select("id")
+          .single();
+
+        if (matchError) {
+          console.error("[PATCH /api/challenges/:id] Match creation failed:");
+          console.error("  Error message:", matchError.message);
+          console.error("  Error code:", matchError.code);
+          console.error("  Error details:", matchError.details);
+          console.error("  Error hint:", matchError.hint);
+
+          // If status constraint fails, try with capitalized "Pending"
+          if (matchError.code === "23514" || matchError.message?.includes("status")) {
+            console.log("[PATCH /api/challenges/:id] Retrying with status 'Pending'");
+            const retryData = { ...matchInsertData, status: "Pending" };
+            const { data: retryMatch, error: retryError } = await supabaseAdmin
+              .from("matches")
+              .insert(retryData)
+              .select("id")
+              .single();
+
+            if (retryError) {
+              console.error("[PATCH /api/challenges/:id] Retry also failed:", retryError);
+              return NextResponse.json({
+                error: "Failed to create match",
+                details: retryError.message
+              }, { status: 500 });
+            }
+
+            updateData.match_id = retryMatch.id;
+            console.log("[PATCH /api/challenges/:id] Match created successfully (retry):", retryMatch.id);
+          } else {
+            return NextResponse.json({
+              error: "Failed to create match",
+              details: matchError.message,
+              code: matchError.code
+            }, { status: 500 });
+          }
+        } else {
+          updateData.match_id = matchData.id;
+          console.log("[PATCH /api/challenges/:id] Match created successfully:", matchData.id);
+        }
 
       } else if (parsed.data.status === "Declined") {
         updateData.declined_at = new Date().toISOString();
