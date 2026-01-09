@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Home, LayoutDashboard, Trophy, Bell, Settings, Menu, X, LogOut, LogIn, Users, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -131,7 +132,15 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-2 font-semibold text-brand-700">
+        <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-3 font-semibold text-brand-700">
+          <div className="relative h-8 w-8 overflow-hidden rounded-lg shadow-sm">
+            <Image
+              src="/app-icon-base.png"
+              alt="Logo"
+              fill
+              className="object-cover"
+            />
+          </div>
           <span className="text-lg text-slate-900">KS Sports Ladder</span>
         </Link>
 

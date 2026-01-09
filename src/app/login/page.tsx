@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
@@ -108,8 +109,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="rounded-full bg-brand-600 p-3">
-            <Trophy className="h-6 w-6 text-white" />
+          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-md">
+            <Image
+              src="/app-icon-base.png"
+              alt="KS Sports Ladder"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Sports Ladder</h1>
           <p className="text-sm text-slate-600">Sign in to your account</p>
