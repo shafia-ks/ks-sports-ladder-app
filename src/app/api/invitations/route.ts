@@ -103,6 +103,11 @@ export async function POST(req: NextRequest) {
           .eq("id", targetLadderId)
           .single();
 
+        // Calculate expiration date (30 days from now)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        const expiresAtISO = expiresAt.toISOString();
+
         // Create invitations for each email
         const invitations = emails.map((emailAddress: string) => ({
           ladder_id: targetLadderId,
@@ -110,6 +115,7 @@ export async function POST(req: NextRequest) {
           invited_by: invited_by,
           status: "pending",
           invitation_type: "email",
+          expires_at: expiresAtISO,
         }));
 
         const { data, error } = await supabaseAdmin
@@ -171,14 +177,20 @@ export async function POST(req: NextRequest) {
 
         const userEmailMap = new Map(users.map((u) => [u.id, u.email]));
 
+        // Calculate expiration date (30 days from now)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        const expiresAtISO = expiresAt.toISOString();
+
         // Create invitations
         const invitations = userIds.map((userId: string) => ({
           ladder_id: targetLadderId,
           user_id: userId,
           email: userEmailMap.get(userId),
-          invited_by: invited_by, // Added missing invited_by field
+          invited_by: invited_by,
           status: "pending",
           invitation_type: "existing_user",
+          expires_at: expiresAtISO,
         }));
 
         const { data, error } = await supabaseAdmin

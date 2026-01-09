@@ -61,7 +61,7 @@ Data is processed in accordance with GDPR. Any international transfers include a
 
 ## 9. Contact Us
 For data protection inquiries:
-- Email: privacy@sportsladder.app
+- Email: khaderwiz@outlook.com
 - Data Protection Officer available upon request
 
 ## 10. Your Choices
