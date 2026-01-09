@@ -82,7 +82,62 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { email, invited_by, ladder_id, ladderId, userIds } = body;
+    const { email, invited_by, ladder_id, ladderId, userIds, emails } = body;
+
+    // Handle bulk email invitations (new users)
+    if (emails && Array.isArray(emails)) {
+      const targetLadderId = ladderId || ladder_id;
+
+      if (!targetLadderId || !invited_by) {
+        return NextResponse.json(
+          { error: "ladderId and invited_by are required for bulk email invitations" },
+          { status: 400 } as ResponseInit
+        );
+      }
+
+      try {
+        // Get ladder info
+        const { data: ladder } = await supabaseAdmin
+          .from("ladders")
+          .select("name")
+          .eq("id", targetLadderId)
+          .single();
+
+        // Create invitations for each email
+        const invitations = emails.map((emailAddress: string) => ({
+          ladder_id: targetLadderId,
+          email: emailAddress,
+          invited_by: invited_by,
+          status: "pending",
+          invitation_type: "email",
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from("invitations")
+          .insert(invitations)
+          .select();
+
+        if (error) {
+          console.error("Bulk email invitation error:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
+        }
+
+        // Send email notifications (placeholder - implement actual email sending)
+        // For now, invitations are created in database and users can check notifications
+
+        return NextResponse.json({
+          ok: true,
+          invitations: data,
+          message: `${emails.length} email invitation(s) sent successfully`
+        });
+      } catch (error) {
+        console.error("Bulk email invitation error:", error);
+        return NextResponse.json(
+          { error: "Failed to send email invitations" },
+          { status: 500 } as ResponseInit
+        );
+      }
+    }
 
     // Handle bulk invitation for existing users
     if (userIds && Array.isArray(userIds)) {

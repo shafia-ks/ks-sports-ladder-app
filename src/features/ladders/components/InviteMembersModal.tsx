@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Search, Mail, Users, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/auth/auth-context";
 
 interface Props {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Props) {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<"existing" | "email">("existing");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -59,6 +61,7 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
                 body: JSON.stringify({
                     ladderId,
                     userIds: selectedUsers,
+                    invited_by: user?.id, // Add current user as inviter
                 }),
             });
 
@@ -91,12 +94,13 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
         setMessage("");
 
         try {
-            const res = await fetch("/api/invitations/email", {
+            const res = await fetch("/api/invitations", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ladderId,
                     emails: emailList,
+                    invited_by: user?.id, // Add current user as inviter
                 }),
             });
 
@@ -140,8 +144,8 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
                     <button
                         onClick={() => setActiveTab("existing")}
                         className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === "existing"
-                                ? "text-brand-600 border-b-2 border-brand-600"
-                                : "text-slate-600 hover:text-slate-900"
+                            ? "text-brand-600 border-b-2 border-brand-600"
+                            : "text-slate-600 hover:text-slate-900"
                             }`}
                     >
                         <Users className="h-4 w-4 inline mr-2" />
@@ -150,8 +154,8 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
                     <button
                         onClick={() => setActiveTab("email")}
                         className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === "email"
-                                ? "text-brand-600 border-b-2 border-brand-600"
-                                : "text-slate-600 hover:text-slate-900"
+                            ? "text-brand-600 border-b-2 border-brand-600"
+                            : "text-slate-600 hover:text-slate-900"
                             }`}
                     >
                         <Mail className="h-4 w-4 inline mr-2" />
@@ -191,8 +195,8 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
                                             key={user.id}
                                             onClick={() => toggleUser(user.id)}
                                             className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedUsers.includes(user.id)
-                                                    ? "border-brand-500 bg-brand-50"
-                                                    : "border-slate-200 hover:border-brand-300"
+                                                ? "border-brand-500 bg-brand-50"
+                                                : "border-slate-200 hover:border-brand-300"
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between">
@@ -246,8 +250,8 @@ export function InviteMembersModal({ isOpen, onClose, ladderId, ladderName }: Pr
 
                     {message && (
                         <div className={`mt-4 p-3 rounded-lg text-sm ${message.startsWith("✓")
-                                ? "bg-green-50 text-green-700"
-                                : "bg-red-50 text-red-700"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-red-50 text-red-700"
                             }`}>
                             {message}
                         </div>
