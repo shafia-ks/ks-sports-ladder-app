@@ -26,6 +26,7 @@ import { LadderMatchesCard } from "@/features/ladders/components/dashboard/Ladde
 import { PendingApprovals } from "@/features/ladders/components/PendingApprovals";
 import { InviteMembersButton } from "@/features/ladders/components/InviteMembersButton";
 import { InviteMembersModal } from "@/features/ladders/components/InviteMembersModal";
+import { PendingOrganizerRequests } from "@/features/ladders/components/PendingOrganizerRequests";
 
 // Lazy load heavy components for better performance
 const RankingsTable = dynamic(
@@ -610,7 +611,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to approve member");
       setToast({ type: "success", message: "Member approved!" });
-      await fetchLadder();
+      await fetchLadder(true); // Silent refetch - no loading state
     } catch (err) {
       setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to approve member" });
     } finally {
@@ -626,7 +627,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to reject member");
       setToast({ type: "success", message: "Member rejected." });
-      await fetchLadder();
+      await fetchLadder(true); // Silent refetch - no loading state
     } catch (err) {
       setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to reject member" });
     } finally {
@@ -1191,6 +1192,14 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         buttonText: "Review"
                       }
                     ]}
+                  />
+                )}
+
+                {/* Pending Organizer Requests for Ladder Organizers */}
+                {isOrganizer && (
+                  <PendingOrganizerRequests
+                    ladderId={params.id}
+                    onRequestProcessed={() => fetchLadder(true)}
                   />
                 )}
 

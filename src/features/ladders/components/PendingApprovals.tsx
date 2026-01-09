@@ -82,25 +82,27 @@ export function PendingApprovals({ members, onApprove, onReject }: PendingApprov
                     return (
                         <div
                             key={member.id}
-                            className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm"
+                            className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm"
                         >
-                            <Avatar name={displayName} email={member.users?.email} src={member.users?.avatar_url} size="md" />
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-base font-semibold text-slate-900 truncate">
-                                        {displayName}
-                                    </span>
-                                    <span className="text-xs text-amber-700 flex items-center gap-1">
-                                        <Clock className="h-3 w-3" /> Awaiting approval
-                                    </span>
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                                <Avatar name={displayName} email={member.users?.email} src={member.users?.avatar_url} size="md" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                                        <span className="text-base font-semibold text-slate-900 truncate">
+                                            {displayName}
+                                        </span>
+                                        <span className="text-xs text-amber-700 flex items-center gap-1 whitespace-nowrap">
+                                            <Clock className="h-3 w-3" /> Awaiting approval
+                                        </span>
+                                    </div>
+                                    {member.users?.email && (
+                                        <span className="text-xs text-slate-500 truncate block">{member.users.email}</span>
+                                    )}
                                 </div>
-                                {member.users?.email && (
-                                    <span className="text-xs text-slate-500 truncate">{member.users.email}</span>
-                                )}
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 w-full sm:w-auto">
                                 <button
-                                    className={`btn btn-success btn-sm flex items-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""
+                                    className={`btn btn-success btn-sm flex-1 sm:flex-none flex items-center justify-center gap-1 ${approvingId === member.id ? "opacity-60 pointer-events-none" : ""
                                         }`}
                                     onClick={() => handleApprove(member.id)}
                                     disabled={approvingId === member.id}
@@ -110,10 +112,10 @@ export function PendingApprovals({ members, onApprove, onReject }: PendingApprov
                                     ) : (
                                         <CheckCircle className="h-4 w-4" />
                                     )}
-                                    Approve
+                                    <span className="text-sm">Approve</span>
                                 </button>
                                 <button
-                                    className={`btn btn-danger btn-sm flex items-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""
+                                    className={`btn btn-danger btn-sm flex-1 sm:flex-none flex items-center justify-center gap-1 ${rejectingId === member.id ? "opacity-60 pointer-events-none" : ""
                                         }`}
                                     onClick={() => handleReject(member.id)}
                                     disabled={rejectingId === member.id}
@@ -123,7 +125,7 @@ export function PendingApprovals({ members, onApprove, onReject }: PendingApprov
                                     ) : (
                                         <X className="h-4 w-4" />
                                     )}
-                                    Reject
+                                    <span className="text-sm">Reject</span>
                                 </button>
                             </div>
                         </div>

@@ -16,8 +16,10 @@ export function useLadderData(ladderId: string, userId?: string) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchLadder = async () => {
-        setIsLoading(true);
+    const fetchLadder = async (silent = false) => {
+        if (!silent) {
+            setIsLoading(true);
+        }
         setError(null);
         try {
             const res = await fetch(`/api/ladders/${ladderId}`, {
@@ -34,7 +36,9 @@ export function useLadderData(ladderId: string, userId?: string) {
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load ladder");
         } finally {
-            setIsLoading(false);
+            if (!silent) {
+                setIsLoading(false);
+            }
         }
     };
 

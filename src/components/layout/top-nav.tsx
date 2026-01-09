@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Home, LayoutDashboard, Trophy, Bell, Settings, Menu, X, LogOut, LogIn, Users, FileText } from "lucide-react";
+import { Home, LayoutDashboard, Trophy, Bell, Settings, Menu, X, LogOut, LogIn, Users, FileText, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Avatar } from "@/components/ui/avatar";
@@ -15,12 +15,14 @@ const playerLinks = [
   { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
   { href: { pathname: "/ladders" }, label: "Ladders", icon: Trophy },
   { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+  { href: { pathname: "/profile" }, label: "Profile", icon: User },
 ];
 
 const organizerLinks = [
   { href: { pathname: "/organizer" }, label: "My Ladders", icon: Trophy },
   { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
   { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+  { href: { pathname: "/profile" }, label: "Profile", icon: User },
 ];
 
 const adminConsoleLink = { href: { pathname: "/admin" }, label: "Admin Console", icon: Settings };
