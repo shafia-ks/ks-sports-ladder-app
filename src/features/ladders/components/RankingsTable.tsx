@@ -12,6 +12,7 @@ interface Player {
         first_name: string | null;
         last_name: string | null;
         email: string | null;
+        avatar_url: string | null;
     } | null;
 }
 
@@ -119,7 +120,7 @@ export function RankingsTable({
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${rankBadge.bg} ${rankBadge.text}`}>
                                         {rankBadge.medal || `#${player.current_rank}`}
                                     </div>
-                                    <Avatar name={displayName} email={player.users?.email} size="sm" />
+                                    <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                                     <div>
                                         <p className="text-sm font-semibold text-slate-900">
                                             {displayName}
@@ -203,7 +204,7 @@ export function RankingsTable({
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="flex items-center gap-3">
-                                            <Avatar name={displayName} email={player.users?.email} size="sm" />
+                                            <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-900">
                                                     {displayName}

@@ -82,8 +82,70 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { email, invited_by, ladder_id } = body;
+    const { email, invited_by, ladder_id, ladderId, userIds } = body;
 
+    // Handle bulk invitation for existing users
+    if (userIds && Array.isArray(userIds)) {
+      const targetLadderId = ladderId || ladder_id;
+
+      if (!targetLadderId) {
+        return NextResponse.json(
+          { error: "ladderId is required for bulk invitations" },
+          { status: 400 } as ResponseInit
+        );
+      }
+
+      try {
+        // Get ladder info
+        const { data: ladder } = await supabaseAdmin
+          .from("ladders")
+          .select("name")
+          .eq("id", targetLadderId)
+          .single();
+
+        // Create invitations
+        const invitations = userIds.map((userId: string) => ({
+          ladder_id: targetLadderId,
+          user_id: userId,
+          status: "pending",
+          invitation_type: "existing_user",
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from("invitations")
+          .insert(invitations)
+          .select();
+
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
+        }
+
+        // Create notifications for each invited user
+        const { createNotification } = await import("@/lib/supabase/notifications");
+        for (const userId of userIds) {
+          await createNotification({
+            userId,
+            type: "ladder_invitation",
+            message: `You've been invited to join ${ladder?.name || "a ladder"}`,
+            link: `/notifications`,
+          });
+        }
+
+        return NextResponse.json({
+          ok: true,
+          invitations: data,
+          message: `${userIds.length} invitation(s) sent successfully`
+        });
+      } catch (error) {
+        console.error("Bulk invitation error:", error);
+        return NextResponse.json(
+          { error: "Failed to send invitations" },
+          { status: 500 } as ResponseInit
+        );
+      }
+    }
+
+    // Original single email invitation logic
     if (!email || !invited_by) {
       return NextResponse.json(
         { error: "email and invited_by required" },

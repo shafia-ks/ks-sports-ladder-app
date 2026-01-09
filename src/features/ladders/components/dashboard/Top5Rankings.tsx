@@ -11,6 +11,7 @@ interface Player {
         first_name: string | null;
         last_name: string | null;
         email: string | null;
+        avatar_url: string | null;
     } | null;
 }
 
@@ -58,7 +59,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankBadge(player.current_rank || 0)}`}>
                                 #{player.current_rank}
                             </div>
-                            <Avatar name={displayName} email={player.users?.email} size="sm" />
+                            <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-slate-900 truncate">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}

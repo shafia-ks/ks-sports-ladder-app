@@ -7,10 +7,22 @@ export interface CreateNotificationParams {
   | "challenge_received"
   | "challenge_accepted"
   | "challenge_declined"
+  | "challenge_expired"
+  | "challenge_reminder"
   | "match_ready"
   | "score_to_confirm"
   | "match_confirmed"
-  | "rank_changed";
+  | "match_completed"
+  | "match_score_submitted"
+  | "match_disputed"
+  | "rank_changed"
+  | "role_changed"
+  | "membership_approved"
+  | "membership_rejected"
+  | "membership_removed"
+  | "join_request"
+  | "account_disabled"
+  | "account_deleted";
   message: string;
   link?: string;
   metadata?: Record<string, any>;
@@ -85,4 +97,45 @@ export async function createNotifications(notifications: CreateNotificationParam
     console.error("[createNotifications] Unexpected error:", error);
     return [];
   }
+}
+
+/**
+ * Legacy function - wrapper for createNotification
+ * Used by challenges API
+ */
+export async function notifyChallenge(params: {
+  challengerId: string;
+  challengedId: string;
+  ladderName?: string;
+  link?: string;
+}) {
+  await createNotification({
+    userId: params.challengedId,
+    type: "challenge_received",
+    message: `You've been challenged${params.ladderName ? ` in ${params.ladderName}` : ""}`,
+    link: params.link || "/challenges",
+  });
+}
+
+/**
+ * Legacy function - wrapper for createNotification
+ * Used by matches API
+ */
+export async function notifyMatchSubmitted(params: {
+  opponentId?: string;
+  playerId?: string;
+  submitterId?: string;
+  matchId?: string;
+  opponentName?: string;
+  link?: string;
+}) {
+  const userId = params.opponentId || params.playerId;
+  if (!userId) return;
+
+  await createNotification({
+    userId,
+    type: "score_to_confirm",
+    message: `Score submitted${params.opponentName ? ` by ${params.opponentName}` : ""} - please confirm`,
+    link: params.link || (params.matchId ? `/matches/${params.matchId}` : "/matches"),
+  });
 }

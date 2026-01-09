@@ -102,6 +102,29 @@ a {
   textarea,
   select {
     min-height: 44px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+  }
+}
+
+/* Mobile view fixes - prevent content cutoff */
+@media (max-width: 640px) {
+
+  /* Ensure cards don't overflow */
+  .card {
+    max-width: 100%;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Fix for tables */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

@@ -18,7 +18,7 @@ const updateSchema = z.object({
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const json = await req.json();
   const parsed = updateSchema.safeParse(json);
-  
+
   if (!parsed.success) {
     console.error("[PATCH /api/challenges/:id] Validation failed:", parsed.error.issues);
     return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
@@ -40,14 +40,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const updateData: any = {};
-  
+
   if (parsed.data.status) {
     updateData.status = parsed.data.status;
-    
+
     // Set timestamps based on status
     if (parsed.data.status === "Accepted") {
       updateData.accepted_at = new Date().toISOString();
-      
+
       // Auto-create match when challenge is accepted
       const { data: matchData, error: matchError } = await supabaseAdmin
         .from("matches")
@@ -71,8 +71,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       updateData.match_id = matchData.id;
 
       // Cancel other pending challenges for both players
-      await supabaseAdmin.rpc("cancel_other_pending_challenges", { 
-        p_accepted_challenge_id: params.id 
+      await supabaseAdmin.rpc("cancel_other_pending_challenges", {
+        p_accepted_challenge_id: params.id
       });
 
     } else if (parsed.data.status === "Declined") {
@@ -90,7 +90,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("counter_proposal_time" in parsed.data) updateData.counter_proposal_time = parsed.data.counter_proposal_time;
   if ("counter_proposal_location" in parsed.data) updateData.counter_proposal_location = parsed.data.counter_proposal_location;
   if ("counter_proposal_notes" in parsed.data) updateData.counter_proposal_notes = parsed.data.counter_proposal_notes;
-  
+
   if (parsed.data.scheduled_at) updateData.scheduled_at = parsed.data.scheduled_at;
   if (parsed.data.location) updateData.location = parsed.data.location;
 
@@ -123,7 +123,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   // Send notification to the other party
   let notifyUserId = "";
   let notifyMessage = "";
-  
+
   if (parsed.data.status === "Accepted") {
     notifyUserId = data?.challenger_id || "";
     notifyMessage = "Your challenge was accepted";
@@ -132,13 +132,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     notifyMessage = "Your challenge was declined";
   } else if (parsed.data.status === "Cancelled") {
     notifyUserId = data?.challenged_id || "";
-    notifyMessage = `Challenge cancelled: ${parsed.data.cancellation_reason}`;
+    notifyMessage = `Challenge cancelled: ${parsed.data.status?.toLowerCase()}`;
   }
 
   if (notifyUserId) {
+    const notificationType = parsed.data.status === "Accepted"
+      ? "challenge_accepted"
+      : parsed.data.status === "Declined"
+        ? "challenge_declined"
+        : "challenge_accepted"; // fallback
+
     await createNotification({
       userId: notifyUserId,
-      type: `challenge_${parsed.data.status?.toLowerCase()}`,
+      type: notificationType as any,
       message: notifyMessage,
       link: `/challenges`,
     });

@@ -172,7 +172,6 @@ export async function POST(req: Request) {
   await notifyChallenge({
     challengedId: parsed.data.challengedId,
     challengerId: parsed.data.challengerId,
-    challengeId: data?.id ?? "",
     ladderName: ladderResult.data?.name ?? "Unknown Ladder",
   });
 

@@ -10,6 +10,7 @@ interface PendingMember {
         first_name: string | null;
         last_name: string | null;
         email: string | null;
+        avatar_url: string | null;
     } | null;
 }
 
@@ -83,7 +84,7 @@ export function PendingApprovals({ members, onApprove, onReject }: PendingApprov
                             key={member.id}
                             className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm"
                         >
-                            <Avatar name={displayName} email={member.users?.email} size="md" />
+                            <Avatar name={displayName} email={member.users?.email} src={member.users?.avatar_url} size="md" />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-base font-semibold text-slate-900 truncate">

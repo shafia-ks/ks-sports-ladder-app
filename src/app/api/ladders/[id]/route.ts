@@ -46,7 +46,7 @@ export async function GET(
     if (organizerIds.length > 0) {
       const { data: organizerUsers, error: organizerUsersError } = await supabaseAdmin
         .from("users")
-        .select("id, full_name, first_name, last_name, email, role")
+        .select("id, full_name, first_name, last_name, email, role, avatar_url")
         .in("id", organizerIds);
 
       if (organizerUsersError) throw organizerUsersError;
@@ -106,7 +106,7 @@ export async function GET(
         if (activeUserIds.length > 0) {
           const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
             .from("users")
-            .select("id, full_name, first_name, last_name, email, role")
+            .select("id, full_name, first_name, last_name, email, role, avatar_url")
             .in("id", activeUserIds);
 
           if (userProfilesError) throw userProfilesError;
