@@ -19,6 +19,10 @@ import { LadderInfoSidebar } from "@/features/ladders/components/dashboard/Ladde
 import { RecentActivity } from "@/features/ladders/components/dashboard/RecentActivity";
 import { OrganizerActionBanner } from "@/features/ladders/components/dashboard/OrganizerActionBanner";
 import { OrganizerStatsGrid } from "@/features/ladders/components/dashboard/OrganizerStatsGrid";
+import { MyActiveChallengesCard } from "@/features/ladders/components/dashboard/MyActiveChallengesCard";
+import { MyActiveMatchesCard } from "@/features/ladders/components/dashboard/MyActiveMatchesCard";
+import { LadderChallengesCard } from "@/features/ladders/components/dashboard/LadderChallengesCard";
+import { LadderMatchesCard } from "@/features/ladders/components/dashboard/LadderMatchesCard";
 
 // Lazy load heavy components for better performance
 const RankingsTable = dynamic(
@@ -1219,6 +1223,22 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     losses={dashboardStats?.myStats?.losses || 0}
                     winStreak={dashboardStats?.myStats?.streak || 0}
                   />
+                )}
+
+                {/* Personal Activity Cards */}
+                {isMember && user && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <MyActiveChallengesCard userId={user.id} ladderId={params.id} />
+                    <MyActiveMatchesCard userId={user.id} ladderId={params.id} />
+                  </div>
+                )}
+
+                {/* Ladder-Wide Activity Cards */}
+                {canAccessMembers && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <LadderChallengesCard ladderId={params.id} />
+                    <LadderMatchesCard ladderId={params.id} />
+                  </div>
                 )}
 
                 {/* Top 5 Rankings */}
