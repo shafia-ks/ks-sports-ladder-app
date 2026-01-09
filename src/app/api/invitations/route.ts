@@ -103,10 +103,24 @@ export async function POST(req: NextRequest) {
           .eq("id", targetLadderId)
           .single();
 
+        // 1. Fetch emails for these users so we satisfy the NOT NULL constraint
+        const { data: users, error: usersError } = await supabaseAdmin
+          .from("users")
+          .select("id, email")
+          .in("id", userIds);
+
+        if (usersError || !users) {
+          console.error("Failed to fetch user emails for invitations:", usersError);
+          return NextResponse.json({ error: "Failed to fetch user emails" }, { status: 500 });
+        }
+
+        const userEmailMap = new Map(users.map((u) => [u.id, u.email]));
+
         // Create invitations
         const invitations = userIds.map((userId: string) => ({
           ladder_id: targetLadderId,
           user_id: userId,
+          email: userEmailMap.get(userId), // Added email field
           status: "pending",
           invitation_type: "existing_user",
         }));

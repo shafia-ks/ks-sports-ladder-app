@@ -22,9 +22,10 @@ interface Top5RankingsProps {
     canChallenge: (targetRank: number) => boolean;
     onChallenge: (playerId: string) => void;
     onViewFullRankings?: () => void;
+    busyPlayers?: Set<string>;
 }
 
-export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge, onViewFullRankings }: Top5RankingsProps) {
+export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge, onViewFullRankings, busyPlayers }: Top5RankingsProps) {
     const top5 = players.slice(0, 5);
 
     const getDisplayName = (player: Player) => {
@@ -47,7 +48,14 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
             <div className="space-y-3">
                 {top5.map((player) => {
                     const isCurrentUser = player.user_id === currentUserId;
-                    const eligible = player.current_rank ? canChallenge(player.current_rank) : false;
+                    const isBusy = busyPlayers?.has(player.user_id);
+                    const isCurrentUserBusy = busyPlayers?.has(currentUserId || "");
+
+                    // Update eligible logic to include busy checks
+                    const eligible = player.current_rank
+                        ? (canChallenge(player.current_rank) && !isBusy && !isCurrentUserBusy)
+                        : false;
+
                     const displayName = getDisplayName(player);
 
                     return (
@@ -64,6 +72,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                 <p className="text-sm font-semibold text-slate-900 truncate">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}
                                 </p>
+                                {isBusy && <span className="text-xs text-brand-600 font-medium ml-2">• In Challenge</span>}
                             </div>
                             {!isCurrentUser && (
                                 <div>

@@ -71,9 +71,28 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       updateData.match_id = matchData.id;
 
       // Cancel other pending challenges for both players
-      await supabaseAdmin.rpc("cancel_other_pending_challenges", {
-        p_accepted_challenge_id: params.id
-      });
+      // Manual update to avoid dependency on database migration functions
+      const playerIds = [challenge.challenger_id, challenge.challenged_id];
+      // Format: challenger_id.in.(...ids...),represented as string for .or()
+      // We need to match if either challenger OR challenged is in the list of our two players
+      // AND the status is pending
+      const playerFilter = `challenger_id.in.(${playerIds.join(",")}),challenged_id.in.(${playerIds.join(",")})`;
+
+      const { error: cancelError } = await supabaseAdmin
+        .from("challenges")
+        .update({
+          status: "Cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: "Another challenge was accepted",
+        })
+        .eq("status", "Pending")
+        .neq("id", params.id)
+        .or(playerFilter);
+
+      if (cancelError) {
+        console.error("Failed to auto-cancel pending challenges:", cancelError);
+        // We log but don't fail the request, as the main action (Accept) succeeded
+      }
 
     } else if (parsed.data.status === "Declined") {
       updateData.declined_at = new Date().toISOString();
