@@ -1,44 +1,88 @@
-import { supabaseAdmin } from "./server";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
-export async function createNotification(params: {
+export interface CreateNotificationParams {
   userId: string;
-  type: string;
+  type:
+  | "ladder_invitation"
+  | "challenge_received"
+  | "challenge_accepted"
+  | "challenge_declined"
+  | "match_ready"
+  | "score_to_confirm"
+  | "match_confirmed"
+  | "rank_changed";
   message: string;
   link?: string;
-}) {
-  if (!supabaseAdmin) return;
-  await supabaseAdmin.from("notifications").insert({
-    user_id: params.userId,
-    type: params.type,
-    message: params.message,
-    link: params.link ?? null,
-    read: false,
-  });
+  metadata?: Record<string, any>;
 }
 
-export async function notifyChallenge(params: {
-  challengedId: string;
-  challengerId: string;
-  challengeId: string;
-  ladderName: string;
-}) {
-  await createNotification({
-    userId: params.challengedId,
-    type: "challenge_received",
-    message: `New challenge from player ${params.challengerId} on ${params.ladderName}`,
-    link: `/challenges/${params.challengeId}`,
-  });
+/**
+ * Create a notification for a user
+ */
+export async function createNotification(params: CreateNotificationParams) {
+  if (!supabaseAdmin) {
+    console.error("[createNotification] Supabase admin client not available");
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("notifications")
+      .insert({
+        user_id: params.userId,
+        type: params.type,
+        message: params.message,
+        link: params.link || null,
+        metadata: params.metadata || {},
+        read: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[createNotification] Error:", error.message);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("[createNotification] Unexpected error:", error);
+    return null;
+  }
 }
 
-export async function notifyMatchSubmitted(params: {
-  opponentId: string;
-  submitterId: string;
-  matchId: string;
-}) {
-  await createNotification({
-    userId: params.opponentId,
-    type: "match_submitted",
-    message: `Match result awaiting your confirmation (submitted by ${params.submitterId})`,
-    link: `/matches/${params.matchId}`,
-  });
+/**
+ * Create multiple notifications at once
+ */
+export async function createNotifications(notifications: CreateNotificationParams[]) {
+  if (!supabaseAdmin) {
+    console.error("[createNotifications] Supabase admin client not available");
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("notifications")
+      .insert(
+        notifications.map(n => ({
+          user_id: n.userId,
+          type: n.type,
+          message: n.message,
+          link: n.link || null,
+          metadata: n.metadata || {},
+          read: false,
+        }))
+      )
+      .select();
+
+    if (error) {
+      console.error("[createNotifications] Error:", error.message);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("[createNotifications] Unexpected error:", error);
+    return [];
+  }
 }
