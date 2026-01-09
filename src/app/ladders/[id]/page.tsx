@@ -600,6 +600,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [hasPendingOrganizerRequest, setHasPendingOrganizerRequest] = useState(false);
 
   // Approve member handler
   const handleApproveMember = async (memberId: string) => {
@@ -723,6 +724,25 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       }));
     }
   }, [data]);
+
+  // Check if user has a pending organizer request for this ladder
+  useEffect(() => {
+    const checkOrganizerRequest = async () => {
+      if (!user?.id || !params.id) return;
+
+      try {
+        const res = await fetch(`/api/leader-requests?user_id=${user.id}&ladder_id=${params.id}&status=pending`);
+        if (res.ok) {
+          const json = await res.json();
+          setHasPendingOrganizerRequest((json.requests || []).length > 0);
+        }
+      } catch (err) {
+        console.error("Failed to check organizer request:", err);
+      }
+    };
+
+    checkOrganizerRequest();
+  }, [user?.id, params.id]);
 
   const handleJoinLadder = async () => {
     if (!user) return;
@@ -1261,7 +1281,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 {!isOrganizer && currentMember && user?.role === "player" && (
                   <RoleRequest
                     currentRole="player"
-                    hasActivRequest={false}
+                    hasActivRequest={hasPendingOrganizerRequest}
                     ladder_id={params.id}
                   />
                 )}
