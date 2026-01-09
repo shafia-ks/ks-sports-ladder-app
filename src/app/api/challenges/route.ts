@@ -32,6 +32,10 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const ladderId = searchParams.get("ladderId");
   const userId = searchParams.get("userId");
+  const statusParam = searchParams.get("status"); // Can be comma-separated: "Pending,Accepted"
+  const limitParam = searchParams.get("limit");
+
+  const limit = limitParam ? parseInt(limitParam, 10) : 100;
 
   let query = supabaseAdmin
     .from("challenges")
@@ -41,7 +45,7 @@ export async function GET(req: Request) {
        counter_proposal_location, counter_proposal_notes, accepted_at, declined_at, completed_at`
     )
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(limit);
 
   if (ladderId) {
     query = query.eq("ladder_id", ladderId);
@@ -49,6 +53,15 @@ export async function GET(req: Request) {
 
   if (userId) {
     query = query.or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`);
+  }
+
+  if (statusParam) {
+    const statuses = statusParam.split(",").map(s => s.trim());
+    if (statuses.length === 1) {
+      query = query.eq("status", statuses[0]);
+    } else {
+      query = query.in("status", statuses);
+    }
   }
 
   const { data, error } = await query;
@@ -120,8 +133,8 @@ export async function POST(req: Request) {
       const cooldownEnd = new Date(lastCompleted.getTime() + parsed.data.rules.cooldownHours * 60 * 60 * 1000);
       if (new Date() < cooldownEnd) {
         const remainingHours = Math.ceil((cooldownEnd.getTime() - Date.now()) / (60 * 60 * 1000));
-        return NextResponse.json({ 
-          error: `You must wait ${remainingHours} more hour(s) before challenging again` 
+        return NextResponse.json({
+          error: `You must wait ${remainingHours} more hour(s) before challenging again`
         }, { status: 422 });
       }
     }
