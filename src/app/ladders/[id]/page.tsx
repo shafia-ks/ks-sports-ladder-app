@@ -23,6 +23,9 @@ import { MyActiveChallengesCard } from "@/features/ladders/components/dashboard/
 import { MyActiveMatchesCard } from "@/features/ladders/components/dashboard/MyActiveMatchesCard";
 import { LadderChallengesCard } from "@/features/ladders/components/dashboard/LadderChallengesCard";
 import { LadderMatchesCard } from "@/features/ladders/components/dashboard/LadderMatchesCard";
+import { PendingApprovals } from "@/features/ladders/components/PendingApprovals";
+import { InviteMembersButton } from "@/features/ladders/components/InviteMembersButton";
+import { InviteMembersModal } from "@/features/ladders/components/InviteMembersModal";
 
 // Lazy load heavy components for better performance
 const RankingsTable = dynamic(
@@ -48,22 +51,7 @@ const RankingsTable = dynamic(
   }
 );
 
-const PendingApprovals = dynamic(
-  () => import("@/features/ladders/components/PendingApprovals").then(mod => ({ default: mod.PendingApprovals })),
-  {
-    loading: () => (
-      <div className="card p-6 animate-pulse">
-        <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-20 bg-slate-200 rounded"></div>
-          ))}
-        </div>
-      </div>
-    ),
-    ssr: false
-  }
-);
+
 
 // Extracted hooks and utilities
 import { useLadderData } from "@/features/ladders/hooks/useLadderData";
@@ -611,6 +599,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [pendingSearch, setPendingSearch] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Approve member handler
   const handleApproveMember = async (memberId: string) => {
@@ -1324,115 +1313,129 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
           {/* Ranking Tab */}
           {tab === "ranking" && canAccessMembers && (
-            <div className="card overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <p className="text-sm font-semibold text-slate-700">Ranking</p>
-                  <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isOrganizer && hasZeroRanks && (
-                    <button
-                      onClick={handleFixRanks}
-                      disabled={fixingRanks}
-                      className="btn btn-xs border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                    >
-                      {fixingRanks ? "Fixing..." : "Fix ranks"}
-                    </button>
-                  )}
-                  {isOrganizer && (
-                    <Link
-                      href={`/organizer/${params.id}/rankings`}
-                      className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
-                    >
-                      Edit rankings
-                    </Link>
-                  )}
-                </div>
-              </div>
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-4 py-2">Rank</th>
-                    <th className="px-4 py-2">Player</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeMembersSorted.map((member) => {
-                    const isBusy = member.is_busy || false;
-                    const isCurrentUser = member.user_id === user?.id;
-                    const currentUserRank = currentMember?.current_rank || 0;
-                    const targetRank = member.current_rank || 0;
-                    const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
+            <div className="space-y-6">
+              {/* Pending Approvals Section for Organizers */}
+              {isOrganizer && pendingMembers.length > 0 && (
+                <PendingApprovals
+                  members={pendingMembers}
+                  onApprove={handleApproveMember}
+                  onReject={handleRejectMember}
+                />
+              )}
 
-                    // Can only challenge if:
-                    // 1. Not yourself
-                    // 2. Target is ranked ABOVE you (lower rank number)
-                    // 3. Within maxPositionsUp limit
-                    // 4. Target is not busy
-                    const canChallenge = !isCurrentUser &&
-                      currentUserRank > 0 &&
-                      targetRank > 0 &&
-                      targetRank < currentUserRank &&
-                      (currentUserRank - targetRank) <= maxPositionsUp &&
-                      !isBusy;
+              <div className="card overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-semibold text-slate-700">Ranking</p>
+                    <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Invitation Button */}
+                    <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
 
-                    return (
-                      <tr key={member.id} className="border-t border-slate-100">
-                        <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-3">
-                            <Avatar
-                              name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
-                              email={member.users?.email}
-                              src={undefined}
-                              size="sm"
-                            />
-                            <div>
-                              <p className="font-medium text-slate-900">
-                                {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
-                              </p>
-                              <p className="text-xs text-slate-500">{member.users?.email}</p>
-                              <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
+                    {isOrganizer && hasZeroRanks && (
+                      <button
+                        onClick={handleFixRanks}
+                        disabled={fixingRanks}
+                        className="btn btn-xs border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                      >
+                        {fixingRanks ? "Fixing..." : "Fix ranks"}
+                      </button>
+                    )}
+                    {isOrganizer && (
+                      <Link
+                        href={`/organizer/${params.id}/rankings`}
+                        className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Edit rankings
+                      </Link>
+                    )}
+                  </div>
+                </div>
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-2">Rank</th>
+                      <th className="px-4 py-2">Player</th>
+                      <th className="px-4 py-2">Status</th>
+                      <th className="px-4 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeMembersSorted.map((member) => {
+                      const isBusy = member.is_busy || false;
+                      const isCurrentUser = member.user_id === user?.id;
+                      const currentUserRank = currentMember?.current_rank || 0;
+                      const targetRank = member.current_rank || 0;
+                      const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
+
+                      // Can only challenge if:
+                      // 1. Not yourself
+                      // 2. Target is ranked ABOVE you (lower rank number)
+                      // 3. Within maxPositionsUp limit
+                      // 4. Target is not busy
+                      const canChallenge = !isCurrentUser &&
+                        currentUserRank > 0 &&
+                        targetRank > 0 &&
+                        targetRank < currentUserRank &&
+                        (currentUserRank - targetRank) <= maxPositionsUp &&
+                        !isBusy;
+
+                      return (
+                        <tr key={member.id} className="border-t border-slate-100">
+                          <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
+                                email={member.users?.email}
+                                src={undefined}
+                                size="sm"
+                              />
+                              <div>
+                                <p className="font-medium text-slate-900">
+                                  {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
+                                </p>
+                                <p className="text-xs text-slate-500">{member.users?.email}</p>
+                                <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2">
-                          {isBusy ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
-                              <Swords className="h-3 w-3" />
-                              In Challenge
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                              <CheckCircle className="h-3 w-3" />
-                              Available
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          {canChallenge ? (
-                            <button
-                              onClick={() => handleQuickChallenge(member.user_id)}
-                              className="text-sm font-semibold text-brand-700 hover:text-brand-900"
-                            >
-                              Challenge
-                            </button>
-                          ) : (
-                            !isCurrentUser && (
-                              <span className="text-xs text-slate-400">
-                                {isBusy ? "Busy" : targetRank >= currentUserRank ? "Can't challenge down" : "Out of range"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {isBusy ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                                <Swords className="h-3 w-3" />
+                                In Challenge
                               </span>
-                            )
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                <CheckCircle className="h-3 w-3" />
+                                Available
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            {canChallenge ? (
+                              <button
+                                onClick={() => handleQuickChallenge(member.user_id)}
+                                className="text-sm font-semibold text-brand-700 hover:text-brand-900"
+                              >
+                                Challenge
+                              </button>
+                            ) : (
+                              !isCurrentUser && (
+                                <span className="text-xs text-slate-400">
+                                  {isBusy ? "Busy" : targetRank >= currentUserRank ? "Can't challenge down" : "Out of range"}
+                                </span>
+                              )
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -1670,6 +1673,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       )}
 
 
+      {/* Invitation Modal */}
+      {isInviteOpen && (
+        <InviteMembersModal
+          isOpen={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+          ladderId={params.id}
+          ladderName={data?.ladder?.name || "Ladder"}
+        />
+      )}
     </div>
   );
 }
