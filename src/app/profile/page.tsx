@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { AvatarPicker, AvatarGrid } from "@/components/ui/avatar-picker";
 import { useAuth } from "@/lib/auth/auth-context";
-import { ArrowLeft, Loader2, Key, Trash2 } from "lucide-react";
+import { Loader2, Key, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -227,15 +227,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Link href="/dashboard" className="text-brand-600 hover:text-brand-700">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <PageHeader
-          title="Profile Settings"
-          description="Manage your profile information and avatar."
-        />
-      </div>
+      <PageHeader
+        title="Profile Settings"
+        description="Manage your profile information and avatar."
+      />
 
       {error && (
         <div className="card p-4 text-sm text-red-600">{error}</div>

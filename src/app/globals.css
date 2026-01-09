@@ -6,6 +6,10 @@
   color-scheme: light;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
