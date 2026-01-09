@@ -602,6 +602,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [hasPendingOrganizerRequest, setHasPendingOrganizerRequest] = useState(false);
+  const [busyPlayers, setBusyPlayers] = useState<Set<string>>(new Set());
 
   // Approve member handler
   const handleApproveMember = async (memberId: string) => {
@@ -744,6 +745,39 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
     checkOrganizerRequest();
   }, [user?.id, params.id]);
+
+  // Fetch active challenges to determine busy players
+  useEffect(() => {
+    const fetchActiveChallenges = async () => {
+      if (!params.id) return;
+
+      try {
+        const res = await fetch(`/api/challenges?ladderId=${params.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          const challenges = json.challenges || [];
+
+          // Find all players involved in Pending or Accepted challenges
+          const busy = new Set<string>();
+          challenges.forEach((challenge: any) => {
+            if (challenge.status === "Pending" || challenge.status === "Accepted") {
+              busy.add(challenge.challenger_id);
+              busy.add(challenge.challenged_id);
+            }
+          });
+
+          setBusyPlayers(busy);
+        }
+      } catch (err) {
+        console.error("Failed to fetch challenges:", err);
+      }
+    };
+
+    fetchActiveChallenges();
+    // Refetch every 30 seconds to keep status updated
+    const interval = setInterval(fetchActiveChallenges, 30000);
+    return () => clearInterval(interval);
+  }, [params.id]);
 
   const handleJoinLadder = async () => {
     if (!user) return;
@@ -1394,7 +1428,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </thead>
                   <tbody>
                     {activeMembersSorted.map((member) => {
-                      const isBusy = member.is_busy || false;
+                      // Check if player has an active challenge (Pending or Accepted)
+                      const isBusy = busyPlayers.has(member.user_id);
                       const isCurrentUser = member.user_id === user?.id;
                       const currentUserRank = currentMember?.current_rank || 0;
                       const targetRank = member.current_rank || 0;
@@ -1404,13 +1439,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       // 1. Not yourself
                       // 2. Target is ranked ABOVE you (lower rank number)
                       // 3. Within maxPositionsUp limit
-                      // 4. Target is not busy
+                      // 4. Target is not busy (no active challenges)
+                      // 5. Current user is not busy
                       const canChallenge = !isCurrentUser &&
                         currentUserRank > 0 &&
                         targetRank > 0 &&
                         targetRank < currentUserRank &&
                         (currentUserRank - targetRank) <= maxPositionsUp &&
-                        !isBusy;
+                        !isBusy &&
+                        !busyPlayers.has(user?.id || "");
 
                       return (
                         <tr key={member.id} className="border-t border-slate-100">
