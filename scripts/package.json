@@ -1,0 +1,11 @@
+{
+    "name": "icon-generator",
+    "version": "1.0.0",
+    "description": "Generate PWA icons from SVG",
+    "scripts": {
+        "generate-icons": "node generate-icons.js"
+    },
+    "devDependencies": {
+        "sharp": "^0.33.5"
+    }
+}

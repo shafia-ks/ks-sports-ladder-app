@@ -1,95 +1,250 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <title>Generate PWA Icons</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Icon Generator</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       max-width: 800px;
       margin: 50px auto;
       padding: 20px;
+      background: #f5f5f5;
     }
-    .icon-preview {
-      display: flex;
-      gap: 20px;
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2563eb;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .preview {
       margin: 20px 0;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+      text-align: center;
     }
-    canvas {
-      border: 1px solid #ddd;
+
+    .preview img {
+      max-width: 256px;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
     button {
       background: #2563eb;
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      margin: 5px;
+      margin: 10px 5px;
     }
+
     button:hover {
       background: #1d4ed8;
     }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .success {
+      color: #059669;
+      padding: 15px;
+      background: #d1fae5;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: none;
+    }
+
+    .instructions {
+      background: #eff6ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #2563eb;
+    }
+
+    .size-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .size-item {
+      padding: 10px;
+      background: #f9fafb;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .size-item.done {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    #progress {
+      margin: 20px 0;
+      display: none;
+    }
   </style>
 </head>
+
 <body>
-  <h1>PWA Icon Generator</h1>
-  <p>Click the buttons below to download the required PWA icons.</p>
-  
-  <div class="icon-preview">
-    <div>
-      <p><strong>192x192 Icon</strong></p>
-      <canvas id="canvas192" width="192" height="192"></canvas>
-      <br>
-      <button onclick="download192()">Download 192x192</button>
+  <div class="container">
+    <h1>🎨 PWA Icon Generator</h1>
+    <p class="subtitle">Generate all PWA icon sizes from your base image</p>
+
+    <div class="instructions">
+      <h3>📋 Instructions:</h3>
+      <ol>
+        <li>The base icon (512x512) is already loaded from your public folder</li>
+        <li>Click "Generate All Sizes" button below</li>
+        <li>Download all generated icons</li>
+        <li>Icons will be saved with correct names for your manifest</li>
+      </ol>
     </div>
-    <div>
-      <p><strong>512x512 Icon</strong></p>
-      <canvas id="canvas512" width="512" height="512"></canvas>
-      <br>
-      <button onclick="download512()">Download 512x512</button>
+
+    <div class="preview">
+      <h3>Base Icon (512x512)</h3>
+      <img id="baseIcon" src="/app-icon-base.png" alt="Base Icon">
     </div>
+
+    <div style="text-align: center;">
+      <button onclick="generateAllSizes()" id="generateBtn">
+        🔄 Generate All Icon Sizes
+      </button>
+    </div>
+
+    <div id="progress">
+      <h3>Generating Icons:</h3>
+      <div class="size-list" id="sizeList"></div>
+    </div>
+
+    <div class="success" id="successMsg">
+      ✅ All icons generated successfully! Click download buttons below.
+    </div>
+
+    <div id="downloadArea" style="margin-top: 20px; text-align: center;"></div>
   </div>
 
   <script>
-    function drawIcon(canvas) {
-      const ctx = canvas.getContext('2d');
-      const size = canvas.width;
-      
-      // Background
-      ctx.fillStyle = '#2563eb';
-      ctx.beginPath();
-      ctx.roundRect(0, 0, size, size, size * 0.15);
-      ctx.fill();
-      
-      // Trophy and ladder icon
-      ctx.fillStyle = 'white';
-      ctx.font = `bold ${size * 0.6}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🏆', size / 2, size / 2);
+    const sizes = [
+      { size: 72, name: 'icon-72x72.png', maskable: false },
+      { size: 96, name: 'icon-96x96.png', maskable: false },
+      { size: 128, name: 'icon-128x128.png', maskable: false },
+      { size: 144, name: 'icon-144x144.png', maskable: false },
+      { size: 152, name: 'icon-152x152.png', maskable: false },
+      { size: 192, name: 'icon-192x192.png', maskable: false },
+      { size: 384, name: 'icon-384x384.png', maskable: false },
+      { size: 512, name: 'icon-512x512.png', maskable: false },
+      { size: 192, name: 'icon-maskable-192x192.png', maskable: true },
+      { size: 512, name: 'icon-maskable-512x512.png', maskable: true },
+    ];
+
+    async function generateAllSizes() {
+      const baseImg = document.getElementById('baseIcon');
+      const generateBtn = document.getElementById('generateBtn');
+      const progressDiv = document.getElementById('progress');
+      const sizeList = document.getElementById('sizeList');
+      const downloadArea = document.getElementById('downloadArea');
+      const successMsg = document.getElementById('successMsg');
+
+      generateBtn.disabled = true;
+      progressDiv.style.display = 'block';
+      downloadArea.innerHTML = '';
+      sizeList.innerHTML = '';
+
+      // Create size items
+      sizes.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'size-item';
+        div.id = `size-${item.name}`;
+        div.textContent = item.name;
+        sizeList.appendChild(div);
+      });
+
+      // Generate each size
+      for (const item of sizes) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (item.maskable) {
+          // Maskable icons need padding (safe zone)
+          const iconSize = Math.floor(item.size * 0.8);
+          const padding = Math.floor((item.size - iconSize) / 2);
+
+          canvas.width = item.size;
+          canvas.height = item.size;
+
+          // Fill background with brand color
+          ctx.fillStyle = '#2563eb';
+          ctx.fillRect(0, 0, item.size, item.size);
+
+          // Draw icon in center with padding
+          ctx.drawImage(baseImg, padding, padding, iconSize, iconSize);
+        } else {
+          // Standard icons
+          canvas.width = item.size;
+          canvas.height = item.size;
+          ctx.drawImage(baseImg, 0, 0, item.size, item.size);
+        }
+
+        // Mark as done
+        document.getElementById(`size-${item.name}`).classList.add('done');
+
+        // Create download link
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = item.name;
+          link.textContent = `📥 Download ${item.name}`;
+          link.style.display = 'inline-block';
+          link.style.margin = '5px';
+          link.style.padding = '8px 16px';
+          link.style.background = '#2563eb';
+          link.style.color = 'white';
+          link.style.textDecoration = 'none';
+          link.style.borderRadius = '6px';
+          link.style.fontSize = '14px';
+          downloadArea.appendChild(link);
+          downloadArea.appendChild(document.createElement('br'));
+        });
+
+        // Small delay for UI update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      successMsg.style.display = 'block';
+      generateBtn.textContent = '✅ Icons Generated!';
     }
 
-    function download192() {
-      const canvas = document.getElementById('canvas192');
-      const link = document.createElement('a');
-      link.download = 'icon-192x192.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    }
-
-    function download512() {
-      const canvas = document.getElementById('canvas512');
-      const link = document.createElement('a');
-      link.download = 'icon-512x512.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    }
-
-    // Draw icons on page load
-    window.onload = function() {
-      drawIcon(document.getElementById('canvas192'));
-      drawIcon(document.getElementById('canvas512'));
+    // Handle image load error
+    document.getElementById('baseIcon').onerror = function () {
+      alert('Could not load base icon. Make sure app-icon-base.png exists in the public folder.');
     };
   </script>
 </body>
+
 </html>
