@@ -56,7 +56,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           player1_id: challenge.challenger_id,
           player2_id: challenge.challenged_id,
           challenge_id: params.id,
-          status: "in_progress",
+          status: "pending",
           sets: [],
           confirmed_by: [],
         })
