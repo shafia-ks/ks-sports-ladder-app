@@ -1330,8 +1330,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Invitation Button */}
-                    <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
+                    {/* Invitation Button - Organizers Only */}
+                    {isOrganizer && (
+                      <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
+                    )}
 
                     {isOrganizer && hasZeroRanks && (
                       <button

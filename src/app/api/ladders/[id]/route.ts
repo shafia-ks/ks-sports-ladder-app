@@ -99,22 +99,21 @@ export async function GET(
       membersWithUsers = members ?? [];
 
       if (members && members.length > 0) {
-        const activeUserIds = members
-          .filter((m) => m.status === "active")
-          .map((m) => m.user_id);
+        // Fetch user data for ALL members (active AND pending)
+        const allUserIds = members.map((m) => m.user_id);
 
-        if (activeUserIds.length > 0) {
+        if (allUserIds.length > 0) {
           const { data: userProfiles, error: userProfilesError } = await supabaseAdmin
             .from("users")
             .select("id, full_name, first_name, last_name, email, role, avatar_url")
-            .in("id", activeUserIds);
+            .in("id", allUserIds);
 
           if (userProfilesError) throw userProfilesError;
 
           const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
           membersWithUsers = members.map((member) => ({
             ...member,
-            users: member.status === "active" ? userMap.get(member.user_id) ?? null : null,
+            users: userMap.get(member.user_id) ?? null,
           }));
         }
       }
