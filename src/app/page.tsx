@@ -12,17 +12,18 @@ const featureList = [
   },
   {
     title: "Challenge governance",
-    body: "Challenge limits, expiry, and busy-player checks to keep ladders fair.",
+    body: "Challenge limits, expiry, and busy player checks to keep ladders fair.",
+
     icon: Timer,
   },
   {
     title: "Ranking your way",
-    body: "Swap, minimal-drop, slide, or points—configure per ladder.",
+    body: "Swap, minimal drop, slide, or points configure per ladder.",
     icon: BarChart3,
   },
   {
     title: "Club-grade oversight",
-    body: "Leader requests, seasons, disputes, and audit-friendly notifications.",
+    body: "Leader requests, seasons, disputes, and audit friendly notifications.",
     icon: Users,
   },
 ];
@@ -97,7 +98,7 @@ export default function HomePage() {
                 <Link href="/signup" className="btn bg-green-600 hover:bg-green-700 text-white border-transparent shadow-sm">
                   Create account
                 </Link>
-                <Link href="/login" className="btn btn-secondary shadow-sm">
+                <Link href="/login" className="btn btn-primary shadow-sm">
                   Sign in
                 </Link>
               </>

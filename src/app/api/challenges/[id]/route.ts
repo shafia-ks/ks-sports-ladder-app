@@ -60,7 +60,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           player1_id: challenge.challenger_id,
           player2_id: challenge.challenged_id,
           challenge_id: params.id,
-          status: "pending", // Match is scheduled but not yet played
+          status: "Pending", // Changed to capital P to match DB constraint
           winner_id: null, // Will be set when result is submitted
           set_scores: null, // Will be set when result is submitted  
           played_at: null, // Will be set when result is submitted

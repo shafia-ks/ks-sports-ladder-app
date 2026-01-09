@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
           email: emailAddress,
           invited_by: invited_by,
           status: "pending",
-          invitation_type: "email",
+          invitation_type: "new_user", // Changed from "email" to match DB constraint
           expires_at: expiresAtISO,
         }));
 
