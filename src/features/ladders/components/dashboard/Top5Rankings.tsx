@@ -20,9 +20,10 @@ interface Top5RankingsProps {
     ladderId: string;
     canChallenge: (targetRank: number) => boolean;
     onChallenge: (playerId: string) => void;
+    onViewFullRankings?: () => void;
 }
 
-export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge }: Top5RankingsProps) {
+export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge, onViewFullRankings }: Top5RankingsProps) {
     const top5 = players.slice(0, 5);
 
     const getDisplayName = (player: Player) => {
@@ -89,13 +90,14 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                     );
                 })}
             </div>
-            <Link
-                href="#"
-                onClick={(e) => { e.preventDefault(); /* Switch to ranking tab */ }}
-                className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4"
-            >
-                View Full Rankings →
-            </Link>
+            {onViewFullRankings && (
+                <button
+                    onClick={onViewFullRankings}
+                    className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4 w-full"
+                >
+                    View Full Rankings →
+                </button>
+            )}
         </div>
     );
 }

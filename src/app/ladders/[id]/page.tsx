@@ -1218,7 +1218,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     wins={dashboardStats?.myStats?.wins || 0}
                     losses={dashboardStats?.myStats?.losses || 0}
                     winStreak={dashboardStats?.myStats?.streak || 0}
-                    ladderId={params.id}
                   />
                 )}
 
@@ -1233,6 +1232,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
                     }}
                     onChallenge={handleQuickChallenge}
+                    onViewFullRankings={() => setTab("ranking")}
                   />
                 )}
 
