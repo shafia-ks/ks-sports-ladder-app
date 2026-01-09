@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Search, Filter, Settings, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Loader2, Search, Filter, Settings, Eye, EyeOff, ExternalLink, Archive, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface Ladder {
     id: string;
@@ -21,6 +22,20 @@ export function AdminLaddersTable() {
 
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [archiving, setArchiving] = useState<string | null>(null);
+
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        variant?: "danger" | "warning" | "primary";
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+    });
 
     useEffect(() => {
         fetchLadders();
@@ -51,6 +66,35 @@ export function AdminLaddersTable() {
         }
         setFilteredLadders(result);
     }, [ladders, search, statusFilter]);
+
+    const toggleLadderStatus = (ladderId: string, currentStatus: string) => {
+        const newStatus = currentStatus === "archived" ? "active" : "archived";
+        const action = newStatus === "archived" ? "archive" : "reactivate";
+
+        setConfirmModal({
+            isOpen: true,
+            title: `${action.charAt(0).toUpperCase() + action.slice(1)} Ladder`,
+            message: `Are you sure you want to ${action} this ladder?`,
+            variant: newStatus === "archived" ? "warning" : "primary",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setArchiving(ladderId);
+                try {
+                    const res = await fetch(`/api/ladders/${ladderId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: newStatus }),
+                    });
+                    if (!res.ok) throw new Error(`Failed to ${action} ladder`);
+                    await fetchLadders();
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setArchiving(null);
+                }
+            },
+        });
+    };
 
     if (loading) {
         return (
@@ -123,9 +167,25 @@ export function AdminLaddersTable() {
                                         {new Date(ladder.created_at).toLocaleDateString()}
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <Link href={`/ladders/${ladder.id}/settings`} className="inline-flex items-center text-xs font-medium text-brand-600 hover:text-brand-700">
-                                            <Settings className="h-3 w-3 mr-1" /> Settings
-                                        </Link>
+                                        <div className="flex items-center justify-end gap-3">
+                                            <Link href={`/ladders/${ladder.id}/settings`} className="inline-flex items-center text-xs font-medium text-brand-600 hover:text-brand-700">
+                                                <Settings className="h-3 w-3 mr-1" /> Settings
+                                            </Link>
+                                            <button
+                                                onClick={() => toggleLadderStatus(ladder.id, ladder.status)}
+                                                disabled={!!archiving}
+                                                className={`inline-flex items-center text-xs font-medium ${ladder.status === "archived"
+                                                        ? "text-green-600 hover:text-green-700"
+                                                        : "text-amber-600 hover:text-amber-700"
+                                                    } disabled:opacity-50`}
+                                            >
+                                                {ladder.status === "archived" ? (
+                                                    <><CheckCircle className="h-3 w-3 mr-1" /> Activate</>
+                                                ) : (
+                                                    <><Archive className="h-3 w-3 mr-1" /> Archive</>
+                                                )}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -133,6 +193,16 @@ export function AdminLaddersTable() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                loading={!!archiving}
+            />
         </div>
     );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, UserX, UserCheck, Shield, Check, X, Search, Filter } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface User {
     id: string;
@@ -27,6 +28,20 @@ export function AdminUsersTable() {
     // Filters
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+
+    // Modal state
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        variant?: "danger" | "warning" | "primary";
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+    });
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -63,36 +78,52 @@ export function AdminUsersTable() {
         setFilteredUsers(result);
     }, [users, search, roleFilter]);
 
-    const updateUserRole = async (userId: string, newRole: string) => {
-        if (!confirm(`Change user role to ${newRole}?`)) return;
-        setUpdating(userId);
-        try {
-            const res = await fetch(`/api/users/${userId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ role: newRole }),
-            });
-            if (!res.ok) throw new Error("Failed to update role");
-            await fetchUsers();
-        } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to update");
-        } finally {
-            setUpdating(null);
-        }
+    const updateUserRole = (userId: string, newRole: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Change User Role",
+            message: `Are you sure you want to change this user's role to ${newRole}?`,
+            variant: "primary",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setUpdating(userId);
+                try {
+                    const res = await fetch(`/api/users/${userId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ role: newRole }),
+                    });
+                    if (!res.ok) throw new Error("Failed to update role");
+                    await fetchUsers();
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to update");
+                } finally {
+                    setUpdating(null);
+                }
+            },
+        });
     };
 
-    const disableUser = async (userId: string) => {
-        if (!confirm("Disable this user? They won't be able to sign in.")) return;
-        setDisabling(userId);
-        try {
-            const res = await fetch(`/api/users/${userId}/disable`, { method: "PATCH" });
-            if (!res.ok) throw new Error("Failed to disable user");
-            await fetchUsers();
-        } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to disable user");
-        } finally {
-            setDisabling(null);
-        }
+    const disableUser = (userId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Disable User",
+            message: "This user won't be able to sign in. Are you sure?",
+            variant: "danger",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setDisabling(userId);
+                try {
+                    const res = await fetch(`/api/users/${userId}/disable`, { method: "PATCH" });
+                    if (!res.ok) throw new Error("Failed to disable user");
+                    await fetchUsers();
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to disable user");
+                } finally {
+                    setDisabling(null);
+                }
+            },
+        });
     };
 
     const roleColors: Record<string, string> = {
@@ -222,6 +253,16 @@ export function AdminUsersTable() {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                loading={!!updating || !!disabling}
+            />
         </div>
     );
 }
