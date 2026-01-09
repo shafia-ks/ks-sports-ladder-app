@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       ladder_id: parsed.data.ladderId,
       challenger_id: parsed.data.challengerId,
       challenged_id: parsed.data.challengedId,
-      status: "pending",
+      status: "Pending",
       expires_at: expiresAt.toISOString(),
     })
     .select("id")
