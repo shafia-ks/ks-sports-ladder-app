@@ -747,37 +747,39 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   }, [user?.id, params.id]);
 
   // Fetch active challenges to determine busy players
-  useEffect(() => {
-    const fetchActiveChallenges = async () => {
-      if (!params.id) return;
+  const fetchActiveChallenges = async () => {
+    if (!params.id) return;
 
-      try {
-        const res = await fetch(`/api/challenges?ladderId=${params.id}`);
-        if (res.ok) {
-          const json = await res.json();
-          const challenges = json.challenges || [];
+    try {
+      const res = await fetch(`/api/challenges?ladderId=${params.id}`);
+      if (res.ok) {
+        const json = await res.json();
+        const challenges = json.challenges || [];
 
-          // Find all players involved in Pending or Accepted challenges
-          const busy = new Set<string>();
-          challenges.forEach((challenge: any) => {
-            if (challenge.status === "Pending" || challenge.status === "Accepted") {
-              busy.add(challenge.challenger_id);
-              busy.add(challenge.challenged_id);
-            }
-          });
+        // Find all players involved in Pending or Accepted challenges
+        const busy = new Set<string>();
+        challenges.forEach((challenge: any) => {
+          if (challenge.status === "Pending" || challenge.status === "Accepted") {
+            busy.add(challenge.challenger_id);
+            busy.add(challenge.challenged_id);
+          }
+        });
 
-          setBusyPlayers(busy);
-        }
-      } catch (err) {
-        console.error("Failed to fetch challenges:", err);
+        setBusyPlayers(busy);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch challenges:", err);
+    }
+  };
 
+  useEffect(() => {
     fetchActiveChallenges();
     // Refetch every 30 seconds to keep status updated
     const interval = setInterval(fetchActiveChallenges, 30000);
     return () => clearInterval(interval);
   }, [params.id]);
+
+
 
   const handleJoinLadder = async () => {
     if (!user) return;
@@ -937,6 +939,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
       alert("Challenge sent!");
       await fetchLadder();
+      await fetchActiveChallenges();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to send challenge");
     }

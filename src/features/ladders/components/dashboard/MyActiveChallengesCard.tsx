@@ -17,9 +17,10 @@ interface Challenge {
 interface Props {
     userId: string;
     ladderId: string;
+    onChallengeUpdate?: () => void;
 }
 
-export function MyActiveChallengesCard({ userId, ladderId }: Props) {
+export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: Props) {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -48,6 +49,7 @@ export function MyActiveChallengesCard({ userId, ladderId }: Props) {
             });
             if (res.ok) {
                 await fetchChallenges();
+                onChallengeUpdate?.();
             }
         } catch (error) {
             console.error("Failed to accept challenge:", error);
@@ -63,6 +65,7 @@ export function MyActiveChallengesCard({ userId, ladderId }: Props) {
             });
             if (res.ok) {
                 await fetchChallenges();
+                onChallengeUpdate?.();
             }
         } catch (error) {
             console.error("Failed to decline challenge:", error);

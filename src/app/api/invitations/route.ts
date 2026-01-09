@@ -120,7 +120,8 @@ export async function POST(req: NextRequest) {
         const invitations = userIds.map((userId: string) => ({
           ladder_id: targetLadderId,
           user_id: userId,
-          email: userEmailMap.get(userId), // Added email field
+          email: userEmailMap.get(userId),
+          invited_by: invited_by, // Added missing invited_by field
           status: "pending",
           invitation_type: "existing_user",
         }));
