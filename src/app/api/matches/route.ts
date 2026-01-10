@@ -87,8 +87,18 @@ export async function GET(req: Request) {
       // Enrich matches with user data
       const enrichedMatches = matches.map(match => ({
         ...match,
-        player1: usersMap.get(match.player1_id) || null,
-        player2: usersMap.get(match.player2_id) || null,
+        player1: usersMap.get(match.player1_id) || {
+          id: match.player1_id,
+          full_name: null,
+          email: 'Unknown Player',
+          profile_picture_url: null
+        },
+        player2: usersMap.get(match.player2_id) || {
+          id: match.player2_id,
+          full_name: null,
+          email: 'Unknown Player',
+          profile_picture_url: null
+        },
       }));
 
       return NextResponse.json({ matches: enrichedMatches });

@@ -135,8 +135,8 @@ export function TopNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-3 font-semibold text-brand-700">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-2 sm:px-4 py-3 gap-2">
+        <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-1 sm:gap-3 font-semibold text-brand-700 shrink-0">
           <div className="relative h-8 w-8 md:h-9 md:w-9 overflow-hidden rounded-lg shadow-sm">
             <Image
               src="/app-icon-base.png"
