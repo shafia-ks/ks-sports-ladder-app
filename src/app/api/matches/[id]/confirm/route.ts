@@ -16,10 +16,10 @@ export async function POST(
 
         console.log(`[POST /api/matches/[id]/confirm] Request received. Params ID: ${params.id}, User: ${user_id}, Action: ${action}`);
 
-        // Get match details
+        // Get match details without join first to avoid schema cache issues
         const { data: match, error: matchError } = await supabaseAdmin
             .from("matches")
-            .select("*, player1:player1_id(id, full_name, email), player2:player2_id(id, full_name, email)")
+            .select("*")
             .eq("id", params.id)
             .single();
 

@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 
     const { data: users, error: usersError } = await supabaseAdmin
       .from("users")
-      .select("id, full_name, email")
+      .select("id, full_name, email, avatar_url")
       .in("id", Array.from(userIds));
 
     if (usersError) {
@@ -85,21 +85,25 @@ export async function GET(req: Request) {
       const usersMap = new Map(users?.map(u => [u.id, u]) || []);
 
       // Enrich matches with user data
-      const enrichedMatches = matches.map(match => ({
-        ...match,
-        player1: usersMap.get(match.player1_id) || {
-          id: match.player1_id,
-          full_name: null,
-          email: 'Unknown Player',
-          profile_picture_url: null
-        },
-        player2: usersMap.get(match.player2_id) || {
-          id: match.player2_id,
-          full_name: null,
-          email: 'Unknown Player',
-          profile_picture_url: null
-        },
-      }));
+      const enrichedMatches = matches.map(match => {
+        const p1 = usersMap.get(match.player1_id);
+        const p2 = usersMap.get(match.player2_id);
+        return {
+          ...match,
+          player1: p1 ? { ...p1, profile_picture_url: p1.avatar_url } : {
+            id: match.player1_id,
+            full_name: null,
+            email: 'Unknown Player',
+            profile_picture_url: null
+          },
+          player2: p2 ? { ...p2, profile_picture_url: p2.avatar_url } : {
+            id: match.player2_id,
+            full_name: null,
+            email: 'Unknown Player',
+            profile_picture_url: null
+          },
+        };
+      });
 
       return NextResponse.json({ matches: enrichedMatches });
     }

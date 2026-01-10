@@ -1433,14 +1433,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     <tr>
                       <th className="px-4 py-2">Rank</th>
                       <th className="px-4 py-2">Player</th>
-                      <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2">Action</th>
+                      <th className="px-4 py-2 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {activeMembersSorted.map((member) => {
                       // Check if player has an active challenge (Pending or Accepted)
-                      const isBusy = busyPlayers.has(member.user_id);
+                      const isBusy = member.is_busy;
                       const isCurrentUser = member.user_id === user?.id;
                       const currentUserRank = currentMember?.current_rank || 0;
                       const targetRank = member.current_rank || 0;
@@ -1468,30 +1467,29 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                               <Avatar
                                 name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
                                 email={member.users?.email}
-                                src={undefined}
+                                src={member.users?.avatar_url}
                                 size="sm"
                               />
                               <div>
                                 <p className="font-medium text-slate-900">
                                   {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
                                 </p>
-                                <p className="text-xs text-slate-500">{member.users?.email}</p>
-                                <div className="mt-1">{renderRolePill(getMemberRole(member))}</div>
+                                <div className="mt-1 flex items-center gap-2">
+                                  {renderRolePill(getMemberRole(member))}
+                                  {isBusy ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded-full">
+                                      <Swords className="h-3 w-3" />
+                                      In Challenge
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-800 rounded-full">
+                                      <CheckCircle className="h-3 w-3" />
+                                      Available
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            {isBusy ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
-                                <Swords className="h-3 w-3" />
-                                In Challenge
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                <CheckCircle className="h-3 w-3" />
-                                Available
-                              </span>
-                            )}
                           </td>
                           <td className="px-4 py-2 text-right">
                             {canChallenge ? (
