@@ -39,11 +39,7 @@ export async function GET(req: Request) {
 
   let query = supabaseAdmin
     .from("matches")
-    .select(
-      `id, ladder_id, challenge_id, player1_id, player2_id, winner_id, status, set_scores, played_at, created_at, disputed_by,
-       player1:users!player1_id(id, full_name, email),
-       player2:users!player2_id(id, full_name, email)`
-    )
+    .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -63,13 +59,43 @@ export async function GET(req: Request) {
     }
   }
 
-  const { data, error } = await query;
+  const { data: matches, error } = await query;
   if (error) {
-    console.error("[GET /api/matches] Error:", error);
+    console.error("[GET /api/matches] Error fetching matches:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ matches: data ?? [] });
+  // Fetch user data for all players
+  if (matches && matches.length > 0) {
+    const userIds = new Set<string>();
+    matches.forEach(match => {
+      if (match.player1_id) userIds.add(match.player1_id);
+      if (match.player2_id) userIds.add(match.player2_id);
+    });
+
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from("users")
+      .select("id, full_name, email")
+      .in("id", Array.from(userIds));
+
+    if (usersError) {
+      console.error("[GET /api/matches] Error fetching users:", usersError);
+    } else {
+      // Create a map of users by ID
+      const usersMap = new Map(users?.map(u => [u.id, u]) || []);
+
+      // Enrich matches with user data
+      const enrichedMatches = matches.map(match => ({
+        ...match,
+        player1: usersMap.get(match.player1_id) || null,
+        player2: usersMap.get(match.player2_id) || null,
+      }));
+
+      return NextResponse.json({ matches: enrichedMatches });
+    }
+  }
+
+  return NextResponse.json({ matches: matches ?? [] });
 }
 
 export async function POST(req: Request) {
