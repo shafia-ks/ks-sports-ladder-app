@@ -37,31 +37,37 @@ export async function GET(
     let rankChange = null;
 
     if (membership) {
-      // Get all matches for this user in this ladder
+      // Get all confirmed matches for this user in this ladder
       const { data: matches } = await supabaseAdmin
         .from("matches")
-        .select("*")
+        .select("id, winner_id, player1_id, player2_id, created_at, status")
         .eq("ladder_id", ladderId)
-        .or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`)
-        .eq("status", "completed")
-        .order("played_at", { ascending: false });
+        .eq("status", "Confirmed")
+        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+        .order("created_at", { ascending: false });
 
       const totalMatches = matches?.length || 0;
       const wins = matches?.filter((m: any) => m.winner_id === userId).length || 0;
+      const losses = totalMatches - wins;
       const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
 
-      // Calculate current streak
+      // Calculate current WIN streak (consecutive wins from most recent matches)
       let streak = 0;
       if (matches && matches.length > 0) {
-        const lastResult = matches[0].winner_id === userId;
-        for (const match of matches) {
-          if ((match.winner_id === userId) === lastResult) {
-            streak++;
-          } else {
-            break;
+        // Check if last match was a win
+        const lastMatchWasWin = matches[0].winner_id === userId;
+
+        if (lastMatchWasWin) {
+          // Count consecutive wins from the start
+          for (const match of matches) {
+            if (match.winner_id === userId) {
+              streak++;
+            } else {
+              break; // Stop at first loss
+            }
           }
         }
-        if (!lastResult) streak = -streak; // Negative for losing streak
+        // If last match was a loss, streak is 0
       }
 
       // Get rank change (compare to previous rank snapshot)
@@ -75,18 +81,19 @@ export async function GET(
       if (rankHistory && rankHistory.length >= 2) {
         const currentRank = membership.current_rank;
         const previousSnapshot = rankHistory[1].snapshot as any;
-        const previousRank = previousSnapshot.find((r: any) => r.user_id === userId)?.rank;
+        const previousRank = previousSnapshot.find((r: any) => r.userId === userId)?.currentRank;
         if (currentRank && previousRank) {
           rankChange = previousRank - currentRank; // Positive means moved up
         }
       }
 
       myStats = {
+        rank: membership.current_rank,
         totalMatches,
         wins,
-        losses: totalMatches - wins,
+        losses,
         winRate,
-        streak: streak > 0 ? streak : null,
+        streak,
         rankChange,
       };
     }
@@ -180,11 +187,11 @@ async function getRecentActivity(ladderId: string) {
 
   if (recentMatchesData) {
     for (const match of recentMatchesData) {
-      const challengerName = match.challenger?.full_name || 
+      const challengerName = match.challenger?.full_name ||
         `${match.challenger?.first_name} ${match.challenger?.last_name}`.trim() || "Player";
-      const opponentName = match.opponent?.full_name || 
+      const opponentName = match.opponent?.full_name ||
         `${match.opponent?.first_name} ${match.opponent?.last_name}`.trim() || "Player";
-      const winnerName = match.winner?.full_name || 
+      const winnerName = match.winner?.full_name ||
         `${match.winner?.first_name} ${match.winner?.last_name}`.trim() || "Player";
 
       recentActivity.push({
@@ -211,9 +218,9 @@ async function getRecentActivity(ladderId: string) {
 
   if (recentChallengesData) {
     for (const challenge of recentChallengesData) {
-      const challengerName = challenge.challenger?.full_name || 
+      const challengerName = challenge.challenger?.full_name ||
         `${challenge.challenger?.first_name} ${challenge.challenger?.last_name}`.trim() || "Player";
-      const opponentName = challenge.opponent?.full_name || 
+      const opponentName = challenge.opponent?.full_name ||
         `${challenge.opponent?.first_name} ${challenge.opponent?.last_name}`.trim() || "Player";
 
       recentActivity.push({

@@ -1,4 +1,5 @@
 import { MapPin, Users, Swords } from "lucide-react";
+import { SportIcon, formatSportName } from "@/lib/utils/sport-icons";
 
 interface LadderInfoSidebarProps {
     sport: string;
@@ -26,8 +27,8 @@ export function LadderInfoSidebar({
                 <h3 className="text-sm font-semibold text-slate-900 mb-3">Ladder Info</h3>
                 <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2 text-slate-700">
-                        <span className="text-2xl">🎾</span>
-                        <span>{sport}</span>
+                        <SportIcon sport={sport} className="h-5 w-5 text-brand-600" />
+                        <span>{formatSportName(sport)}</span>
                     </div>
                     {location && (
                         <div className="flex items-center gap-2 text-slate-700">
