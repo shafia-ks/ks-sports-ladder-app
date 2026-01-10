@@ -128,9 +128,6 @@ export function RankingsTable({
                                                 <span className="ml-2 text-xs text-brand-600 font-normal">(You)</span>
                                             )}
                                         </p>
-                                        {player.users?.email && (
-                                            <p className="text-xs text-slate-500">{player.users.email}</p>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -212,9 +209,6 @@ export function RankingsTable({
                                                         <span className="ml-2 text-xs text-brand-600 font-normal">(You)</span>
                                                     )}
                                                 </p>
-                                                {player.users?.email && (
-                                                    <p className="text-xs text-slate-500">{player.users.email}</p>
-                                                )}
                                             </div>
                                         </div>
                                     </td>

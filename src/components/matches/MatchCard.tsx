@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus } from "lucide-react";
+import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { Avatar } from "@/components/ui/avatar";
 
 interface Player {
     id: string;
@@ -283,17 +284,12 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     {/* Players */}
                     <div className="flex items-center gap-3 mt-3">
                         <div className={`flex items-center gap-2 ${winnerId === match.player1_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
-                            {match.player1.profile_picture_url ? (
-                                <img
-                                    src={match.player1.profile_picture_url}
-                                    alt={match.player1.full_name || match.player1.email}
-                                    className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                                    {(match.player1.full_name || match.player1.email)[0].toUpperCase()}
-                                </div>
-                            )}
+                            <Avatar
+                                name={match.player1.full_name}
+                                email={match.player1.email}
+                                src={match.player1.profile_picture_url}
+                                size="md"
+                            />
                             <span className="text-slate-900">
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </span>
@@ -303,17 +299,12 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <span className="text-slate-400 font-medium">VS</span>
 
                         <div className={`flex items-center gap-2 ${winnerId === match.player2_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
-                            {match.player2.profile_picture_url ? (
-                                <img
-                                    src={match.player2.profile_picture_url}
-                                    alt={match.player2.full_name || match.player2.email}
-                                    className="w-10 h-10 rounded-full object-cover border-2 border-purple-200"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
-                                    {(match.player2.full_name || match.player2.email)[0].toUpperCase()}
-                                </div>
-                            )}
+                            <Avatar
+                                name={match.player2.full_name}
+                                email={match.player2.email}
+                                src={match.player2.profile_picture_url}
+                                size="md"
+                            />
                             <span className="text-slate-900">
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </span>
@@ -347,7 +338,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 justify-end">
                     {!isEditing && !isEditingDetails && canEdit && (
                         <>
                             <button
