@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { MatchCard } from "@/components/matches/MatchCard";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/auth/auth-context";
 
 interface Player {
   id: string;
@@ -106,8 +106,8 @@ export default function LadderMatchesPage({ params }: { params: { id: string } }
           <button
             onClick={() => setFilter("all")}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "all"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
           >
             All ({counts.all})
@@ -115,8 +115,8 @@ export default function LadderMatchesPage({ params }: { params: { id: string } }
           <button
             onClick={() => setFilter("Pending")}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Pending"
-                ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-md"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-md"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
           >
             Pending ({counts.Pending})
@@ -124,8 +124,8 @@ export default function LadderMatchesPage({ params }: { params: { id: string } }
           <button
             onClick={() => setFilter("Submitted")}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Submitted"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
           >
             Awaiting Confirmation ({counts.Submitted})
@@ -133,8 +133,8 @@ export default function LadderMatchesPage({ params }: { params: { id: string } }
           <button
             onClick={() => setFilter("Confirmed")}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Confirmed"
-                ? "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              ? "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
           >
             Completed ({counts.Confirmed})

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/toast";
 
 interface Player {
     id: string;
@@ -35,7 +35,7 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: MatchCardProps) {
-    const { toast } = useToast();
+    const { push: showToast } = useToast();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -87,10 +87,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
     const handleSubmit = async () => {
         if (!winnerId) {
-            toast({
+            showToast({
                 title: "No winner detected",
                 description: "Please enter valid scores to determine a winner.",
-                variant: "destructive",
+                variant: "error",
             });
             return;
         }
@@ -114,19 +114,20 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
             if (!response.ok) throw new Error("Failed to submit score");
 
-            toast({
+            showToast({
                 title: "Score submitted!",
                 description: "Match score has been recorded successfully.",
+                variant: "success",
             });
 
             setIsEditing(false);
             onUpdate();
         } catch (error) {
             console.error("Error submitting score:", error);
-            toast({
+            showToast({
                 title: "Error",
                 description: "Failed to submit score. Please try again.",
-                variant: "destructive",
+                variant: "error",
             });
         } finally {
             setLoading(false);

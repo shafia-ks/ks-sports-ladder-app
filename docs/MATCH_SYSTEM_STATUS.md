@@ -1,6 +1,6 @@
 # Match Management System - Implementation Status
 
-## ✅ COMPLETED (Step 1)
+## ✅ COMPLETED (Phase 1)
 
 ### 1. **MatchCard Component** (`src/components/matches/MatchCard.tsx`)
 - ✅ Modern card-based design with color-coded borders
@@ -11,11 +11,27 @@
 - ✅ Expandable/collapsible for completed matches
 - ✅ Real-time winner calculation
 - ✅ Green/red highlighting for winning/losing sets
+- ✅ Toast notifications for success/error
 
 ### 2. **API Endpoint** (`src/app/api/matches/[id]/submit/route.ts`)
 - ✅ PATCH endpoint for submitting match scores
 - ✅ Updates set_scores, winner_id, played_at, location, status
 - ✅ Accessible to players (not just organizers)
+
+### 3. **Matches List Page** (`src/app/ladders/[id]/matches/page.tsx`)
+- ✅ Filter tabs: All | Pending | Submitted | Completed
+- ✅ Search by player name
+- ✅ Vertical list of MatchCard components
+- ✅ Fetch matches from API
+- ✅ Real-time updates after score submission
+- ✅ Empty state when no matches
+- ✅ Loading states with skeleton UI
+
+### 4. **Build & Type Check**
+- ✅ TypeScript compilation successful
+- ✅ No type errors
+- ✅ Build passes successfully
+- ✅ All imports resolved correctly
 
 ---
 
