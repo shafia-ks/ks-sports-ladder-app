@@ -62,7 +62,7 @@ export function PendingActions({ challenges, matches, loading }: PendingActionsP
                                 </p>
                                 <p className="mt-1 text-xs text-orange-700">{match.score_summary}</p>
                             </div>
-                            <Link href="/matches" className="btn bg-orange-200 text-orange-900 hover:bg-orange-300 border-orange-300 text-xs px-3 py-1">
+                            <Link href="/dashboard" className="btn bg-orange-200 text-orange-900 hover:bg-orange-300 border-orange-300 text-xs px-3 py-1">
                                 Verify
                             </Link>
                         </div>

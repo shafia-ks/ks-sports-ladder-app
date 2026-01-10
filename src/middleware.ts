@@ -15,8 +15,7 @@ export function middleware(request: NextRequest) {
   // Protect user routes
   if (
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/challenges/create") ||
-    pathname.startsWith("/matches/submit")
+    pathname.startsWith("/challenges/create")
   ) {
     // TODO: verify user session exists
     // For now, allow all (development mode)
@@ -26,5 +25,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/challenges/create", "/matches/submit"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/challenges/create"],
 };

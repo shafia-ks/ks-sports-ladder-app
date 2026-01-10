@@ -101,7 +101,7 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
                                     </p>
                                 </div>
                                 <Link
-                                    href={`/matches/submit?matchId=${match.id}`}
+                                    href={`/ladders/${ladderId}?tab=matches`}
                                     className="btn btn-sm bg-blue-600 text-white hover:bg-blue-700"
                                 >
                                     Submit Score
@@ -125,7 +125,7 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
                                     </p>
                                 </div>
                                 <Link
-                                    href={`/matches/submit?matchId=${match.id}`}
+                                    href={`/ladders/${ladderId}?tab=matches`}
                                     className="btn btn-sm bg-amber-600 text-white hover:bg-amber-700"
                                 >
                                     Confirm
@@ -138,7 +138,7 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
 
             {matches.length > 0 && (
                 <Link
-                    href={`/matches`}
+                    href={`/ladders/${ladderId}?tab=matches`}
                     className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4"
                 >
                     View all matches →

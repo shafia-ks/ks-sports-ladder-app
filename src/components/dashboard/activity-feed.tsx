@@ -90,12 +90,6 @@ export function ActivityFeed({ activeChallenges, recentMatches, loading, userId 
                     </div>
                 )}
             </div>
-
-            <div className="pt-2">
-                <Link href="/matches" className="block w-full text-center text-xs font-semibold text-brand-600 hover:text-brand-700 py-2 bg-slate-50 rounded-lg hover:bg-brand-50 transition-colors">
-                    View All Activity
-                </Link>
-            </div>
         </div>
     );
 }
