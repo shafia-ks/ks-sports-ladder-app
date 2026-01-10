@@ -25,9 +25,14 @@ export function LadderMatchesCard({ ladderId }: Props) {
 
     const fetchMatches = async () => {
         try {
-            const res = await fetch(`/api/matches?ladderId=${ladderId}&status=in_progress,pending_confirmation&limit=5`);
+            // Fetch all matches and filter client-side
+            const res = await fetch(`/api/matches?ladderId=${ladderId}&limit=10`);
             const data = await res.json();
-            setMatches(data.matches || []);
+            // Show Pending (scheduled) and Submitted (awaiting confirmation) matches
+            const activeMatches = (data.matches || []).filter((m: Match) =>
+                m.status === 'Pending' || m.status === 'Submitted'
+            );
+            setMatches(activeMatches.slice(0, 5)); // Limit to 5
         } catch (error) {
             console.error("Failed to fetch ladder matches:", error);
         } finally {
@@ -84,11 +89,11 @@ export function LadderMatchesCard({ ladderId }: Props) {
                                             <Clock className="h-3 w-3 inline mr-1" />
                                             {new Date(match.created_at).toLocaleDateString()}
                                         </p>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${match.status === "pending_confirmation"
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${match.status === "Submitted"
                                                 ? "bg-amber-100 text-amber-700"
                                                 : "bg-blue-100 text-blue-700"
                                             }`}>
-                                            {match.status === "pending_confirmation" ? "Confirming" : "In Progress"}
+                                            {match.status === "Submitted" ? "Confirming" : "Scheduled"}
                                         </span>
                                     </div>
                                 </div>

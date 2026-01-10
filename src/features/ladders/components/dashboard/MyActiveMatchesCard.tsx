@@ -30,9 +30,14 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
 
     const fetchMatches = async () => {
         try {
-            const res = await fetch(`/api/matches?userId=${userId}&ladderId=${ladderId}&status=in_progress,pending_confirmation`);
+            // Fetch Pending (not yet played) and Submitted (awaiting confirmation) matches
+            const res = await fetch(`/api/matches?userId=${userId}&ladderId=${ladderId}`);
             const data = await res.json();
-            setMatches(data.matches || []);
+            // Filter client-side for active matches
+            const activeMatches = (data.matches || []).filter((m: Match) =>
+                m.status === 'Pending' || m.status === 'Submitted'
+            );
+            setMatches(activeMatches);
         } catch (error) {
             console.error("Failed to fetch matches:", error);
         } finally {
@@ -40,8 +45,8 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
         }
     };
 
-    const toScore = matches.filter((m) => m.status === "in_progress");
-    const toConfirm = matches.filter((m) => m.status === "pending_confirmation");
+    const toScore = matches.filter((m) => m.status === "Pending"); // Matches ready to play
+    const toConfirm = matches.filter((m) => m.status === "Submitted"); // Matches awaiting confirmation
 
     if (loading) {
         return (
