@@ -41,8 +41,8 @@ export async function GET(req: Request) {
     .from("matches")
     .select(
       `id, ladder_id, challenge_id, player1_id, player2_id, winner_id, status, set_scores, played_at, created_at, disputed_by,
-       player1:users!matches_player1_id_fkey(id, full_name, email),
-       player2:users!matches_player2_id_fkey(id, full_name, email)`
+       player1:player1_id(id, full_name, email),
+       player2:player2_id(id, full_name, email)`
     )
     .order("created_at", { ascending: false })
     .limit(50);
@@ -65,6 +65,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await query;
   if (error) {
+    console.error("[GET /api/matches] Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
