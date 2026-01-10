@@ -28,6 +28,7 @@ import { PendingApprovals } from "@/features/ladders/components/PendingApprovals
 import { InviteMembersButton } from "@/features/ladders/components/InviteMembersButton";
 import { InviteMembersModal } from "@/features/ladders/components/InviteMembersModal";
 import { PendingOrganizerRequests } from "@/features/ladders/components/PendingOrganizerRequests";
+import { MatchesList } from "@/features/ladders/components/MatchesList";
 
 // Lazy load heavy components for better performance
 const RankingsTable = dynamic(
@@ -1520,15 +1521,12 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
           {/* Matches Tab */}
           {tab === "matches" && canAccessMembers && (
-            <div className="py-12 text-center">
-              <Target className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-sm text-slate-600 mb-4">View and manage matches for this ladder</p>
-              <Link
-                href={`/ladders/${params.id}/matches`}
-                className="btn btn-primary inline-block"
-              >
-                View Matches
-              </Link>
+            <div className="space-y-6">
+              <MatchesList
+                ladderId={params.id}
+                currentUserId={user?.id || ""}
+                isOrganizer={isOrganizer}
+              />
             </div>
           )}
 
