@@ -96,8 +96,6 @@ export async function GET(
 
       if (membersError) throw membersError;
 
-      membersWithUsers = members ?? [];
-
       if (members && members.length > 0) {
         // Fetch user data for ALL members (active AND pending)
         const allUserIds = members.map((m) => m.user_id);
@@ -110,10 +108,35 @@ export async function GET(
 
           if (userProfilesError) throw userProfilesError;
 
+          // Fetch active challenges and matches to determine 'busy' status
+          const [{ data: activeChallenges }, { data: activeMatches }] = await Promise.all([
+            supabaseAdmin
+              .from("challenges")
+              .select("challenger_id, challenged_id")
+              .eq("ladder_id", params.id)
+              .in("status", ["pending", "accepted"]),
+            supabaseAdmin
+              .from("matches")
+              .select("player1_id, player2_id")
+              .eq("ladder_id", params.id)
+              .in("status", ["Pending", "Submitted"])
+          ]);
+
+          const busyUserIds = new Set<string>();
+          activeChallenges?.forEach(c => {
+            busyUserIds.add(c.challenger_id);
+            busyUserIds.add(c.challenged_id);
+          });
+          activeMatches?.forEach(m => {
+            busyUserIds.add(m.player1_id);
+            busyUserIds.add(m.player2_id);
+          });
+
           const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
           membersWithUsers = members.map((member) => ({
             ...member,
             users: userMap.get(member.user_id) ?? null,
+            is_busy: busyUserIds.has(member.user_id)
           }));
         }
       }

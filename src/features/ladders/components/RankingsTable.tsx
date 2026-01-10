@@ -14,6 +14,7 @@ interface Player {
         email: string | null;
         avatar_url: string | null;
     } | null;
+    is_busy?: boolean;
 }
 
 interface RankingsTableProps {
@@ -136,10 +137,20 @@ export function RankingsTable({
                                     {eligible ? (
                                         <button
                                             onClick={() => onChallenge(player.user_id)}
-                                            className="btn btn-primary btn-sm w-full inline-flex items-center justify-center gap-1"
+                                            disabled={player.is_busy}
+                                            className={`btn btn-sm w-full inline-flex items-center justify-center gap-1 ${player.is_busy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
                                         >
-                                            <Swords className="h-3 w-3" />
-                                            Challenge
+                                            {player.is_busy ? (
+                                                <>
+                                                    <Clock className="h-3 w-3" />
+                                                    Busy
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Swords className="h-3 w-3" />
+                                                    Challenge
+                                                </>
+                                            )}
                                         </button>
                                     ) : (
                                         <button
@@ -168,9 +179,6 @@ export function RankingsTable({
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                                 Player
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                Trend
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
                                 Action
@@ -212,20 +220,26 @@ export function RankingsTable({
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 text-center">
-                                        {/* Placeholder for trend - can be enhanced later */}
-                                        <span className="text-slate-400">—</span>
-                                    </td>
                                     <td className="px-4 py-4 text-right">
                                         {!isCurrentUser && (
                                             <>
                                                 {eligible ? (
                                                     <button
                                                         onClick={() => onChallenge(player.user_id)}
-                                                        className="btn btn-primary btn-sm inline-flex items-center gap-1"
+                                                        disabled={player.is_busy}
+                                                        className={`btn btn-sm inline-flex items-center gap-1 ${player.is_busy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
                                                     >
-                                                        <Swords className="h-3 w-3" />
-                                                        Challenge
+                                                        {player.is_busy ? (
+                                                            <>
+                                                                <Clock className="h-3 w-3" />
+                                                                Busy
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Swords className="h-3 w-3" />
+                                                                Challenge
+                                                            </>
+                                                        )}
                                                     </button>
                                                 ) : (
                                                     <button

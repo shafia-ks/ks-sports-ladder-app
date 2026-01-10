@@ -13,6 +13,7 @@ interface Player {
         email: string | null;
         avatar_url: string | null;
     } | null;
+    is_busy?: boolean;
 }
 
 interface Top5RankingsProps {
@@ -22,10 +23,9 @@ interface Top5RankingsProps {
     canChallenge: (targetRank: number) => boolean;
     onChallenge: (playerId: string) => void;
     onViewFullRankings?: () => void;
-    busyPlayers?: Set<string>;
 }
 
-export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge, onViewFullRankings, busyPlayers }: Top5RankingsProps) {
+export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, onChallenge, onViewFullRankings }: Top5RankingsProps) {
     const top5 = players.slice(0, 5);
 
     const getDisplayName = (player: Player) => {
@@ -48,12 +48,13 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
             <div className="space-y-3">
                 {top5.map((player) => {
                     const isCurrentUser = player.user_id === currentUserId;
-                    const isBusy = busyPlayers?.has(player.user_id);
-                    const isCurrentUserBusy = busyPlayers?.has(currentUserId || "");
+                    const isBusy = player.is_busy;
 
-                    // Update eligible logic to include busy checks
+                    // Simple eligible check based on rank and own busy status
+                    // Note: We don't have current user's busy status strictly here unless we find them in the list or passed in.
+                    // But blocking the challenge button itself if target is busy is good enough.
                     const eligible = player.current_rank
-                        ? (canChallenge(player.current_rank) && !isBusy && !isCurrentUserBusy)
+                        ? canChallenge(player.current_rank)
                         : false;
 
                     const displayName = getDisplayName(player);
@@ -72,17 +73,23 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                 <p className="text-sm font-semibold text-slate-900 truncate">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}
                                 </p>
-                                {isBusy && <span className="text-xs text-brand-600 font-medium ml-2">• In Challenge</span>}
+                                {isBusy && (
+                                    <div className="flex items-center gap-1 text-xs text-amber-600 font-medium mt-0.5">
+                                        <Clock className="h-3 w-3" />
+                                        <span>Busy</span>
+                                    </div>
+                                )}
                             </div>
                             {!isCurrentUser && (
                                 <div>
                                     {eligible ? (
                                         <button
                                             onClick={() => onChallenge(player.user_id)}
-                                            className="btn btn-primary btn-sm flex items-center gap-1"
+                                            disabled={isBusy}
+                                            className={`btn btn-sm flex items-center gap-1 ${isBusy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
                                         >
-                                            <Swords className="h-3 w-3" />
-                                            Challenge
+                                            {isBusy ? <Lock className="h-3 w-3" /> : <Swords className="h-3 w-3" />}
+                                            {isBusy ? "Busy" : "Challenge"}
                                         </button>
                                     ) : (
                                         <button

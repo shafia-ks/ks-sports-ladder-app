@@ -14,7 +14,7 @@ export async function POST(
         const body = await req.json();
         const { user_id, action } = body; // action: 'confirm' or 'dispute'
 
-        console.log(`[POST /api/matches/:id/confirm] ${action} match:`, params.id, "by user:", user_id);
+        console.log(`[POST /api/matches/[id]/confirm] Request received. Params ID: ${params.id}, User: ${user_id}, Action: ${action}`);
 
         // Get match details
         const { data: match, error: matchError } = await supabaseAdmin
@@ -23,9 +23,17 @@ export async function POST(
             .eq("id", params.id)
             .single();
 
-        if (matchError || !match) {
+        if (matchError) {
+            console.error(`[POST /api/matches/[id]/confirm] Match lookup error for ID ${params.id}:`, matchError);
+            return NextResponse.json({ error: "Match lookup failed" }, { status: 500 });
+        }
+
+        if (!match) {
+            console.error(`[POST /api/matches/[id]/confirm] Match not found for ID ${params.id}`);
             return NextResponse.json({ error: "Match not found" }, { status: 404 });
         }
+
+        console.log(`[POST /api/matches/[id]/confirm] Match found:`, match.id, "Status:", match.status);
 
         // Verify user is one of the players
         if (match.player1_id !== user_id && match.player2_id !== user_id) {

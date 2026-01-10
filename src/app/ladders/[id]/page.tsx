@@ -1316,7 +1316,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     }}
                     onChallenge={handleQuickChallenge}
                     onViewFullRankings={() => setTab("ranking")}
-                    busyPlayers={busyPlayers}
                   />
                 )}
 
