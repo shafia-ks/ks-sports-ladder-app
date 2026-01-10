@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 
     const { data: users, error: usersError } = await supabaseAdmin
       .from("users")
-      .select("id, full_name, email, profile_picture_url")
+      .select("id, full_name, email")
       .in("id", Array.from(userIds));
 
     if (usersError) {
