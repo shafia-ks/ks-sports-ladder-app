@@ -145,7 +145,7 @@ export function TopNav() {
               className="object-cover"
             />
           </div>
-          <span className="text-base md:text-xl font-bold text-slate-900 tracking-tight">KS Sports Ladder</span>
+          <span className="hidden sm:inline text-base md:text-xl font-bold text-slate-900 tracking-tight">KS Sports Ladder</span>
         </Link>
 
         <nav className="hidden gap-1 md:flex">
@@ -183,8 +183,8 @@ export function TopNav() {
                   >
                     <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
                   </Link>
-                  <div className="hidden lg:flex flex-col items-start">
-                    <p className="text-xs font-medium text-slate-800 max-w-[150px] truncate">
+                  <div className="hidden xl:flex flex-col items-start">
+                    <p className="text-xs font-medium text-slate-800 max-w-[120px] truncate">
                       {user.fullName || user.email}
                     </p>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
@@ -197,7 +197,7 @@ export function TopNav() {
                     title="Sign out"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span className="hidden lg:inline">Sign out</span>
+                    <span className="hidden xl:inline">Sign out</span>
                   </button>
                 </div>
               ) : (
