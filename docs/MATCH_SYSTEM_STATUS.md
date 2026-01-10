@@ -35,53 +35,53 @@
 
 ---
 
-## 🚧 TODO (Next Steps)
+## 🚧 IN PROGRESS (Phase 2)
 
-### 3. **Matches List Page** (`src/app/ladders/[id]/matches/page.tsx`)
-**Features Needed:**
-- Filter tabs: All | Pending | Completed
-- Search by player name
-- Vertical list of MatchCard components
-- Fetch matches from API
-- Real-time updates after score submission
-- Empty state when no matches
+### 5. **Database Migration** (`database/migrations/009_add_match_location_scheduled_time.sql`)
+- ✅ Added `location` column (TEXT)
+- ✅ Added `scheduled_time` column (TIMESTAMP WITH TIME ZONE)
+- ✅ Created index for scheduled_time queries
+- ✅ Added column comments for documentation
+- ⏳ **Needs to be applied in Supabase SQL Editor**
 
-### 4. **Update Ladder Matches Tab**
-**Files to Modify:**
-- `src/app/ladders/[id]/page.tsx` - Update Matches tab
-- Remove "View Matches" button
-- Embed matches list directly in tab
+### 6. **Confirmation Workflow** (`src/app/api/matches/[id]/confirm/route.ts`)
+- ✅ POST endpoint for confirm/dispute actions
+- ✅ Verify user is a player in the match
+- ✅ Update match status to Confirmed
+- ✅ Notify other player on confirmation
+- ✅ Notify organizers on dispute
+- ⏳ Ranking update integration (TODO)
 
-### 5. **Database Schema Updates**
-**Add columns to `matches` table:**
-```sql
-ALTER TABLE matches 
-ADD COLUMN IF NOT EXISTS location TEXT,
-ADD COLUMN IF NOT EXISTS scheduled_time TIMESTAMP;
-```
+### 7. **Match Card Enhancements** (`src/components/matches/MatchCard.tsx`)
+- ✅ Added handleConfirm function
+- ✅ Added handleDispute function
+- ✅ Confirm button (green) for submitted matches
+- ✅ Dispute button (red) for submitted matches
+- ✅ Only show to non-submitting player
+- ✅ Toast notifications for confirm/dispute
+- ✅ Prompt for dispute reason
 
-### 6. **Auto-populate Matches from Challenges**
-**Already working!** ✅
-- Challenge acceptance creates Pending match
-- Match is linked via `challenge_id`
+### 8. **Build & Type Check**
+- ✅ TypeScript compilation successful
+- ✅ Build passes successfully
+- ✅ No type errors
 
 ---
 
-## 📋 IMPLEMENTATION PLAN
+## ⏳ TODO (Phase 2 Remaining)
 
-### **Phase 1: Core Functionality** (Current)
-1. ✅ MatchCard component
-2. ✅ Submit API endpoint
-3. ⏳ Matches list page with filters
-4. ⏳ Integrate into ladder tabs
+### 9. **Apply Database Migration**
+**Action Required:**
+Run `database/migrations/009_add_match_location_scheduled_time.sql` in Supabase SQL Editor
 
-### **Phase 2: Polish**
-5. ⏳ Add database migration for location/scheduled_time
-6. ⏳ Confirmation workflow (opponent confirms score)
-7. ⏳ Dispute handling
-8. ⏳ Ranking updates on match confirmation
+### 10. **Ranking Updates on Confirmation**
+**Files to Modify:**
+- `src/app/api/matches/[id]/confirm/route.ts` - Integrate ranking engine
+- Call `applyMatchResult` and `updateLadderRanks` on confirmation
 
-### **Phase 3: Enhancements**
+---
+
+## ⏳ TODO (Phase 3 - Future Enhancements)
 9. ⏳ Match history view
 10. ⏳ Statistics and analytics
 11. ⏳ Export match data

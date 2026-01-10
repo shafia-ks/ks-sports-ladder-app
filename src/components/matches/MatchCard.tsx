@@ -162,7 +162,79 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         }
     };
 
+    const handleConfirm = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/matches/${match.id}/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    action: "confirm",
+                }),
+            });
+
+            if (!response.ok) throw new Error("Failed to confirm match");
+
+            showToast({
+                title: "Match confirmed!",
+                description: "The match result has been confirmed.",
+                variant: "success",
+            });
+
+            onUpdate();
+        } catch (error) {
+            console.error("Error confirming match:", error);
+            showToast({
+                title: "Error",
+                description: "Failed to confirm match. Please try again.",
+                variant: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDispute = async () => {
+        const reason = prompt("Please provide a reason for disputing this match:");
+        if (!reason) return;
+
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/matches/${match.id}/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    action: "dispute",
+                    reason,
+                }),
+            });
+
+            if (!response.ok) throw new Error("Failed to dispute match");
+
+            showToast({
+                title: "Match disputed",
+                description: "Organizers have been notified and will review the dispute.",
+                variant: "warning",
+            });
+
+            onUpdate();
+        } catch (error) {
+            console.error("Error disputing match:", error);
+            showToast({
+                title: "Error",
+                description: "Failed to dispute match. Please try again.",
+                variant: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const canEdit = match.status === "Pending" || (match.status === "Submitted" && isOrganizer);
+    const canConfirm = match.status === "Submitted" && !isOrganizer &&
+        (match.player1_id === currentUserId || match.player2_id === currentUserId);
 
     return (
         <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-6 hover:shadow-md transition-shadow`}>
@@ -230,6 +302,26 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         >
                             {match.status === "Pending" ? "Enter Score →" : "Edit Score"}
                         </button>
+                    )}
+
+                    {/* Confirmation/Dispute buttons for submitted matches */}
+                    {canConfirm && (
+                        <>
+                            <button
+                                onClick={handleConfirm}
+                                disabled={loading}
+                                className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-medium text-sm disabled:opacity-50"
+                            >
+                                ✓ Confirm
+                            </button>
+                            <button
+                                onClick={handleDispute}
+                                disabled={loading}
+                                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-medium text-sm disabled:opacity-50"
+                            >
+                                ⚠ Dispute
+                            </button>
+                        </>
                     )}
 
                     {match.status === "Confirmed" && (
