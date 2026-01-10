@@ -55,6 +55,77 @@ export async function POST(
                 return NextResponse.json({ error: updateError.message }, { status: 500 });
             }
 
+            // Trigger ranking update
+            console.log("[POST /api/matches/:id/confirm] Starting ranking update...");
+
+            // Fetch ladder ranking rules
+            const { data: ladder, error: ladderError } = await supabaseAdmin
+                .from("ladders")
+                .select("ranking_rules")
+                .eq("id", match.ladder_id)
+                .single();
+
+            if (ladderError || !ladder) {
+                console.error("[POST /api/matches/:id/confirm] Failed to fetch ladder rules:", ladderError);
+                // Don't fail the confirmation, just log the error
+            } else {
+                // Fetch current ladder members with ranks
+                const { data: members, error: membersError } = await supabaseAdmin
+                    .from("ladder_memberships")
+                    .select("user_id, current_rank")
+                    .eq("ladder_id", match.ladder_id)
+                    .eq("status", "active")
+                    .order("current_rank", { ascending: true });
+
+                if (membersError || !members) {
+                    console.error("[POST /api/matches/:id/confirm] Failed to fetch members:", membersError);
+                } else {
+                    // Import ranking engine
+                    const { applyMatchResult } = await import("@/lib/ranking/ranking-engine");
+                    const { updateLadderRanks } = await import("@/lib/supabase/rankings");
+
+                    // Prepare ranking data
+                    const ranking = members
+                        .filter(m => m.current_rank && m.current_rank > 0)
+                        .map(m => ({
+                            userId: m.user_id,
+                            currentRank: m.current_rank!
+                        }));
+
+                    // Determine loser (the player who is NOT the winner)
+                    const loserId = match.winner_id === match.player1_id ? match.player2_id : match.player1_id;
+
+                    // Apply ranking update
+                    const result = applyMatchResult({
+                        ranking,
+                        winnerId: match.winner_id,
+                        loserId,
+                        rules: ladder.ranking_rules || { type: "default-swap-minimal-drop" }
+                    });
+
+                    console.log("[POST /api/matches/:id/confirm] Ranking update result:", result.note);
+
+                    // Update ranks in database
+                    const rankUpdate = await updateLadderRanks({
+                        ladderId: match.ladder_id,
+                        ranking: result.ranking
+                    });
+
+                    if (!rankUpdate.success) {
+                        console.error("[POST /api/matches/:id/confirm] Failed to update ranks:", rankUpdate.error);
+                    } else {
+                        console.log("[POST /api/matches/:id/confirm] Rankings updated successfully");
+
+                        // Save to ranking history
+                        await supabaseAdmin.from("ranking_history").insert({
+                            ladder_id: match.ladder_id,
+                            match_id: match.id,
+                            snapshot: result.ranking
+                        });
+                    }
+                }
+            }
+
             // Notify the other player
             const otherPlayerId = match.player1_id === user_id ? match.player2_id : match.player1_id;
             await createNotification({
