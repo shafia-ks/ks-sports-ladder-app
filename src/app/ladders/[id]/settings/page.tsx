@@ -65,6 +65,7 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
   });
 
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleExport = async (type: "rankings" | "matches") => {
     try {
@@ -179,7 +180,6 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
   };
 
   const handleProfilePictureUpload = async (file: File): Promise<string> => {
-    const { user } = useAuth();
     if (!user?.id) throw new Error("Not authenticated");
 
     const formData = new FormData();
@@ -201,7 +201,6 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
   };
 
   const handleProfilePictureRemove = async (): Promise<void> => {
-    const { user } = useAuth();
     if (!user?.id) throw new Error("Not authenticated");
 
     const res = await fetch(`/api/ladders/${params.id}/profile-picture?userId=${user.id}`, {

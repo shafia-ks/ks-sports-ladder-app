@@ -6,7 +6,8 @@ import {
     Wind,
     Target,
     Circle,
-    Zap
+    Zap,
+    Swords
 } from "lucide-react";
 
 export type SportType =
@@ -38,13 +39,13 @@ export function getSportIcon(sport: string): React.ComponentType<{ className?: s
 
     // Map sports to appropriate icons
     const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-        tennis: Target,
-        squash: Target,
-        badminton: Target,
-        tabletennis: Target,
-        pingpong: Target,
-        pickleball: Target,
-        racquetball: Target,
+        tennis: Swords,
+        squash: Swords,
+        badminton: Swords,
+        tabletennis: Swords,
+        pingpong: Swords,
+        pickleball: Swords,
+        racquetball: Swords,
         basketball: Circle,
         volleyball: Circle,
         soccer: Circle,
@@ -52,7 +53,7 @@ export function getSportIcon(sport: string): React.ComponentType<{ className?: s
         baseball: Circle,
         golf: Target,
         swimming: Waves,
-        running: Zap,
+        running: Wind,
         cycling: Bike,
         fitness: Dumbbell,
         gym: Dumbbell,

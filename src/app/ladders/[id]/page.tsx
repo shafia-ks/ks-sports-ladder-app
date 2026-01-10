@@ -696,7 +696,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         const res = await fetch(`/api/ladders/${params.id}/dashboard-stats?user_id=${user.id}`);
         if (res.ok) {
           const json = await res.json();
-          setDashboardStats(json.stats || null);
+          setDashboardStats(json);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard stats:", err);
@@ -1458,7 +1458,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         targetRank < currentUserRank &&
                         (currentUserRank - targetRank) <= maxPositionsUp &&
                         !isBusy &&
-                        !busyPlayers.has(user?.id || "");
+                        !currentMember?.is_busy;
 
                       return (
                         <tr key={member.id} className="border-t border-slate-100">
@@ -1503,7 +1503,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                             ) : (
                               !isCurrentUser && (
                                 <span className="text-xs text-slate-400">
-                                  {isBusy ? "Busy" : targetRank >= currentUserRank ? "Can't challenge down" : "Out of range"}
+                                  {isBusy
+                                    ? "Busy"
+                                    : currentMember?.is_busy
+                                      ? "You are busy"
+                                      : targetRank >= currentUserRank
+                                        ? "Can't challenge down"
+                                        : "Out of range"}
                                 </span>
                               )
                             )}
