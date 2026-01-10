@@ -1379,6 +1379,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   location={data?.ladder?.location}
                   memberCount={memberCounts.active}
                   activeChallenges={challengeCounts.active}
+                  profilePictureUrl={data?.ladder?.profile_picture_url}
                   organizers={data?.organizers || []}
                 />
               </div>

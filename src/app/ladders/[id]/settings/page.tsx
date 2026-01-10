@@ -10,6 +10,8 @@ import { Check, X, Trash2, ArrowLeft, Loader2, Download } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useRouter } from "next/navigation";
 import { HelpTooltip } from "@/components/ui/tooltip";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { useAuth } from "@/lib/auth/auth-context";
 
 interface LadderMember {
   id: string;
@@ -38,6 +40,7 @@ interface LadderData {
     status: string;
     challenge_rules: any;
     ranking_rules: any;
+    profile_picture_url?: string | null;
   } | null;
   members: LadderMember[];
 }
@@ -175,6 +178,45 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
     }
   };
 
+  const handleProfilePictureUpload = async (file: File): Promise<string> => {
+    const { user } = useAuth();
+    if (!user?.id) throw new Error("Not authenticated");
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", user.id);
+
+    const res = await fetch(`/api/ladders/${params.id}/profile-picture`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Upload failed");
+
+    // Reload ladder data to get new profile picture URL
+    await reload();
+
+    return json.url;
+  };
+
+  const handleProfilePictureRemove = async (): Promise<void> => {
+    const { user } = useAuth();
+    if (!user?.id) throw new Error("Not authenticated");
+
+    const res = await fetch(`/api/ladders/${params.id}/profile-picture?userId=${user.id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const json = await res.json();
+      throw new Error(json.error || "Remove failed");
+    }
+
+    // Reload ladder data
+    await reload();
+  };
+
   const ladderName = data?.ladder?.name ?? "Ladder";
 
   return (
@@ -233,6 +275,20 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Ladder Profile Picture */}
+              <div className="border-b border-slate-200 pb-6">
+                <h3 className="text-base font-semibold text-slate-900 mb-4">Ladder Profile Picture</h3>
+                <ImageUpload
+                  currentImageUrl={data?.ladder?.profile_picture_url}
+                  onUpload={handleProfilePictureUpload}
+                  onRemove={handleProfilePictureRemove}
+                  label="Upload Ladder Picture"
+                  description="Click to upload a profile picture for this ladder"
+                  maxSizeMB={5}
+                  circular={true}
+                />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
