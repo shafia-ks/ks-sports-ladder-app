@@ -81,6 +81,28 @@ Run `database/migrations/009_add_match_location_scheduled_time.sql` in Supabase 
 
 ---
 
+## 🚧 IN PROGRESS (Phase 2.5 - Refinements)
+
+### 11. **Integrate Matches into Ladder Tabs**
+- ⏳ Replace standalone matches page with tab in ladder
+- ⏳ Matches belong to specific ladder only
+- ⏳ Remove separate /ladders/[id]/matches route
+- ⏳ Add matches content to ladder page tabs
+
+### 12. **Separate Edit Details Option**
+- ⏳ Add "Edit Details" button for optional fields
+- ⏳ Allow editing date/time/location without submitting score
+- ⏳ Save details independently
+- ⏳ Professional workflow separation
+
+### 13. **Profile Pictures in Matches**
+- ⏳ Fetch user profile_picture_url from database
+- ⏳ Display actual profile pictures in match cards
+- ⏳ Fallback to initials if no picture
+- ⏳ Consistent avatar styling
+
+---
+
 ## ⏳ TODO (Phase 3 - Future Enhancements)
 9. ⏳ Match history view
 10. ⏳ Statistics and analytics

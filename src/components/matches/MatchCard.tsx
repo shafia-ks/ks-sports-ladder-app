@@ -8,6 +8,7 @@ interface Player {
     id: string;
     full_name: string | null;
     email: string;
+    profile_picture_url?: string | null;
 }
 
 interface Match {
@@ -38,6 +39,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     const { push: showToast } = useToast();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Score state
@@ -127,6 +129,41 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             showToast({
                 title: "Error",
                 description: "Failed to submit score. Please try again.",
+                variant: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveDetails = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/matches/${match.id}/submit`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    played_at: matchDate && matchTime ? `${matchDate}T${matchTime}:00` : match.played_at,
+                    location: location || null,
+                    status: match.status, // Keep current status
+                }),
+            });
+
+            if (!response.ok) throw new Error("Failed to save details");
+
+            showToast({
+                title: "Details saved!",
+                description: "Match details have been updated successfully.",
+                variant: "success",
+            });
+
+            setIsEditingDetails(false);
+            onUpdate();
+        } catch (error) {
+            console.error("Error saving details:", error);
+            showToast({
+                title: "Error",
+                description: "Failed to save details. Please try again.",
                 variant: "error",
             });
         } finally {
@@ -246,9 +283,17 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     {/* Players */}
                     <div className="flex items-center gap-3 mt-3">
                         <div className={`flex items-center gap-2 ${winnerId === match.player1_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                                {(match.player1.full_name || match.player1.email)[0].toUpperCase()}
-                            </div>
+                            {match.player1.profile_picture_url ? (
+                                <img
+                                    src={match.player1.profile_picture_url}
+                                    alt={match.player1.full_name || match.player1.email}
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
+                                />
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                                    {(match.player1.full_name || match.player1.email)[0].toUpperCase()}
+                                </div>
+                            )}
                             <span className="text-slate-900">
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </span>
@@ -258,9 +303,17 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <span className="text-slate-400 font-medium">VS</span>
 
                         <div className={`flex items-center gap-2 ${winnerId === match.player2_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
-                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
-                                {(match.player2.full_name || match.player2.email)[0].toUpperCase()}
-                            </div>
+                            {match.player2.profile_picture_url ? (
+                                <img
+                                    src={match.player2.profile_picture_url}
+                                    alt={match.player2.full_name || match.player2.email}
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-purple-200"
+                                />
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
+                                    {(match.player2.full_name || match.player2.email)[0].toUpperCase()}
+                                </div>
+                            )}
                             <span className="text-slate-900">
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </span>
@@ -295,13 +348,21 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                    {!isEditing && canEdit && (
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-sm"
-                        >
-                            {match.status === "Pending" ? "Enter Score →" : "Edit Score"}
-                        </button>
+                    {!isEditing && !isEditingDetails && canEdit && (
+                        <>
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-sm"
+                            >
+                                {match.status === "Pending" ? "Enter Score →" : "Edit Score"}
+                            </button>
+                            <button
+                                onClick={() => setIsEditingDetails(true)}
+                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-sm"
+                            >
+                                📝 Edit Details
+                            </button>
+                        </>
                     )}
 
                     {/* Confirmation/Dispute buttons for submitted matches */}
@@ -471,6 +532,63 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? "Submitting..." : "Submit Score"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Details Editing (Separate from score) */}
+            {isEditingDetails && (
+                <div className="mt-4 space-y-4">
+                    <div className="bg-slate-50 rounded-xl p-4">
+                        <h4 className="text-sm font-semibold text-slate-700 mb-3">Edit Match Details</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    value={matchDate}
+                                    onChange={(e) => setMatchDate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Time</label>
+                                <input
+                                    type="time"
+                                    value={matchTime}
+                                    onChange={(e) => setMatchTime(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                                <input
+                                    type="text"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    placeholder="e.g., Court 1"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            onClick={() => setIsEditingDetails(false)}
+                            className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium"
+                            disabled={loading}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSaveDetails}
+                            disabled={loading}
+                            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Saving..." : "Save Details"}
                         </button>
                     </div>
                 </div>
