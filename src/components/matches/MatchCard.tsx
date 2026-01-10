@@ -270,7 +270,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     };
 
     const canEdit = match.status === "Pending" || (match.status === "Submitted" && isOrganizer);
-    const canConfirm = match.status === "Submitted" && !isOrganizer &&
+    const canConfirm = match.status === "Submitted" &&
         (match.player1_id === currentUserId || match.player2_id === currentUserId);
 
     return (
