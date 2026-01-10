@@ -396,7 +396,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         </span>
                     ))}
                     <span className="text-sm text-slate-600 ml-2">
-                        ({match.player1_id === winnerId ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} wins)
+                        ({match.player1_id === winnerId ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} won)
                     </span>
                 </div>
             )}
