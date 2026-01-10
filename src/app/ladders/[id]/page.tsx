@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useToast } from "@/components/ui/toast";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleRequest } from "@/components/ui/role-request";
@@ -144,6 +145,7 @@ interface Challenge {
 }
 
 function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?: string }) {
+  const { push: toastPush } = useToast();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
@@ -595,7 +597,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
 
 export default function LadderDetailPage({ params }: { params: { id: string } }) {
   // Toast state for feedback (must be first)
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { push: toastPush } = useToast();
   // State for pending member approval UI
   const [pendingSearch, setPendingSearch] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -611,10 +613,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/approve`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to approve member");
-      setToast({ type: "success", message: "Member approved!" });
+      toastPush({ title: "Member approved!", variant: "success" });
       await fetchLadder(true); // Silent refetch - no loading state
     } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to approve member" });
+      toastPush({ title: "Failed to approve member", description: err instanceof Error ? err.message : "Undefined error", variant: "error" });
     } finally {
       setApprovingId(null);
     }
@@ -627,22 +629,16 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       const res = await fetch(`/api/ladders/${params.id}/members/${memberId}/reject`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to reject member");
-      setToast({ type: "success", message: "Member rejected." });
+      toastPush({ title: "Member rejected.", variant: "success" });
       await fetchLadder(true); // Silent refetch - no loading state
     } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to reject member" });
+      toastPush({ title: "Failed to reject member", description: err instanceof Error ? err.message : "Undefined error", variant: "error" });
     } finally {
       setRejectingId(null);
     }
   };
 
-  // Toast auto-dismiss
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
+
 
   const { user } = useAuth();
 
@@ -902,7 +898,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
     // Check if current player is busy
     if (currentMember.is_busy) {
-      alert("You already have an ongoing challenge or pending match");
+      toastPush({
+        title: "Cannot send challenge",
+        description: "You already have an ongoing challenge or pending match",
+        variant: "warning",
+      });
       return;
     }
 
@@ -937,11 +937,18 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         throw new Error(json.error || json.errors?.[0]?.message || "Failed to create challenge");
       }
 
-      alert("Challenge sent!");
+      toastPush({
+        title: "Challenge sent!",
+        variant: "success",
+      });
       await fetchLadder();
       await fetchActiveChallenges();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send challenge");
+      toastPush({
+        title: "Failed to send challenge",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "error",
+      });
     }
   };
 

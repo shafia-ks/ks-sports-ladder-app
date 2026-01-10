@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Loader2 } from "lucide-react";
 
@@ -29,6 +31,8 @@ interface Member {
 
 export default function ChallengeCreatePage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const { push: toast } = useToast();
   const [ladders, setLadders] = useState<Ladder[]>([]);
   const [selectedLadder, setSelectedLadder] = useState<string>("");
   const [members, setMembers] = useState<Member[]>([]);
@@ -104,7 +108,11 @@ export default function ChallengeCreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLadder || !formData.opponent_id) {
-      alert("Please select ladder and opponent");
+      toast({
+        title: "Missing fields",
+        description: "Please select ladder and opponent",
+        variant: "warning",
+      });
       return;
     }
 
@@ -115,7 +123,11 @@ export default function ChallengeCreatePage() {
       const challenged = members.find(m => m.user_id === formData.opponent_id);
 
       if (!ladder || !challenger || !challenged) {
-        alert("Invalid ladder or members");
+        toast({
+          title: "Invalid selection",
+          description: "Invalid ladder or members selected",
+          variant: "error",
+        });
         return;
       }
 
@@ -153,14 +165,25 @@ export default function ChallengeCreatePage() {
 
       if (!res.ok) {
         const json = await res.json();
-        alert(json.errors?.[0]?.message || json.error || "Failed to create challenge");
+        toast({
+          title: "Failed to create challenge",
+          description: json.errors?.[0]?.message || json.error || "Unknown error",
+          variant: "error",
+        });
         return;
       }
 
-      alert("Challenge sent!");
-      window.location.href = "/challenges";
+      toast({
+        title: "Challenge sent!",
+        variant: "success",
+      });
+      router.push("/challenges");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create challenge");
+      toast({
+        title: "Failed to create challenge",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "error",
+      });
     } finally {
       setSubmitting(false);
     }

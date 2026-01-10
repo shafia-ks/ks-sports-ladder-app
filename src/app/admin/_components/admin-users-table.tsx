@@ -126,6 +126,50 @@ export function AdminUsersTable() {
         });
     };
 
+    const enableUser = (userId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Enable User",
+            message: "This user will be able to sign in again. Continue?",
+            variant: "primary",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setDisabling(userId);
+                try {
+                    const res = await fetch(`/api/users/${userId}/enable`, { method: "PATCH" });
+                    if (!res.ok) throw new Error("Failed to enable user");
+                    await fetchUsers();
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to enable user");
+                } finally {
+                    setDisabling(null);
+                }
+            },
+        });
+    };
+
+    const deleteUser = (userId: string, userName: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Delete User Account",
+            message: `Permanently delete ${userName}'s account? This will remove all their data including matches, challenges, and rankings. This action CANNOT be undone!`,
+            variant: "danger",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setDisabling(userId);
+                try {
+                    const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+                    if (!res.ok) throw new Error("Failed to delete user");
+                    await fetchUsers();
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to delete user");
+                } finally {
+                    setDisabling(null);
+                }
+            },
+        });
+    };
+
     const roleColors: Record<string, string> = {
         admin: "bg-red-100 text-red-700",
         organizer: "bg-amber-100 text-amber-700",
@@ -234,15 +278,22 @@ export function AdminUsersTable() {
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            {user.id !== currentUser?.id && !user.disabled && (
+                                            {user.id !== currentUser?.id && (
                                                 <div className="flex justify-end gap-2">
-                                                    {user.role !== "admin" && (
-                                                        <button onClick={() => updateUserRole(user.id, "admin")} disabled={!!updating} className="text-xs text-brand-600 hover:underline">Make Admin</button>
+                                                    {!user.disabled ? (
+                                                        <>
+                                                            {user.role !== "admin" && (
+                                                                <button onClick={() => updateUserRole(user.id, "admin")} disabled={!!updating} className="text-xs text-brand-600 hover:underline">Make Admin</button>
+                                                            )}
+                                                            {user.role !== "player" && (
+                                                                <button onClick={() => updateUserRole(user.id, "player")} disabled={!!updating} className="text-xs text-slate-600 hover:underline">Demote</button>
+                                                            )}
+                                                            <button onClick={() => disableUser(user.id)} disabled={!!disabling} className="text-xs text-red-600 hover:underline">Disable</button>
+                                                            <button onClick={() => deleteUser(user.id, user.full_name || user.email)} disabled={!!disabling} className="text-xs text-red-700 hover:underline font-semibold">Delete</button>
+                                                        </>
+                                                    ) : (
+                                                        <button onClick={() => enableUser(user.id)} disabled={!!disabling} className="text-xs text-green-600 hover:underline font-semibold">Enable</button>
                                                     )}
-                                                    {user.role !== "player" && (
-                                                        <button onClick={() => updateUserRole(user.id, "player")} disabled={!!updating} className="text-xs text-slate-600 hover:underline">Demote</button>
-                                                    )}
-                                                    <button onClick={() => disableUser(user.id)} disabled={!!disabling} className="text-xs text-red-600 hover:underline">Disable</button>
                                                 </div>
                                             )}
                                         </td>

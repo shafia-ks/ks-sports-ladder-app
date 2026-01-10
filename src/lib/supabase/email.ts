@@ -6,30 +6,65 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions) {
   try {
-    // Note: Email sending with Supabase requires email configured in project settings
-    // For production, integrate with SendGrid, Resend, or similar
-    console.log("Email would be sent:", {
+    // Using Supabase's built-in email functionality
+    // This requires SMTP to be configured in your Supabase project settings
+    // Go to: Supabase Dashboard → Project Settings → Auth → SMTP Settings
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("❌ Supabase credentials missing for email sending");
+      console.log("Email would be sent:", {
+        to: options.to,
+        subject: options.subject,
+        htmlPreview: options.html.substring(0, 100) + "...",
+      });
+      return false;
+    }
+
+    // Use Supabase's email invite functionality
+    // Note: This sends via Supabase's configured SMTP
+    const response = await fetch(`${supabaseUrl}/auth/v1/invite`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({
+        email: options.to,
+        data: {
+          email_subject: options.subject,
+          email_body: options.html,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Supabase email error:', error);
+
+      // Fallback: log the email details
+      console.log("📧 Email details (not sent):", {
+        to: options.to,
+        subject: options.subject,
+        htmlPreview: options.html.substring(0, 100) + "...",
+      });
+      return false;
+    }
+
+    console.log(`✅ Email sent via Supabase to: ${options.to}`);
+    return true;
+  } catch (err) {
+    console.error("❌ Failed to send email:", err);
+
+    // Fallback: log the email details
+    console.log("📧 Email details (not sent):", {
       to: options.to,
       subject: options.subject,
       htmlPreview: options.html.substring(0, 100) + "...",
     });
-
-    // TODO: Integrate with email service provider (SendGrid, Resend, etc.)
-    // Example integration:
-    // const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${SENDGRID_API_KEY}` },
-    //   body: JSON.stringify({
-    //     personalizations: [{ to: [{ email: options.to }] }],
-    //     from: { email: 'noreply@example.com' },
-    //     subject: options.subject,
-    //     content: [{ type: 'text/html', value: options.html }]
-    //   })
-    // });
-
-    return true;
-  } catch (err) {
-    console.error("Failed to send email:", err);
     return false;
   }
 }

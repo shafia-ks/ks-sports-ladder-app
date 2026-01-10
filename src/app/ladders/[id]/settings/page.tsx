@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Check, X, Trash2, ArrowLeft, Loader2, Download } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useRouter } from "next/navigation";
+import { HelpTooltip } from "@/components/ui/tooltip";
 
 interface LadderMember {
   id: string;
@@ -262,8 +263,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700" htmlFor="visibility">
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor="visibility">
                     Visibility
+                    <HelpTooltip content="Public ladders are visible to everyone. Private ladders require an invitation to join." />
                   </label>
                   <select
                     id="visibility"
@@ -281,7 +283,10 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
               <div className="border-t border-slate-200 pt-4">
                 <h3 className="text-base font-semibold text-slate-900">Ranking Rules</h3>
                 <div className="space-y-3 pt-2">
-                  <label className="block text-sm font-medium text-slate-700">Ranking System</label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    Ranking System
+                    <HelpTooltip content="Choose how rankings are calculated. Swap = position swapping, ELO = points-based rating system. See Help Center for detailed explanations." />
+                  </label>
                   <div className="grid gap-2 md:grid-cols-2">
                     {[
                       { id: "swap-positions", label: "Swap Positions" },
@@ -305,8 +310,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                   {formData.rankingType === "points-elo" && (
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="space-y-2">
-                        <label htmlFor="kFactor" className="block text-sm font-medium text-slate-700">
+                        <label htmlFor="kFactor" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                           K-Factor
+                          <HelpTooltip content="Controls rating volatility. Higher = more dramatic changes. Recommended: 24 for balanced, 32 for volatile, 16 for stable." />
                         </label>
                         <input
                           id="kFactor"
@@ -320,8 +326,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="bonusWinStreak" className="block text-sm font-medium text-slate-700">
+                        <label htmlFor="bonusWinStreak" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                           Bonus Win Streak
+                          <HelpTooltip content="Extra points awarded for consecutive wins. 0 = no bonus, 3 = moderate bonus for win streaks." />
                         </label>
                         <input
                           id="bonusWinStreak"
@@ -340,8 +347,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                   {formData.rankingType === "default-swap-minimal-drop" && (
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <label htmlFor="maxDrop" className="block text-sm font-medium text-slate-700">
+                        <label htmlFor="maxDrop" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                           Max Drop
+                          <HelpTooltip content="Maximum positions a player can drop when losing. 1 = minimal disruption, higher = more dramatic changes." />
                         </label>
                         <input
                           id="maxDrop"
@@ -363,8 +371,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                 <h3 className="text-base font-semibold text-slate-900">Challenge Rules</h3>
                 <div className="grid gap-4 md:grid-cols-3 pt-2">
                   <div className="space-y-2">
-                    <label htmlFor="maxPositionsUp" className="block text-sm font-medium text-slate-700">
+                    <label htmlFor="maxPositionsUp" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                       Max Positions Up
+                      <HelpTooltip content="How many ranks above can players challenge? Example: 3 means rank #10 can challenge #7, #8, #9. Lower = more conservative." />
                     </label>
                     <input
                       id="maxPositionsUp"
@@ -378,8 +387,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="expiryDays" className="block text-sm font-medium text-slate-700">
+                    <label htmlFor="expiryDays" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                       Challenge Expiry (days)
+                      <HelpTooltip content="Days to respond to a challenge before it expires. 7 days is recommended for most ladders." />
                     </label>
                     <input
                       id="expiryDays"
@@ -393,8 +403,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="cooldownHours" className="block text-sm font-medium text-slate-700">
+                    <label htmlFor="cooldownHours" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                       Cooldown (hours)
+                      <HelpTooltip content="Time between issuing challenges. 0 = no cooldown, 24-48 hours prevents spam challenges." />
                     </label>
                     <input
                       id="cooldownHours"

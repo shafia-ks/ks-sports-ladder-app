@@ -128,8 +128,39 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
         }
 
-        // Send email notifications (placeholder - implement actual email sending)
-        // For now, invitations are created in database and users can check notifications
+        // Send email notifications to new users
+        const { sendEmail, createInvitationEmailHTML } = await import("@/lib/supabase/email");
+
+        // Get inviter name for email
+        const { data: inviter } = await supabaseAdmin
+          .from("users")
+          .select("full_name, email")
+          .eq("id", invited_by)
+          .single();
+
+        const inviterName = inviter?.full_name || inviter?.email || "Someone";
+
+        // Send emails in parallel
+        const emailPromises = data?.map(async (invitation: any) => {
+          const emailHTML = createInvitationEmailHTML(
+            invitation.id,
+            inviterName,
+            ladder?.name
+          );
+
+          try {
+            await sendEmail({
+              to: invitation.email,
+              subject: `You're invited to join ${ladder?.name || "KS Sports Ladder"}!`,
+              html: emailHTML,
+            });
+          } catch (err) {
+            console.error(`Failed to send email to ${invitation.email}:`, err);
+            // Don't fail the whole request if one email fails
+          }
+        }) || [];
+
+        await Promise.allSettled(emailPromises);
 
         return NextResponse.json({
           ok: true,
@@ -204,14 +235,33 @@ export async function POST(req: NextRequest) {
 
         // Create notifications for each invited user
         const { createNotification } = await import("@/lib/supabase/notifications");
-        for (const userId of userIds) {
-          await createNotification({
-            userId,
-            type: "ladder_invitation",
-            message: `You've been invited to join ${ladder?.name || "a ladder"}`,
-            link: `/notifications`,
-          });
-        }
+
+        const notificationPromises = userIds.map(async (userId: string) => {
+          try {
+            const result = await createNotification({
+              userId,
+              type: "ladder_invitation",
+              message: `You've been invited to join ${ladder?.name || "a ladder"}`,
+              link: `/notifications`,
+            });
+
+            if (!result) {
+              console.error(`Failed to create notification for user ${userId}`);
+            } else {
+              console.log(`✅ Notification created for user ${userId}`);
+            }
+
+            return result;
+          } catch (err) {
+            console.error(`Error creating notification for user ${userId}:`, err);
+            return null;
+          }
+        });
+
+        const notificationResults = await Promise.allSettled(notificationPromises);
+        const successCount = notificationResults.filter(r => r.status === 'fulfilled' && r.value).length;
+
+        console.log(`📧 Created ${successCount}/${userIds.length} notifications for existing user invitations`);
 
         return NextResponse.json({
           ok: true,

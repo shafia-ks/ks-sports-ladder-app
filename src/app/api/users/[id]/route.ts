@@ -55,18 +55,49 @@ export async function PATCH(
         performedBy: params.id, // In production, get from auth context
       });
 
-        // Notify user of role change
-        await createNotification({
-          userId: params.id,
-          type: "role_changed",
-          message: `Your role has been updated to ${role}`,
-          link: role === "admin" ? "/admin" : role === "organizer" ? "/organizer" : "/dashboard",
-        });
+      // Notify user of role change
+      await createNotification({
+        userId: params.id,
+        type: "role_changed",
+        message: `Your role has been updated to ${role}`,
+        link: role === "admin" ? "/admin" : role === "organizer" ? "/organizer" : "/dashboard",
+      });
 
       return NextResponse.json({ user: data });
     }
 
     return NextResponse.json({ error: "No action specified" }, { status: 400 } as ResponseInit);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
+  }
+}
+
+/**
+ * DELETE - Permanently delete user account and all associated data
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 } as ResponseInit);
+  }
+
+  try {
+    const userId = params.id;
+
+    await createAuditLog({
+      entityType: "user",
+      entityId: userId,
+      action: "User account permanently deleted",
+      performedBy: "admin",
+    });
+
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (authError) throw authError;
+
+    return NextResponse.json({ success: true, message: "User deleted" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 } as ResponseInit);
   }
