@@ -1,0 +1,403 @@
+"use client";
+
+import { useState } from "react";
+import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Player {
+    id: string;
+    full_name: string | null;
+    email: string;
+}
+
+interface Match {
+    id: string;
+    ladder_id: string;
+    challenge_id: string | null;
+    player1_id: string;
+    player2_id: string;
+    winner_id: string | null;
+    status: "Pending" | "Submitted" | "Confirmed" | "Disputed";
+    set_scores: string[] | null;
+    played_at: string | null;
+    created_at: string;
+    player1: Player;
+    player2: Player;
+    location?: string | null;
+    scheduled_time?: string | null;
+}
+
+interface MatchCardProps {
+    match: Match;
+    currentUserId: string;
+    isOrganizer: boolean;
+    onUpdate: () => void;
+}
+
+export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: MatchCardProps) {
+    const { toast } = useToast();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    // Score state
+    const [sets, setSets] = useState<Array<{ player1: number; player2: number }>>(
+        match.set_scores?.map((score) => {
+            const [p1, p2] = score.split("-").map(Number);
+            return { player1: p1, player2: p2 };
+        }) || [
+            { player1: 0, player2: 0 },
+            { player1: 0, player2: 0 },
+            { player1: 0, player2: 0 },
+        ]
+    );
+
+    // Match details state
+    const [matchDate, setMatchDate] = useState(match.played_at?.split("T")[0] || "");
+    const [matchTime, setMatchTime] = useState(
+        match.scheduled_time || match.played_at?.split("T")[1]?.substring(0, 5) || ""
+    );
+    const [location, setLocation] = useState(match.location || "");
+
+    // Calculate winner
+    const calculateWinner = () => {
+        const player1Wins = sets.filter((s) => s.player1 > s.player2).length;
+        const player2Wins = sets.filter((s) => s.player2 > s.player1).length;
+
+        if (player1Wins > player2Wins) return { winnerId: match.player1_id, setsWon: player1Wins };
+        if (player2Wins > player1Wins) return { winnerId: match.player2_id, setsWon: player2Wins };
+        return { winnerId: null, setsWon: 0 };
+    };
+
+    const { winnerId, setsWon } = calculateWinner();
+    const player1SetsWon = sets.filter((s) => s.player1 > s.player2).length;
+    const player2SetsWon = sets.filter((s) => s.player2 > s.player1).length;
+
+    const addSet = () => {
+        if (sets.length < 5) {
+            setSets([...sets, { player1: 0, player2: 0 }]);
+        }
+    };
+
+    const updateSet = (index: number, player: "player1" | "player2", value: string) => {
+        const newSets = [...sets];
+        newSets[index][player] = parseInt(value) || 0;
+        setSets(newSets);
+    };
+
+    const handleSubmit = async () => {
+        if (!winnerId) {
+            toast({
+                title: "No winner detected",
+                description: "Please enter valid scores to determine a winner.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const setScores = sets.map((s) => `${s.player1}-${s.player2}`);
+            const playedAt = matchDate && matchTime ? `${matchDate}T${matchTime}:00` : new Date().toISOString();
+
+            const response = await fetch(`/api/matches/${match.id}/submit`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    set_scores: setScores,
+                    winner_id: winnerId,
+                    played_at: playedAt,
+                    location: location || null,
+                    status: "Submitted",
+                }),
+            });
+
+            if (!response.ok) throw new Error("Failed to submit score");
+
+            toast({
+                title: "Score submitted!",
+                description: "Match score has been recorded successfully.",
+            });
+
+            setIsEditing(false);
+            onUpdate();
+        } catch (error) {
+            console.error("Error submitting score:", error);
+            toast({
+                title: "Error",
+                description: "Failed to submit score. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatusBadge = () => {
+        switch (match.status) {
+            case "Pending":
+                return <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">⏱ Pending</span>;
+            case "Submitted":
+                return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">🔵 Awaiting Confirmation</span>;
+            case "Confirmed":
+                return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Completed</span>;
+            case "Disputed":
+                return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">⚠ Disputed</span>;
+        }
+    };
+
+    const getBorderColor = () => {
+        switch (match.status) {
+            case "Pending":
+                return "border-l-orange-500";
+            case "Submitted":
+                return "border-l-blue-500";
+            case "Confirmed":
+                return "border-l-green-500";
+            case "Disputed":
+                return "border-l-red-500";
+            default:
+                return "border-l-gray-300";
+        }
+    };
+
+    const canEdit = match.status === "Pending" || (match.status === "Submitted" && isOrganizer);
+
+    return (
+        <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-6 hover:shadow-md transition-shadow`}>
+            {/* Header */}
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                    {getStatusBadge()}
+
+                    {/* Players */}
+                    <div className="flex items-center gap-3 mt-3">
+                        <div className={`flex items-center gap-2 ${winnerId === match.player1_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                                {(match.player1.full_name || match.player1.email)[0].toUpperCase()}
+                            </div>
+                            <span className="text-slate-900">
+                                {match.player1.full_name || match.player1.email.split("@")[0]}
+                            </span>
+                            {winnerId === match.player1_id && match.status === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
+                        </div>
+
+                        <span className="text-slate-400 font-medium">VS</span>
+
+                        <div className={`flex items-center gap-2 ${winnerId === match.player2_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
+                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
+                                {(match.player2.full_name || match.player2.email)[0].toUpperCase()}
+                            </div>
+                            <span className="text-slate-900">
+                                {match.player2.full_name || match.player2.email.split("@")[0]}
+                            </span>
+                            {winnerId === match.player2_id && match.status === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
+                        </div>
+                    </div>
+
+                    {/* Match Info (if available and not editing) */}
+                    {!isEditing && (matchDate || matchTime || location) && (
+                        <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
+                            {matchDate && (
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" />
+                                    {new Date(matchDate).toLocaleDateString()}
+                                </span>
+                            )}
+                            {matchTime && (
+                                <span className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    {matchTime}
+                                </span>
+                            )}
+                            {location && (
+                                <span className="flex items-center gap-1">
+                                    <MapPin className="h-4 w-4" />
+                                    {location}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                    {!isEditing && canEdit && (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-sm"
+                        >
+                            {match.status === "Pending" ? "Enter Score →" : "Edit Score"}
+                        </button>
+                    )}
+
+                    {match.status === "Confirmed" && (
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Score Display (Completed matches) */}
+            {match.status === "Confirmed" && !isExpanded && match.set_scores && (
+                <div className="flex items-center gap-2 mt-3">
+                    {match.set_scores.map((score, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+                            {score}
+                        </span>
+                    ))}
+                    <span className="text-sm text-slate-600 ml-2">
+                        ({match.player1_id === winnerId ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} wins)
+                    </span>
+                </div>
+            )}
+
+            {/* Score Entry (Editing) */}
+            {isEditing && (
+                <div className="mt-4 space-y-4">
+                    {/* Score Grid */}
+                    <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="grid grid-cols-[auto_1fr] gap-3">
+                            {/* Headers */}
+                            <div></div>
+                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                                {sets.map((_, idx) => (
+                                    <div key={idx} className="text-center text-sm font-medium text-slate-600">
+                                        Set {idx + 1}
+                                    </div>
+                                ))}
+                                <div></div>
+                            </div>
+
+                            {/* Player 1 Row */}
+                            <div className={`text-sm font-medium ${winnerId === match.player1_id ? "text-green-600" : "text-slate-700"}`}>
+                                {match.player1.full_name || match.player1.email.split("@")[0]}
+                            </div>
+                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                                {sets.map((set, idx) => (
+                                    <input
+                                        key={idx}
+                                        type="number"
+                                        min="0"
+                                        max="99"
+                                        value={set.player1 || ""}
+                                        onChange={(e) => updateSet(idx, "player1", e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
+                                            }`}
+                                    />
+                                ))}
+                                {sets.length < 5 && (
+                                    <button
+                                        onClick={addSet}
+                                        className="flex items-center justify-center gap-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Player 2 Row */}
+                            <div className={`text-sm font-medium ${winnerId === match.player2_id ? "text-green-600" : "text-slate-700"}`}>
+                                {match.player2.full_name || match.player2.email.split("@")[0]}
+                            </div>
+                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                                {sets.map((set, idx) => (
+                                    <input
+                                        key={idx}
+                                        type="number"
+                                        min="0"
+                                        max="99"
+                                        value={set.player2 || ""}
+                                        onChange={(e) => updateSet(idx, "player2", e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
+                                            }`}
+                                    />
+                                ))}
+                                <div></div>
+                            </div>
+                        </div>
+
+                        {/* Winner Indicator */}
+                        {winnerId && (
+                            <div className="mt-3 text-center">
+                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                    ✓ {winnerId === match.player1_id ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} leads {Math.max(player1SetsWon, player2SetsWon)}-{Math.min(player1SetsWon, player2SetsWon)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Match Details */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Date (optional)</label>
+                            <input
+                                type="date"
+                                value={matchDate}
+                                onChange={(e) => setMatchDate(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Time (optional)</label>
+                            <input
+                                type="time"
+                                value={matchTime}
+                                onChange={(e) => setMatchTime(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Location (optional)</label>
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="e.g., Court 1"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            onClick={() => setIsEditing(false)}
+                            className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium"
+                            disabled={loading}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading || !winnerId}
+                            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Submitting..." : "Submit Score"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Expanded Details (Completed matches) */}
+            {isExpanded && match.status === "Confirmed" && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span className="text-slate-600">Match Date:</span>
+                            <span className="ml-2 font-medium">{matchDate ? new Date(matchDate).toLocaleDateString() : "Not specified"}</span>
+                        </div>
+                        <div>
+                            <span className="text-slate-600">Location:</span>
+                            <span className="ml-2 font-medium">{location || "Not specified"}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
