@@ -31,13 +31,15 @@ export async function GET(req: Request) {
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Confirmed")
-            .order("played_at", { ascending: false })
+            .order("created_at", { ascending: false })
             .limit(10);
 
         if (error) {
             console.error("[GET /api/dashboard/recent-activity] Error:", error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
+
+        console.log(`[recent-activity] Found ${matches?.length || 0} matches for user ${userId}`);
 
         const activities = (matches || []).map((match) => {
             const isPlayer1 = match.player1_id === userId;
