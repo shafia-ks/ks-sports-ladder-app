@@ -11,11 +11,32 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { set_scores, winner_id, played_at, location, status } = body;
+        const { set_scores, winner_id, played_at, location, user_id } = body;
 
         console.log("[PATCH /api/matches/:id/submit] Updating match:", params.id, body);
 
-        // Update match
+        // Validate user_id is provided
+        if (!user_id) {
+            return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+        }
+
+        // Get match to verify user is a player
+        const { data: existingMatch, error: fetchError } = await supabaseAdmin
+            .from("matches")
+            .select("player1_id, player2_id, status")
+            .eq("id", params.id)
+            .single();
+
+        if (fetchError || !existingMatch) {
+            return NextResponse.json({ error: "Match not found" }, { status: 404 });
+        }
+
+        // Verify user is one of the players
+        if (existingMatch.player1_id !== user_id && existingMatch.player2_id !== user_id) {
+            return NextResponse.json({ error: "Unauthorized: You are not a player in this match" }, { status: 403 });
+        }
+
+        // Update match with new status ScoreSubmitted
         const { data: match, error } = await supabaseAdmin
             .from("matches")
             .update({
@@ -23,7 +44,8 @@ export async function PATCH(
                 winner_id,
                 played_at: played_at || new Date().toISOString(),
                 location,
-                status: status || "Submitted",
+                status: "ScoreSubmitted",
+                submitted_by: user_id,
             })
             .eq("id", params.id)
             .select()
@@ -31,6 +53,12 @@ export async function PATCH(
 
         if (error) {
             console.error("[PATCH /api/matches/:id/submit] Error:", error);
+            // Check if it's a state transition error from our trigger
+            if (error.message.includes("Invalid match status transition")) {
+                return NextResponse.json({
+                    error: "Cannot submit score: Match is not in a valid state for submission"
+                }, { status: 400 });
+            }
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 

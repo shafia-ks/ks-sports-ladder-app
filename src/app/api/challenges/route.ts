@@ -156,6 +156,22 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
+    // Handle database trigger errors with user-friendly messages
+    if (error.message.includes("Challenger is currently busy")) {
+      return NextResponse.json({
+        error: "You are currently busy with another challenge or match. Please complete it before creating a new challenge."
+      }, { status: 422 });
+    }
+    if (error.message.includes("Challenged player is currently busy")) {
+      return NextResponse.json({
+        error: "This player is currently busy with another challenge or match. Please try again later."
+      }, { status: 422 });
+    }
+    if (error.message.includes("cooling period")) {
+      return NextResponse.json({
+        error: "You or your opponent are in a cooling period. Please wait before challenging again."
+      }, { status: 422 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

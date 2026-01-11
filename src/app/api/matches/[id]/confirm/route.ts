@@ -41,6 +41,13 @@ export async function POST(
         }
 
         if (action === "confirm") {
+            // Check if user is trying to confirm their own submission
+            if (match.submitted_by === user_id) {
+                return NextResponse.json({
+                    error: "You cannot confirm your own submitted score. Please wait for your opponent to confirm."
+                }, { status: 403 });
+            }
+
             // Update match status to Confirmed
             const { error: updateError } = await supabaseAdmin
                 .from("matches")
