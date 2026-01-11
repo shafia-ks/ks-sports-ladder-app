@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { checkRateLimit, getClientIp, apiRateLimiter } from '@/lib/api/rate-limit';
+import type { Ratelimit } from '@upstash/ratelimit';
 
 export interface AuthenticatedRequest extends NextRequest {
     userId?: string;
@@ -58,6 +60,47 @@ export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
         console.error('[Auth Middleware] Verification error:', error);
         return { success: false, error: 'Authentication failed' };
     }
+}
+
+/**
+ * Middleware wrapper that adds rate limiting
+ * Returns 429 if rate limit exceeded
+ */
+export async function withRateLimit(
+    req: NextRequest,
+    limiter: Ratelimit | null = apiRateLimiter,
+    handler: (req: NextRequest) => Promise<NextResponse>
+): Promise<NextResponse> {
+    const ip = getClientIp(req.headers);
+    const rateLimit = await checkRateLimit(limiter, ip);
+
+    if (!rateLimit.success) {
+        return NextResponse.json(
+            {
+                error: 'Too many requests',
+                limit: rateLimit.limit,
+                remaining: rateLimit.remaining,
+                reset: rateLimit.reset.toISOString(),
+            },
+            {
+                status: 429,
+                headers: {
+                    'X-RateLimit-Limit': rateLimit.limit.toString(),
+                    'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+                    'X-RateLimit-Reset': rateLimit.reset.toISOString(),
+                },
+            }
+        );
+    }
+
+    const response = await handler(req);
+
+    // Add rate limit headers to successful responses
+    response.headers.set('X-RateLimit-Limit', rateLimit.limit.toString());
+    response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
+    response.headers.set('X-RateLimit-Reset', rateLimit.reset.toISOString());
+
+    return response;
 }
 
 /**

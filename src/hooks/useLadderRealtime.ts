@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { logger } from '@/lib/utils/logger';
 
 interface UseLadderRealtimeOptions {
     ladderId: string;
@@ -38,7 +39,7 @@ export function useLadderRealtime({
                         filter: `ladder_id=eq.${ladderId}`,
                     },
                     () => {
-                        console.log('[Realtime] Challenge change detected');
+                        logger.debug('[Realtime] Challenge change detected');
                         onChallengeChange();
                     }
                 )
@@ -60,7 +61,7 @@ export function useLadderRealtime({
                         filter: `ladder_id=eq.${ladderId}`,
                     },
                     () => {
-                        console.log('[Realtime] Match change detected');
+                        logger.debug('[Realtime] Match change detected');
                         onMatchChange();
                     }
                 )
@@ -82,7 +83,7 @@ export function useLadderRealtime({
                         filter: `ladder_id=eq.${ladderId}`,
                     },
                     () => {
-                        console.log('[Realtime] Ranking change detected');
+                        logger.debug('[Realtime] Ranking change detected');
                         onRankingChange();
                     }
                 )
