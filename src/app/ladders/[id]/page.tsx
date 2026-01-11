@@ -693,7 +693,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       if (!canAccessStats) return;
 
       try {
-        const res = await fetch(`/api/ladders/${params.id}/dashboard-stats?user_id=${user.id}`);
+        const res = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
         if (res.ok) {
           const json = await res.json();
           setDashboardStats(json);

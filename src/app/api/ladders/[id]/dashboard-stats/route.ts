@@ -42,7 +42,7 @@ export async function GET(
         .from("matches")
         .select("id, winner_id, player1_id, player2_id, created_at, status")
         .eq("ladder_id", ladderId)
-        .eq("status", "Confirmed")
+        .in("status", ["Confirmed", "completed"])
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
         .order("created_at", { ascending: false });
 
