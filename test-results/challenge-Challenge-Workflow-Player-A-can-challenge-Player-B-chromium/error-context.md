@@ -1,0 +1,245 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Logo KS Sports Ladder" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img "Logo" [ref=e6]
+        - generic [ref=e7]: KS Sports Ladder
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e10]
+          - text: Dashboard
+        - link "Ladders" [ref=e15] [cursor=pointer]:
+          - /url: /ladders
+          - img [ref=e16]
+          - text: Ladders
+        - link "Help" [ref=e22] [cursor=pointer]:
+          - /url: /help
+          - img [ref=e23]
+          - text: Help
+        - link "Profile" [ref=e26] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e27]
+          - text: Profile
+      - generic [ref=e30]:
+        - button "Notifications" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: "3"
+        - generic [ref=e38]:
+          - link "Shafia Zeenath" [ref=e39] [cursor=pointer]:
+            - /url: /profile
+            - img "Shafia Zeenath" [ref=e41]
+          - generic [ref=e42]:
+            - paragraph [ref=e43]: Shafia Zeenath
+            - generic [ref=e44]: player
+          - button "Sign out" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+            - generic [ref=e49]: Sign out
+  - main [ref=e50]:
+    - generic [ref=e51]:
+      - navigation [ref=e52]:
+        - link "Home" [ref=e54] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e55]:
+          - img [ref=e56]
+          - link "My Ladders" [ref=e58] [cursor=pointer]:
+            - /url: /ladders
+        - generic [ref=e59]:
+          - img [ref=e60]
+          - generic [ref=e62]: private test
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - heading "private test" [level=1] [ref=e65]
+          - paragraph [ref=e66]: Ranking overview and membership.
+        - generic [ref=e69]: ✓ Member
+      - generic [ref=e70]:
+        - generic [ref=e71]: Squash
+        - generic [ref=e72]: "Visibility: private"
+        - generic [ref=e73]: "Status: active"
+      - generic [ref=e74]:
+        - button "Dashboard" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - text: Dashboard
+        - button "Ranking" [ref=e81] [cursor=pointer]
+        - button "Matches" [ref=e82] [cursor=pointer]:
+          - img [ref=e83]
+          - text: Matches
+        - button "Settings" [ref=e87] [cursor=pointer]:
+          - img [ref=e88]
+          - text: Settings
+      - generic [ref=e91]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94] [cursor=pointer]:
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - paragraph [ref=e97]: Members
+                  - paragraph [ref=e99]: "4"
+                  - paragraph [ref=e100]: Active
+                - img [ref=e101]
+              - button "Manage" [ref=e106]
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - generic [ref=e109]:
+                  - paragraph [ref=e110]: Matches
+                  - paragraph [ref=e112]: "2"
+                  - paragraph [ref=e113]: Confirmed
+                - img [ref=e114]
+              - button "Manage" [ref=e118]
+            - generic [ref=e119] [cursor=pointer]:
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - paragraph [ref=e122]: Activity
+                  - paragraph [ref=e124]: "0"
+                  - paragraph [ref=e125]: This Month
+                - img [ref=e126]
+              - button "Manage" [ref=e128]
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - img [ref=e133]
+              - paragraph [ref=e139]: "#3"
+              - paragraph [ref=e140]: Rank
+            - generic [ref=e141]:
+              - img [ref=e143]
+              - paragraph [ref=e146]: 1-1
+              - paragraph [ref=e147]: W/L
+            - generic [ref=e148]:
+              - img [ref=e150]
+              - paragraph [ref=e152]: 0W
+              - paragraph [ref=e153]: Streak
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - generic [ref=e156]:
+                - heading "My Challenges" [level=3] [ref=e157]:
+                  - img [ref=e158]
+                  - text: My Challenges
+                - generic [ref=e167]:
+                  - generic [ref=e168]: 0 Incoming
+                  - generic [ref=e169]: 0 Sent
+              - generic [ref=e170]:
+                - generic [ref=e172]:
+                  - generic [ref=e173]:
+                    - paragraph [ref=e174]: vs Khader Mohammad
+                    - paragraph [ref=e175]:
+                      - img [ref=e176]
+                      - text: Accepted - Match created
+                  - img [ref=e179]
+                - generic [ref=e182]:
+                  - generic [ref=e183]:
+                    - paragraph [ref=e184]: vs Khader Mohammad
+                    - paragraph [ref=e185]:
+                      - img [ref=e186]
+                      - text: Accepted - Match created
+                  - img [ref=e189]
+              - link "View all challenges →" [ref=e191] [cursor=pointer]:
+                - /url: /challenges
+            - generic [ref=e192]:
+              - generic [ref=e193]:
+                - heading "My Matches" [level=3] [ref=e194]:
+                  - img [ref=e195]
+                  - text: My Matches
+                - generic [ref=e199]:
+                  - generic [ref=e200]: 0 To Score
+                  - generic [ref=e201]: 0 To Confirm
+              - generic [ref=e202]:
+                - img [ref=e203]
+                - paragraph [ref=e207]: No active matches
+                - paragraph [ref=e208]: Matches appear here after challenges are accepted
+          - generic [ref=e209]:
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading "Active Ladder Challenges" [level=3] [ref=e212]:
+                  - img [ref=e213]
+                  - text: Active Ladder Challenges
+                - generic [ref=e222]: 2 active
+              - generic [ref=e223]:
+                - generic [ref=e226]:
+                  - paragraph [ref=e227]: Shafia Zeenath vs Khader Mohammad
+                  - generic [ref=e228]:
+                    - paragraph [ref=e229]:
+                      - img [ref=e230]
+                      - text: 1/11/2026
+                    - generic [ref=e233]: Accepted
+                - generic [ref=e236]:
+                  - paragraph [ref=e237]: Shafia Zeenath vs Khader Mohammad
+                  - generic [ref=e238]:
+                    - paragraph [ref=e239]:
+                      - img [ref=e240]
+                      - text: 1/10/2026
+                    - generic [ref=e243]: Accepted
+            - generic [ref=e244]:
+              - generic [ref=e245]:
+                - heading "Active Ladder Matches" [level=3] [ref=e246]:
+                  - img [ref=e247]
+                  - text: Active Ladder Matches
+                - generic [ref=e251]: 0 in progress
+              - generic [ref=e252]:
+                - img [ref=e253]
+                - paragraph [ref=e257]: No active matches
+                - paragraph [ref=e258]: Matches will appear here once challenges are accepted
+          - generic [ref=e259]:
+            - heading "Top 5 Rankings" [level=2] [ref=e260]
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - generic [ref=e263]: "#1"
+                - img "Khader Mohammad" [ref=e265]
+                - generic [ref=e266]:
+                  - paragraph [ref=e267]: Khader Mohammad
+                  - generic [ref=e268]:
+                    - img [ref=e269]
+                    - generic [ref=e272]: Busy
+                - button "Cannot challenge Khader Mohammad, player is busy" [disabled] [ref=e274]:
+                  - img [ref=e275]
+                  - text: Busy
+              - generic [ref=e278]:
+                - generic [ref=e279]: "#2"
+                - generic "Karim Pyarali" [ref=e280]: KP
+                - paragraph [ref=e282]: Karim Pyarali
+                - button "Challenge Karim Pyarali" [ref=e284] [cursor=pointer]:
+                  - img [ref=e285]
+                  - text: Challenge
+              - generic [ref=e294]:
+                - generic [ref=e295]: "#3"
+                - img "Shafia Zeenath" [ref=e297]
+                - generic [ref=e298]:
+                  - paragraph [ref=e299]: Shafia Zeenath (You)
+                  - generic [ref=e300]:
+                    - img [ref=e301]
+                    - generic [ref=e304]: Busy
+              - generic [ref=e305]:
+                - generic [ref=e306]: "#4"
+                - generic "Tom James" [ref=e307]: TJ
+                - paragraph [ref=e309]: Tom James
+                - button "Cannot challenge Tom James, out of rank range" [disabled] [ref=e311]:
+                  - img [ref=e312]
+                  - text: Locked
+            - button "View Full Rankings →" [ref=e315] [cursor=pointer]
+          - generic [ref=e316]:
+            - heading "Recent Activity" [level=2] [ref=e317]:
+              - img [ref=e318]
+              - text: Recent Activity
+            - paragraph [ref=e320]: No recent activity
+        - generic [ref=e322]:
+          - generic [ref=e323]:
+            - heading "Ladder Info" [level=3] [ref=e324]
+            - generic [ref=e325]:
+              - generic [ref=e326]:
+                - img [ref=e327]
+                - generic [ref=e336]: Squash
+              - generic [ref=e337]:
+                - img [ref=e338]
+                - generic [ref=e343]: 4 members
+              - generic [ref=e344]:
+                - img [ref=e345]
+                - generic [ref=e354]: 2 active challenges
+          - generic [ref=e355]:
+            - heading "Organizers" [level=3] [ref=e356]
+            - generic [ref=e357]:
+              - generic [ref=e358]: Khader Mohammad
+              - generic [ref=e359]: Shafia Zeenath
+  - alert [ref=e360]
+```

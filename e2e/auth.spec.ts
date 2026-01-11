@@ -14,7 +14,7 @@ async function login(page: Page, email: string, password: string) {
 test.describe("Authentication Flow", () => {
     test("User can login successfully", async ({ page }) => {
         await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
-        await expect(page).toHaveURL("/");
+        await expect(page).toHaveURL(/dashboard/);
         // Check for dashboard or nav element
         await expect(page.locator("nav")).toBeVisible();
     });
@@ -26,12 +26,10 @@ test.describe("Authentication Flow", () => {
 
     test("User can logout", async ({ page }) => {
         await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
-        await page.goto("/profile"); // Ensure we are on a page where logout is accessible or use direct url if applicable
+        await page.goto("/profile"); // Ensure we are on a page where logout is accessible
 
-        // Using direct logout URL if UI button is hidden or complex
-        await page.goto("/logout").catch(() => { });
-        // Or try clicking button if visible
-        // await page.getByRole("button", { name: /Sign out/i }).click();
+        // Use the visible Sign out button from the screenshot
+        await page.getByRole("button", { name: /Sign out/i }).click();
 
         await expect(page).toHaveURL(/\/login/);
     });

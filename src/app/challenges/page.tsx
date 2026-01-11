@@ -189,12 +189,7 @@ export default function ChallengesPage() {
           title="Challenges"
           description="Track outgoing and incoming challenges with status, expiry, and actions."
           cta={
-            hasActiveLadder ? (
-              <Link href="/challenges/create" className="btn btn-primary">
-                <Swords className="h-4 w-4" />
-                Create challenge
-              </Link>
-            ) : undefined
+            undefined
           }
         />
 
@@ -222,10 +217,7 @@ export default function ChallengesPage() {
                 <div className="text-center py-8">
                   <Swords className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                   <p className="text-sm text-slate-600 mb-4">No active challenges</p>
-                  <Link href="/challenges/create" className="btn btn-primary">
-                    <Swords className="h-4 w-4" />
-                    Create your first challenge
-                  </Link>
+                  <p className="text-sm text-slate-600 mb-4">No active challenges</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -402,8 +394,8 @@ export default function ChallengesPage() {
                       key={reason}
                       onClick={() => setCancelReason(reason)}
                       className={`w-full text-left px-4 py-2 rounded-lg border transition ${cancelReason === reason
-                          ? "border-brand-600 bg-brand-50 text-brand-900"
-                          : "border-slate-200 hover:border-slate-300"
+                        ? "border-brand-600 bg-brand-50 text-brand-900"
+                        : "border-slate-200 hover:border-slate-300"
                         }`}
                     >
                       {reason}

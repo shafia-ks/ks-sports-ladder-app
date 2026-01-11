@@ -117,7 +117,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 }),
             });
 
-            if (!response.ok) throw new Error("Failed to submit score");
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to submit score");
+            }
 
             showToast({
                 title: "Score submitted!",
@@ -133,7 +136,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             console.error("Error submitting score:", error);
             showToast({
                 title: "Error",
-                description: "Failed to submit score. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to submit score. Please try again.",
                 variant: "error",
             });
         } finally {

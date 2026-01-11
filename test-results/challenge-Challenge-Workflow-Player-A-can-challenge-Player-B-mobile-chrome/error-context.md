@@ -1,0 +1,222 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Logo" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img "Logo" [ref=e6]
+      - generic [ref=e7]:
+        - button "Notifications" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+          - generic [ref=e13]: "3"
+        - link "Shafia Zeenath" [ref=e14] [cursor=pointer]:
+          - /url: /profile
+          - img "Shafia Zeenath" [ref=e16]
+        - button [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - link "Home" [ref=e23] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e24]:
+          - img [ref=e25]
+          - link "My Ladders" [ref=e27] [cursor=pointer]:
+            - /url: /ladders
+        - generic [ref=e28]:
+          - img [ref=e29]
+          - generic [ref=e31]: private test
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - heading "private test" [level=1] [ref=e34]
+          - paragraph [ref=e35]: Ranking overview and membership.
+        - generic [ref=e38]: ✓ Member
+      - generic [ref=e39]:
+        - generic [ref=e40]: Squash
+        - generic [ref=e41]: "Visibility: private"
+        - generic [ref=e42]: "Status: active"
+      - generic [ref=e43]:
+        - button "Dashboard" [ref=e44] [cursor=pointer]:
+          - img
+          - text: Dashboard
+        - button "Ranking" [ref=e49] [cursor=pointer]
+        - button "Matches" [ref=e50] [cursor=pointer]:
+          - img
+          - text: Matches
+        - button "Settings" [ref=e54] [cursor=pointer]:
+          - img
+          - text: Settings
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60] [cursor=pointer]:
+              - generic [ref=e61]:
+                - generic [ref=e62]:
+                  - paragraph [ref=e63]: Members
+                  - paragraph [ref=e65]: "4"
+                  - paragraph [ref=e66]: Active
+                - img [ref=e67]
+              - button "Manage" [ref=e72]
+            - generic [ref=e73] [cursor=pointer]:
+              - generic [ref=e74]:
+                - generic [ref=e75]:
+                  - paragraph [ref=e76]: Matches
+                  - paragraph [ref=e78]: "2"
+                  - paragraph [ref=e79]: Confirmed
+                - img [ref=e80]
+              - button "Manage" [ref=e84]
+            - generic [ref=e85] [cursor=pointer]:
+              - generic [ref=e86]:
+                - generic [ref=e87]:
+                  - paragraph [ref=e88]: Activity
+                  - paragraph [ref=e90]: "0"
+                  - paragraph [ref=e91]: This Month
+                - img [ref=e92]
+              - button "Manage" [ref=e94]
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - img [ref=e99]
+              - paragraph [ref=e105]: "#3"
+              - paragraph [ref=e106]: Rank
+            - generic [ref=e107]:
+              - img [ref=e109]
+              - paragraph [ref=e112]: 1-1
+              - paragraph [ref=e113]: W/L
+            - generic [ref=e114]:
+              - img [ref=e116]
+              - paragraph [ref=e118]: 0W
+              - paragraph [ref=e119]: Streak
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - heading "My Challenges" [level=3] [ref=e123]:
+                  - img [ref=e124]
+                  - text: My Challenges
+                - generic [ref=e133]:
+                  - generic [ref=e134]: 0 Incoming
+                  - generic [ref=e135]: 0 Sent
+              - generic [ref=e136]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]:
+                    - paragraph [ref=e140]: vs Khader Mohammad
+                    - paragraph [ref=e141]:
+                      - img [ref=e142]
+                      - text: Accepted - Match created
+                  - img [ref=e145]
+                - generic [ref=e148]:
+                  - generic [ref=e149]:
+                    - paragraph [ref=e150]: vs Khader Mohammad
+                    - paragraph [ref=e151]:
+                      - img [ref=e152]
+                      - text: Accepted - Match created
+                  - img [ref=e155]
+              - link "View all challenges →" [ref=e157] [cursor=pointer]:
+                - /url: /challenges
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - heading "My Matches" [level=3] [ref=e160]:
+                  - img [ref=e161]
+                  - text: My Matches
+                - generic [ref=e165]:
+                  - generic [ref=e166]: 0 To Score
+                  - generic [ref=e167]: 0 To Confirm
+              - generic [ref=e168]:
+                - img [ref=e169]
+                - paragraph [ref=e173]: No active matches
+                - paragraph [ref=e174]: Matches appear here after challenges are accepted
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - generic [ref=e177]:
+                - heading "Active Ladder Challenges" [level=3] [ref=e178]:
+                  - img [ref=e179]
+                  - text: Active Ladder Challenges
+                - generic [ref=e188]: 2 active
+              - generic [ref=e189]:
+                - generic [ref=e192]:
+                  - paragraph [ref=e193]: Shafia Zeenath vs Khader Mohammad
+                  - generic [ref=e194]:
+                    - paragraph [ref=e195]:
+                      - img [ref=e196]
+                      - text: 1/11/2026
+                    - generic [ref=e199]: Accepted
+                - generic [ref=e202]:
+                  - paragraph [ref=e203]: Shafia Zeenath vs Khader Mohammad
+                  - generic [ref=e204]:
+                    - paragraph [ref=e205]:
+                      - img [ref=e206]
+                      - text: 1/10/2026
+                    - generic [ref=e209]: Accepted
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading "Active Ladder Matches" [level=3] [ref=e212]:
+                  - img [ref=e213]
+                  - text: Active Ladder Matches
+                - generic [ref=e217]: 0 in progress
+              - generic [ref=e218]:
+                - img [ref=e219]
+                - paragraph [ref=e223]: No active matches
+                - paragraph [ref=e224]: Matches will appear here once challenges are accepted
+          - generic [ref=e225]:
+            - heading "Top 5 Rankings" [level=2] [ref=e226]
+            - generic [ref=e227]:
+              - generic [ref=e228]:
+                - generic [ref=e229]: "#1"
+                - img "Khader Mohammad" [ref=e231]
+                - generic [ref=e232]:
+                  - paragraph [ref=e233]: Khader Mohammad
+                  - generic [ref=e234]:
+                    - img [ref=e235]
+                    - generic [ref=e238]: Busy
+                - button "Cannot challenge Khader Mohammad, player is busy" [disabled] [ref=e240]:
+                  - img [ref=e241]
+                  - text: Busy
+              - generic [ref=e244]:
+                - generic [ref=e245]: "#2"
+                - generic "Karim Pyarali" [ref=e246]: KP
+                - paragraph [ref=e248]: Karim Pyarali
+                - button "Challenge Karim Pyarali" [ref=e250] [cursor=pointer]:
+                  - img [ref=e251]
+                  - text: Challenge
+              - generic [ref=e260]:
+                - generic [ref=e261]: "#3"
+                - img "Shafia Zeenath" [ref=e263]
+                - generic [ref=e264]:
+                  - paragraph [ref=e265]: Shafia Zeenath (You)
+                  - generic [ref=e266]:
+                    - img [ref=e267]
+                    - generic [ref=e270]: Busy
+              - generic [ref=e271]:
+                - generic [ref=e272]: "#4"
+                - generic "Tom James" [ref=e273]: TJ
+                - paragraph [ref=e275]: Tom James
+                - button "Cannot challenge Tom James, out of rank range" [disabled] [ref=e277]:
+                  - img [ref=e278]
+                  - text: Locked
+            - button "View Full Rankings →" [ref=e281] [cursor=pointer]
+          - generic [ref=e282]:
+            - heading "Recent Activity" [level=2] [ref=e283]:
+              - img [ref=e284]
+              - text: Recent Activity
+            - paragraph [ref=e286]: No recent activity
+        - generic [ref=e288]:
+          - generic [ref=e289]:
+            - heading "Ladder Info" [level=3] [ref=e290]
+            - generic [ref=e291]:
+              - generic [ref=e292]:
+                - img [ref=e293]
+                - generic [ref=e302]: Squash
+              - generic [ref=e303]:
+                - img [ref=e304]
+                - generic [ref=e309]: 4 members
+              - generic [ref=e310]:
+                - img [ref=e311]
+                - generic [ref=e320]: 2 active challenges
+          - generic [ref=e321]:
+            - heading "Organizers" [level=3] [ref=e322]
+            - generic [ref=e323]:
+              - generic [ref=e324]: Khader Mohammad
+              - generic [ref=e325]: Shafia Zeenath
+  - alert [ref=e326]
+```
