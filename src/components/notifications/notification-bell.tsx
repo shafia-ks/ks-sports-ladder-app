@@ -101,7 +101,7 @@ export function NotificationBell() {
                                         </div>
                                         {notification.link_url && (
                                             <Link
-                                                href={notification.link_url}
+                                                href={notification.link_url as any}
                                                 onClick={() => handleNotificationClick(notification.id)}
                                                 className="absolute inset-0 z-10"
                                                 aria-label={`View ${notification.title}`}

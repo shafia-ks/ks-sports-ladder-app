@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
+import { useAnalytics } from "@/lib/analytics/tracker";
 
 interface Player {
     id: string;
@@ -38,6 +39,7 @@ interface MatchCardProps {
 
 export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: MatchCardProps) {
     const { push: showToast } = useToast();
+    const { trackEvent } = useAnalytics();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -122,6 +124,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 description: "Match score has been recorded successfully.",
                 variant: "success",
             });
+
+            trackEvent({ action: 'match_submitted', category: 'engagement', label: match.ladder_id });
 
             setIsEditing(false);
             onUpdate();
@@ -219,6 +223,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 description: "The match result has been confirmed.",
                 variant: "success",
             });
+
+            trackEvent({ action: 'match_confirmed', category: 'engagement', label: match.ladder_id });
 
             onUpdate();
         } catch (error) {

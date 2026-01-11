@@ -1,0 +1,5 @@
+﻿
+> ks-sports-ladder-app@0.1.0 type-check
+> tsc --noEmit
+
+src/components/notifications/notification-bell.tsx(104,49): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.

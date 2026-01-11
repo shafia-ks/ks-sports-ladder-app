@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+import Image from "next/image";
 
 interface AvatarProps {
   name?: string | null;
@@ -26,13 +27,14 @@ export function Avatar({ name, email, src, size = "sm" }: AvatarProps) {
   if (src) {
     return (
       <div
-        className={`${dimension} overflow-hidden rounded-full border border-slate-200 bg-slate-100`}
+        className={`${dimension} relative overflow-hidden rounded-full border border-slate-200 bg-slate-100`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt={name || email || "User avatar"}
-          className="h-full w-full object-cover"
+          fill
+          className="object-cover"
+          sizes="96px"
         />
       </div>
     );

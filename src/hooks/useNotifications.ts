@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
-import { Notification } from '@/types';
+import { Notification } from '@/types/index';
 import { useToast } from '@/components/ui/toast';
 
 export function useNotifications() {
@@ -12,13 +12,14 @@ export function useNotifications() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) {
+        if (!user || !supabase) {
             setNotifications([]);
             setUnreadCount(0);
             return;
         }
 
         const fetchNotifications = async () => {
+            if (!supabase) return; // Guard against undefined
             try {
                 const { data, error } = await supabase
                     .from('notifications')
@@ -43,6 +44,8 @@ export function useNotifications() {
         fetchNotifications();
 
         // Subscribe to real-time changes
+        if (!supabase) return;
+
         const subscription = supabase
             .channel('notifications_feed')
             .on(
@@ -81,13 +84,7 @@ export function useNotifications() {
                         prev.map((n) => (n.id === updated.id ? updated : n))
                     );
 
-                    // Re-calculate unread count from the updated list
-                    // (We can't easily access the current list in `setNotifications` AND `setUnreadCount` atomically without `useReducer` or relying on React 18 batching, 
-                    // but simple recalculation is fine for now, or just decrement if we tracked it)
-                    // Let's just rely on the next fetch or assume local optimistic updates handled it mostly.
-                    // But if updated from another tab, we want to update count.
-                    // Ideally we fetch count? No, that's expensive.
-                    // Let's just update the list.
+                    // Re-calculate unread count from the updated list logic is simplified here
                 }
             )
             .subscribe();
@@ -98,6 +95,7 @@ export function useNotifications() {
     }, [user, toast]);
 
     const markAsRead = async (id: string) => {
+        if (!supabase) return;
         // Optimistic update
         setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
@@ -118,6 +116,7 @@ export function useNotifications() {
     };
 
     const markAllAsRead = async () => {
+        if (!supabase) return;
         // Optimistic update
         const unreadIds = notifications.filter(n => !n.read_at).map(n => n.id);
         if (unreadIds.length === 0) return;

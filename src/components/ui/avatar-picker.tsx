@@ -58,12 +58,14 @@ export function AvatarPicker({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className="w-24 h-24">
+        <div className="w-24 h-24 relative">
           {preview ? (
-            <img
+            <Image
               src={preview}
               alt="Avatar preview"
-              className="w-24 h-24 rounded-full object-cover"
+              fill
+              className="rounded-full object-cover"
+              sizes="96px"
             />
           ) : selectedColor ? (
             <div className={`w-24 h-24 rounded-full ${selectedColor} flex items-center justify-center text-white text-3xl font-bold`}>

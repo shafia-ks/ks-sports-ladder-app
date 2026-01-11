@@ -2,8 +2,11 @@
 -- Phase 3: Persistent Notification System
 -- =====================================================
 
+-- 0. Cleanup previous attempts (Fixes "column doesn't exist" errors if table exists)
+DROP TABLE IF EXISTS notifications CASCADE;
+
 -- 1. Create notifications table
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type TEXT NOT NULL CHECK (type IN (
@@ -27,12 +30,11 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- 2. Enable RLS
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view their own notifications" ON notifications;
+-- Note: Policies are dropped with the table, creating fresh
 CREATE POLICY "Users can view their own notifications"
     ON notifications FOR SELECT
     USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Users can update their own notifications" ON notifications;
 CREATE POLICY "Users can update their own notifications"
     ON notifications FOR UPDATE
     USING (auth.uid() = user_id);

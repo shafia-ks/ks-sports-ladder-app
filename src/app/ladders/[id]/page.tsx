@@ -12,6 +12,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleRequest } from "@/components/ui/role-request";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { useAnalytics } from "@/lib/analytics/tracker";
 
 // Extracted components
 import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
@@ -148,6 +149,7 @@ interface Challenge {
 
 function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?: string }) {
   const { push: toastPush } = useToast();
+  const { trackEvent } = useAnalytics();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
@@ -188,6 +190,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
         body: JSON.stringify({ status: "Accepted" }),
       });
       if (res.ok) {
+        trackEvent({ action: 'challenge_accepted', category: 'engagement', label: ladderId });
         fetchChallenges();
       }
     } catch (err) {
@@ -203,6 +206,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
         body: JSON.stringify({ status: "Declined" }),
       });
       if (res.ok) {
+        trackEvent({ action: 'challenge_declined', category: 'engagement', label: ladderId });
         fetchChallenges();
       }
     } catch (err) {
@@ -228,6 +232,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
         }),
       });
       if (res.ok) {
+        trackEvent({ action: 'challenge_cancelled', category: 'engagement', label: ladderId });
         setShowCancelModal(null);
         setCancelReason("");
         fetchChallenges();
@@ -600,6 +605,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
 export default function LadderDetailPage({ params }: { params: { id: string } }) {
   // Toast state for feedback (must be first)
   const { push: toastPush } = useToast();
+  const { trackEvent } = useAnalytics();
   // State for pending member approval UI
   const [pendingSearch, setPendingSearch] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -801,6 +807,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     if (!user) return;
     try {
       await joinLadder(user.id);
+      trackEvent({ action: 'ladder_joined', category: 'growth', label: params.id });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to join ladder");
     }
@@ -961,6 +968,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         title: "Challenge sent!",
         variant: "success",
       });
+      trackEvent({ action: 'challenge_created', category: 'engagement', label: params.id });
       await fetchLadder();
       await fetchActiveChallenges();
     } catch (err) {
