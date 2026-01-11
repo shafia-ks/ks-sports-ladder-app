@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export async function GET(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("user_id");
+
+    if (!userId) {
+        return NextResponse.json({ error: "user_id required" }, { status: 400 });
+    }
+
+    try {
+        if (!supabaseAdmin) {
+            return NextResponse.json({ error: "Database not available" }, { status: 500 });
+        }
+
+        const { data: matches, error } = await supabaseAdmin
+            .from("matches")
+            .select(`
+        id,
+        player1_id,
+        player2_id,
+        ladder_id,
+        played_at,
+        location,
+        ladders (name, image_url),
+        player1:users!matches_player1_id_fkey (full_name, avatar_url),
+        player2:users!matches_player2_id_fkey (full_name, avatar_url)
+      `)
+            .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+            .eq("status", "Confirmed")
+            .gte("played_at", new Date().toISOString())
+            .order("played_at", { ascending: true })
+            .limit(5);
+
+        if (error) {
+            console.error("[GET /api/dashboard/upcoming-matches] Error:", error);
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        const formattedMatches = (matches || []).map((match) => {
+            const isPlayer1 = match.player1_id === userId;
+            const opponent = isPlayer1 ? (match.player2 as any) : (match.player1 as any);
+            const ladders = match.ladders as any;
+
+            return {
+                id: match.id,
+                ladder_id: match.ladder_id,
+                ladder_name: ladders?.name || "Unknown Ladder",
+                ladder_image: ladders?.image_url,
+                opponent_name: opponent?.full_name || "Unknown",
+                opponent_avatar: opponent?.avatar_url,
+                played_at: match.played_at,
+                location: match.location,
+            };
+        });
+
+        return NextResponse.json({ matches: formattedMatches });
+    } catch (error: any) {
+        console.error("[GET /api/dashboard/upcoming-matches] Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
