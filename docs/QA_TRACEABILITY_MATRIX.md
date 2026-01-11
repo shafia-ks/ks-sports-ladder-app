@@ -11,11 +11,11 @@
 |----|---------|-------------|--------|--------|-----------|
 | **LAD-01** | Ladder | User can create a ladder with rules | Spec | 🔴 | `e2e/ladder.spec.ts` (partial) |
 | **LAD-02** | Ladder | User can join a ladder (Membership) | Spec | 🟡 | `e2e/ladder.spec.ts` |
-| **CHL-01** | Challenge | Ranking Rule: Max positions up check | Spec | 🔴 | - |
-| **CHL-02** | Challenge | Busy Rule: Cannot challenge busy player | Spec | 🔴 | - |
+| **CHL-01** | Challenge | Ranking Rule: Max positions up check | Spec | � | `e2e/challenge.spec.ts` |
+| **CHL-02** | Challenge | Busy Rule: Cannot challenge busy player | Spec | � | `e2e/challenge.spec.ts` |
 | **CHL-03** | Challenge | Cap Rule: Max active challenges limit | Spec | 🔴 | - |
 | **CHL-04** | Challenge | Self-challenge prevention | Spec | 🔴 | - |
-| **MCH-01** | Match | Players can submit scores | Spec | 🔴 | - |
+| **MCH-01** | Match | Players can submit scores | Spec | � | `e2e/match.spec.ts` |
 | **MCH-02** | Match | Opponent must confirm score | Spec | 🔴 | - |
 | **MCH-03** | Match | Ranking updates on confirmation | Spec | 🟢 | `src/lib/ranking/__tests__/ranking-engine.test.ts` (Passed) |
 | **RNK-01** | Rankings | Default Swap Minimal Drop logic | Spec | 🟢 | `src/lib/ranking/__tests__/ranking-engine.test.ts` (Passed) |
