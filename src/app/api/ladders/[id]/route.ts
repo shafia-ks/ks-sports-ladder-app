@@ -114,7 +114,7 @@ export async function GET(
               .from("challenges")
               .select("challenger_id, challenged_id")
               .eq("ladder_id", params.id)
-              .in("status", ["pending", "accepted"]),
+              .in("status", ["Pending", "Accepted"]),
             supabaseAdmin
               .from("matches")
               .select("player1_id, player2_id")
