@@ -5,12 +5,12 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { AvatarPicker, AvatarGrid } from "@/components/ui/avatar-picker";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Loader2, Key, Trash2 } from "lucide-react";
+import { Loader2, Key, Trash2, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,6 +95,9 @@ export default function ProfilePage() {
         avatar_color: "" // Clear color when uploading image
       }));
 
+      // Refresh auth context to sync changes across app
+      await refreshProfile();
+
       setSuccess("Avatar uploaded successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -124,13 +127,18 @@ export default function ProfilePage() {
       if (!supabase) throw new Error("Supabase not configured");
       if (!user?.id) throw new Error("User not found");
 
+      // Validate full_name is not empty
+      if (!formData.full_name?.trim()) {
+        throw new Error("Full name is required");
+      }
+
       // Use Supabase client directly since we're authenticated
       const { data, error } = await supabase
         .from("users")
         .update({
-          first_name: formData.first_name || null,
-          last_name: formData.last_name || null,
-          full_name: formData.full_name || null,
+          first_name: formData.first_name?.trim() || null,
+          last_name: formData.last_name?.trim() || null,
+          full_name: formData.full_name.trim(),
           avatar_url: formData.avatar_url || null,
         })
         .eq("id", user.id)
@@ -139,10 +147,11 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
+      // Refresh auth context to sync changes across the entire app
+      await refreshProfile();
+
       setSuccess("Profile updated successfully!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
@@ -233,11 +242,20 @@ export default function ProfilePage() {
       />
 
       {error && (
-        <div className="card p-4 text-sm text-red-600">{error}</div>
+        <div className="card p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <div className="text-red-600 text-sm flex-1">{error}</div>
+          </div>
+        </div>
       )}
 
       {success && (
-        <div className="card p-4 text-sm text-green-600">{success}</div>
+        <div className="card p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <div className="text-green-700 text-sm font-medium">{success}</div>
+          </div>
+        </div>
       )}
 
       <form onSubmit={handleSave} className="card space-y-6 p-6">
@@ -256,7 +274,7 @@ export default function ProfilePage() {
               onSelectAvatar={(avatarId, color) => {
                 setFormData((prev) => ({
                   ...prev,
-                  avatar_url: color,
+                  avatar_url: "", // Clear URL when selecting color
                   avatar_color: color,
                 }));
               }}
