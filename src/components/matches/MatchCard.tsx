@@ -114,6 +114,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     played_at: playedAt,
                     location: location || null,
                     status: "Submitted",
+                    user_id: currentUserId,
                 }),
             });
 
