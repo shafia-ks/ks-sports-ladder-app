@@ -12,36 +12,97 @@ export async function GET(req: Request) {
     try {
         const supabase = createClient();
         const actions: any[] = [];
+        const userIds = new Set<string>();
 
-        // 1. Get pending challenges (where user is challenged)
+        // 1. Get pending challenges (Raw)
         const { data: challenges, error: challengesError } = await supabase
             .from("challenges")
             .select(`
-        id,
-        challenger_id,
-        challenged_id,
-        ladder_id,
-        status,
-        expires_at,
-        ladders (name),
-        challenger:users!challenger_id (full_name),
-        challenged:users!challenged_id (full_name)
-      `)
+                id,
+                challenger_id,
+                challenged_id,
+                ladder_id,
+                status,
+                expires_at,
+                ladders (name)
+            `)
             .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
             .eq("status", "Pending");
 
         if (challengesError) throw challengesError;
 
+        // Collect challenge user IDs
+        challenges?.forEach(c => {
+            if (c.challenger_id) userIds.add(c.challenger_id);
+            if (c.challenged_id) userIds.add(c.challenged_id);
+        });
+
+        // 2. Get matches awaiting score confirmation (Raw)
+        const { data: matches, error: matchesError } = await supabase
+            .from("matches")
+            .select(`
+                id,
+                player1_id,
+                player2_id,
+                ladder_id,
+                status,
+                submitted_by,
+                ladders (name)
+            `)
+            .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+            .eq("status", "ScoreSubmitted");
+
+        if (matchesError) throw matchesError;
+
+        // Collect match user IDs
+        matches?.forEach(m => {
+            if (m.player1_id) userIds.add(m.player1_id);
+            if (m.player2_id) userIds.add(m.player2_id);
+        });
+
+        // 3. Get matches awaiting score submission (Raw)
+        const { data: pendingMatches, error: pendingError } = await supabase
+            .from("matches")
+            .select(`
+                id,
+                player1_id,
+                player2_id,
+                ladder_id,
+                status,
+                ladders (name)
+            `)
+            .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+            .eq("status", "Pending");
+
+        if (pendingError) throw pendingError;
+
+        // Collect pending match user IDs
+        pendingMatches?.forEach(m => {
+            if (m.player1_id) userIds.add(m.player1_id);
+            if (m.player2_id) userIds.add(m.player2_id);
+        });
+
+        // 4. Fetch Users manually
+        const { data: users } = await supabase
+            .from("users")
+            .select("id, full_name")
+            .in("id", Array.from(userIds));
+
+        const userMap = new Map(users?.map(u => [u.id, u]) || []);
+
+        // 5. Build Actions List
+
+        // Challenges
         if (challenges) {
             for (const challenge of challenges) {
-                // Only show if user is the challenged party
                 if (challenge.challenged_id === userId) {
+                    const challenger = userMap.get(challenge.challenger_id);
                     actions.push({
                         id: challenge.id,
                         type: "challenge",
                         ladder_id: challenge.ladder_id,
                         ladder_name: (challenge.ladders as any)?.name || "Unknown Ladder",
-                        opponent_name: (challenge.challenger as any)?.full_name || "Unknown",
+                        opponent_name: challenger?.full_name || "Unknown",
                         expires_at: challenge.expires_at,
                         status: challenge.status,
                     });
@@ -49,40 +110,20 @@ export async function GET(req: Request) {
             }
         }
 
-        // 2. Get matches awaiting score confirmation
-        const { data: matches, error: matchesError } = await supabase
-            .from("matches")
-            .select(`
-        id,
-        player1_id,
-        player2_id,
-        ladder_id,
-        status,
-        submitted_by,
-        ladders (name),
-        player1:users!player1_id (full_name),
-        player2:users!player2_id (full_name)
-      `)
-            .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-            .eq("status", "ScoreSubmitted");
-
-        if (matchesError) throw matchesError;
-
+        // Matches Confirm
         if (matches) {
             for (const match of matches) {
-                // Only show if user didn't submit the score
                 if (match.submitted_by !== userId) {
-                    const opponentName =
-                        match.player1_id === userId
-                            ? (match.player2 as any)?.full_name
-                            : (match.player1 as any)?.full_name;
+                    const player1 = userMap.get(match.player1_id);
+                    const player2 = userMap.get(match.player2_id);
+                    const opponent = match.player1_id === userId ? player2 : player1;
 
                     actions.push({
                         id: match.id,
                         type: "confirm_score",
                         ladder_id: match.ladder_id,
                         ladder_name: (match.ladders as any)?.name || "Unknown Ladder",
-                        opponent_name: opponentName || "Unknown",
+                        opponent_name: opponent?.full_name || "Unknown",
                         status: match.status,
                         match_id: match.id,
                     });
@@ -90,44 +131,26 @@ export async function GET(req: Request) {
             }
         }
 
-        // 3. Get matches awaiting score submission (status: Pending)
-        const { data: pendingMatches, error: pendingError } = await supabase
-            .from("matches")
-            .select(`
-        id,
-        player1_id,
-        player2_id,
-        ladder_id,
-        status,
-        ladders (name),
-        player1:users!player1_id (full_name),
-        player2:users!player2_id (full_name)
-      `)
-            .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-            .eq("status", "Pending");
-
-        if (pendingError) throw pendingError;
-
+        // Pending Matches
         if (pendingMatches) {
             for (const match of pendingMatches) {
-                const opponentName =
-                    match.player1_id === userId
-                        ? (match.player2 as any)?.full_name
-                        : (match.player1 as any)?.full_name;
+                const player1 = userMap.get(match.player1_id);
+                const player2 = userMap.get(match.player2_id);
+                const opponent = match.player1_id === userId ? player2 : player1;
 
                 actions.push({
                     id: match.id,
                     type: "submit_score",
                     ladder_id: match.ladder_id,
                     ladder_name: (match.ladders as any)?.name || "Unknown Ladder",
-                    opponent_name: opponentName || "Unknown",
+                    opponent_name: opponent?.full_name || "Unknown",
                     status: match.status,
                     match_id: match.id,
                 });
             }
         }
 
-        // Sort by expires_at (challenges first, then others)
+        // Sort by expires_at
         actions.sort((a, b) => {
             if (a.expires_at && !b.expires_at) return -1;
             if (!a.expires_at && b.expires_at) return 1;

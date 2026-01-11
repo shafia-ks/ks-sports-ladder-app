@@ -12,22 +12,20 @@ export async function GET(req: Request) {
     try {
         const supabase = createClient();
 
-        // Use .or() correctly with authenticated client
+        // 1. Fetch Matches (Raw)
         const { data: matches, error } = await supabase
             .from("matches")
             .select(`
-        id,
-        player1_id,
-        player2_id,
-        winner_id,
-        ladder_id,
-        set_scores,
-        played_at,
-        created_at,
-        ladders (name),
-        player1:users!player1_id (full_name),
-        player2:users!player2_id (full_name)
-      `)
+                id,
+                player1_id,
+                player2_id,
+                winner_id,
+                ladder_id,
+                set_scores,
+                played_at,
+                created_at,
+                ladders (name)
+            `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Confirmed")
             .order("created_at", { ascending: false })
@@ -38,9 +36,27 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        // 2. Fetch Users manually
+        const userIds = new Set<string>();
+        matches?.forEach(m => {
+            if (m.player1_id) userIds.add(m.player1_id);
+            if (m.player2_id) userIds.add(m.player2_id);
+        });
+
+        const { data: users } = await supabase
+            .from("users")
+            .select("id, full_name")
+            .in("id", Array.from(userIds));
+
+        const userMap = new Map(users?.map(u => [u.id, u]) || []);
+
+        // 3. Merge Data
         const activities = (matches || []).map((match) => {
+            const player1 = userMap.get(match.player1_id);
+            const player2 = userMap.get(match.player2_id);
+
             const isPlayer1 = match.player1_id === userId;
-            const opponent = isPlayer1 ? (match.player2 as any) : (match.player1 as any);
+            const opponent = isPlayer1 ? player2 : player1;
             const ladders = match.ladders as any;
             const won = match.winner_id === userId;
 

@@ -12,19 +12,18 @@ export async function GET(req: Request) {
     try {
         const supabase = createClient();
 
+        // 1. Fetch Matches (Raw)
         const { data: matches, error } = await supabase
             .from("matches")
             .select(`
-        id,
-        player1_id,
-        player2_id,
-        ladder_id,
-        played_at,
-        location,
-        ladders (name, image_url),
-        player1:users!player1_id (full_name, avatar_url),
-        player2:users!player2_id (full_name, avatar_url)
-      `)
+                id,
+                player1_id,
+                player2_id,
+                ladder_id,
+                played_at,
+                location,
+                ladders (name, image_url)
+            `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Confirmed")
             .gte("played_at", new Date().toISOString())
@@ -36,9 +35,27 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        // 2. Fetch Users manually to avoid ambiguous FK errors
+        const userIds = new Set<string>();
+        matches?.forEach(m => {
+            if (m.player1_id) userIds.add(m.player1_id);
+            if (m.player2_id) userIds.add(m.player2_id);
+        });
+
+        const { data: users } = await supabase
+            .from("users")
+            .select("id, full_name, avatar_url")
+            .in("id", Array.from(userIds));
+
+        const userMap = new Map(users?.map(u => [u.id, u]) || []);
+
+        // 3. Merge Data
         const formattedMatches = (matches || []).map((match) => {
+            const player1 = userMap.get(match.player1_id);
+            const player2 = userMap.get(match.player2_id);
+
             const isPlayer1 = match.player1_id === userId;
-            const opponent = isPlayer1 ? (match.player2 as any) : (match.player1 as any);
+            const opponent = isPlayer1 ? player2 : player1;
             const ladders = match.ladders as any;
 
             return {
