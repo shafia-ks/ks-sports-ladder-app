@@ -711,7 +711,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       params.set('tab', newTab);
     }
     const newUrl = params.toString() ? `${pathname}?${params.toString()}` : (pathname || '');
-    router.push(newUrl, { scroll: false });
+    router.push(newUrl as any, { scroll: false });
   };
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [fixingRanks, setFixingRanks] = useState(false);
