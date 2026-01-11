@@ -29,6 +29,7 @@ import { InviteMembersButton } from "@/features/ladders/components/InviteMembers
 import { InviteMembersModal } from "@/features/ladders/components/InviteMembersModal";
 import { PendingOrganizerRequests } from "@/features/ladders/components/PendingOrganizerRequests";
 import { MatchesList } from "@/features/ladders/components/MatchesList";
+import { useLadderRealtime } from "@/hooks/useLadderRealtime";
 
 // Lazy load heavy components for better performance
 const RankingsTable = dynamic(
@@ -645,6 +646,24 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
   // Use custom hooks for data fetching
   const { data, isLoading, error, refetch: fetchLadder } = useLadderData(params.id, user?.id);
+
+  // Real-time subscriptions for instant updates
+  useLadderRealtime({
+    ladderId: params.id,
+    onChallengeChange: () => {
+      console.log('[Dashboard] Challenge changed, refetching...');
+      fetchLadder(true); // Silent refetch
+    },
+    onMatchChange: () => {
+      console.log('[Dashboard] Match changed, refetching...');
+      fetchLadder(true); // Silent refetch
+    },
+    onRankingChange: () => {
+      console.log('[Dashboard] Ranking changed, refetching...');
+      fetchLadder(true); // Silent refetch
+    },
+    enabled: !!data, // Only enable after initial load
+  });
 
   // Use custom hooks for actions
   const actions = useLadderActions(params.id, fetchLadder);
