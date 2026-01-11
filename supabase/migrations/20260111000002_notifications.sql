@@ -59,9 +59,9 @@ DECLARE
     v_challenged_name TEXT;
     v_ladder_name TEXT;
 BEGIN
-    -- Get names
-    SELECT full_name INTO v_challenger_name FROM users WHERE id = NEW.challenger_id;
-    SELECT full_name INTO v_challenged_name FROM users WHERE id = NEW.challenged_id;
+    -- Get names with safety fallbacks
+    SELECT COALESCE(full_name, 'A player') INTO v_challenger_name FROM users WHERE id = NEW.challenger_id;
+    SELECT COALESCE(full_name, 'A player') INTO v_challenged_name FROM users WHERE id = NEW.challenged_id;
     SELECT name INTO v_ladder_name FROM ladders WHERE id = NEW.ladder_id;
 
     -- Build payload based on operation
@@ -82,7 +82,7 @@ BEGIN
             'challenge_received',
             'New Challenge Received',
             v_challenger_name || ' has challenged you on ' || v_ladder_name,
-            '/ladders/' || NEW.ladder_id,
+            '/dashboard',
             json_build_object('challenge_id', NEW.id, 'ladder_id', NEW.ladder_id)
         );
 
@@ -108,7 +108,7 @@ BEGIN
                     CASE WHEN NEW.status = 'Accepted' THEN 'challenge_accepted' ELSE 'challenge_declined' END,
                     'Challenge ' || NEW.status,
                     v_challenged_name || ' has ' || LOWER(NEW.status) || ' your challenge on ' || v_ladder_name,
-                    '/ladders/' || NEW.ladder_id,
+                    '/dashboard',
                     json_build_object('challenge_id', NEW.id, 'ladder_id', NEW.ladder_id)
                 );
             END IF;
@@ -169,7 +169,7 @@ BEGIN
                     ELSE NEW.player1_id 
                 END;
                 
-                SELECT full_name INTO v_submitter_name FROM users WHERE id = NEW.submitted_by;
+                SELECT COALESCE(full_name, 'A player') INTO v_submitter_name FROM users WHERE id = NEW.submitted_by;
 
                 INSERT INTO notifications (user_id, type, title, message, link_url, metadata)
                 VALUES (
@@ -177,7 +177,7 @@ BEGIN
                     'match_submitted',
                     'Match Score Submitted',
                     v_submitter_name || ' submitted a score for your match on ' || v_ladder_name || '. Please confirm it.',
-                    '/matches',
+                    '/dashboard', 
                     json_build_object('match_id', NEW.id, 'ladder_id', NEW.ladder_id)
                 );
             
@@ -188,7 +188,7 @@ BEGIN
                     ELSE NEW.player1_id 
                 END;
                 
-                SELECT full_name INTO v_submitter_name FROM users WHERE id = NEW.disputed_by;
+                SELECT COALESCE(full_name, 'A player') INTO v_submitter_name FROM users WHERE id = NEW.disputed_by;
 
                 INSERT INTO notifications (user_id, type, title, message, link_url, metadata)
                 VALUES (
@@ -196,18 +196,17 @@ BEGIN
                     'match_disputed',
                     'Match Score Disputed',
                     v_submitter_name || ' disputed the match score on ' || v_ladder_name,
-                    '/matches',
+                    '/dashboard',
                     json_build_object('match_id', NEW.id, 'ladder_id', NEW.ladder_id)
                 );
 
             ELSIF NEW.status = 'Confirmed' THEN
-                -- Notify both players (except the one who confirmed if applicable)
-                -- Actually simpler to just notify both "Match Confirmed"
+                -- Notify both players
                 INSERT INTO notifications (user_id, type, title, message, link_url, metadata)
                 VALUES 
-                (NEW.player1_id, 'match_confirmed', 'Match Confirmed', 'Your match on ' || v_ladder_name || ' has been confirmed.', '/matches', json_build_object('match_id', NEW.id)),
-                (NEW.player2_id, 'match_confirmed', 'Match Confirmed', 'Your match on ' || v_ladder_name || ' has been confirmed.', '/matches', json_build_object('match_id', NEW.id))
-                ON CONFLICT DO NOTHING; -- In case of weirdness, but UUID primary key prevents conflict on ID. Here we insert distinct rows.
+                (NEW.player1_id, 'match_confirmed', 'Match Confirmed', 'Your match on ' || v_ladder_name || ' has been confirmed.', '/ladders/' || NEW.ladder_id, json_build_object('match_id', NEW.id)),
+                (NEW.player2_id, 'match_confirmed', 'Match Confirmed', 'Your match on ' || v_ladder_name || ' has been confirmed.', '/ladders/' || NEW.ladder_id, json_build_object('match_id', NEW.id))
+                ON CONFLICT DO NOTHING;
             END IF;
         END IF;
     END IF;
@@ -253,8 +252,7 @@ BEGIN
                 json_build_object('ladder_id', NEW.ladder_id, 'old_rank', OLD.current_rank, 'new_rank', NEW.current_rank)
              );
         ELSIF NEW.current_rank > OLD.current_rank THEN
-             -- Optional: Notify when dropped? Maybe discouraging. Let's stick to positive/neutral.
-             -- But knowing you dropped is important.
+             -- Notify drop
              INSERT INTO notifications (user_id, type, title, message, link_url, metadata)
              VALUES (
                 NEW.user_id,
