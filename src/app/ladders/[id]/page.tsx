@@ -303,10 +303,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
             <Swords className="h-5 w-5 text-brand-600" />
             Active Challenges ({activeChallenges.length})
           </h3>
-          <Link href="/challenges/create" className="btn btn-sm btn-primary">
-            <Swords className="h-4 w-4" />
-            New Challenge
-          </Link>
+
         </div>
 
         {activeChallenges.length === 0 ? (
