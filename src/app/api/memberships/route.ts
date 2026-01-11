@@ -1,37 +1,77 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-// Returns memberships for a given user_id. Intended for authenticated client calls.
-export async function GET(req: NextRequest) {
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
-  }
-
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("user_id");
 
   if (!userId) {
-    return NextResponse.json({ error: "user_id is required" }, { status: 400 });
+    return NextResponse.json({ error: "user_id required" }, { status: 400 });
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    }
+
+    // 1. Get memberships with ladder details
+    const { data: memberships, error } = await supabaseAdmin
       .from("ladder_memberships")
-      .select(
-        `id, ladder_id, status, current_rank, requested_at, accepted_at, ladders ( id, name, location, status )`
-      )
+      .select(`
+        *,
+        ladders (
+          id,
+          name,
+          sport_id,
+          image_url,
+          status,
+          visibility
+        )
+      `)
       .eq("user_id", userId)
-      .order("accepted_at", { ascending: true });
+      .eq("status", "active") // Only get active memberships
+      .order("joined_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error("[GET /api/memberships] Error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-    const memberships = data ?? [];
-    const active = memberships.filter((m) => m.status === "active");
-    const pending = memberships.filter((m) => m.status === "pending");
+    // 2. Calculate match counts for each membership
+    // We do this by querying matches table for this user per ladder
+    const { data: matches } = await supabaseAdmin
+      .from("matches")
+      .select("ladder_id, played_at, created_at")
+      .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+      .eq("status", "Confirmed");
 
-    return NextResponse.json({ memberships, active, pending });
-  } catch (error) {
-    console.error("GET /api/memberships error:", error);
-    return NextResponse.json({ error: "Failed to load memberships" }, { status: 500 });
+    const enrichedMemberships = memberships.map((membership) => {
+      const ladderMatches = (matches || []).filter(
+        (m) => m.ladder_id === membership.ladder_id
+      );
+
+      // Find last played date
+      let lastPlayed = null;
+      if (ladderMatches.length > 0) {
+        // Sort by date descending
+        const sorted = [...ladderMatches].sort((a, b) => {
+          const tA = new Date(a.played_at || a.created_at).getTime();
+          const tB = new Date(b.played_at || b.created_at).getTime();
+          return tB - tA;
+        });
+        lastPlayed = sorted[0].played_at || sorted[0].created_at;
+      }
+
+      return {
+        ...membership,
+        match_count: ladderMatches.length,
+        last_played: lastPlayed,
+      };
+    });
+
+    return NextResponse.json({ active: enrichedMemberships });
+  } catch (error: any) {
+    console.error("[GET /api/memberships] Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

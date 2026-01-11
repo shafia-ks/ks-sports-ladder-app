@@ -3,7 +3,14 @@ import { LadderRankingEntry } from "@/lib/ranking/ranking-engine";
 import { RankingRuleType } from "@/types/domain";
 
 async function fetchMatches(userId?: string) {
-  const url = userId ? `/api/matches?userId=${encodeURIComponent(userId)}` : "/api/matches";
+  // FIXED: Always filter by Confirmed status for dashboard/profile
+  const params = new URLSearchParams();
+  if (userId) {
+    params.set('userId', userId);
+  }
+  params.set('status', 'Confirmed');
+
+  const url = `/api/matches?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to load matches");
   return res.json();
@@ -35,7 +42,7 @@ async function submitMatch(data: {
 
 export function useMatches(userId?: string) {
   return useQuery({
-    queryKey: ["matches", userId],
+    queryKey: ["matches", userId, "Confirmed"],
     queryFn: () => fetchMatches(userId)
   });
 }

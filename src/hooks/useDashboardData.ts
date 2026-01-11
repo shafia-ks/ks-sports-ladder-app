@@ -16,14 +16,26 @@ export function useDashboardData() {
         }
 
         const myLadders = membershipsData.active ?? [];
-        const wins = (matchesData.matches ?? []).filter((m: any) => m.winner_id === user.id).length;
-        const totalMatches = (matchesData.matches ?? []).length;
 
-        // Calculate simple streak (wins in a row from most recent)
+        // FIXED: Only count CONFIRMED matches for stats
+        const confirmedMatches = (matchesData.matches ?? []).filter((m: any) => m.status === 'Confirmed');
+        const wins = confirmedMatches.filter((m: any) => m.winner_id === user.id).length;
+        const totalMatches = confirmedMatches.length;
+
+        // Calculate streak from most recent confirmed matches (ordered by played_at or created_at)
+        const sortedMatches = [...confirmedMatches].sort((a: any, b: any) => {
+            const dateA = new Date(a.played_at || a.created_at).getTime();
+            const dateB = new Date(b.played_at || b.created_at).getTime();
+            return dateB - dateA; // Most recent first
+        });
+
         let streak = 0;
-        for (const match of (matchesData.matches ?? [])) {
-            if (match.winner_id === user.id) streak++;
-            else break;
+        for (const match of sortedMatches) {
+            if (match.winner_id === user.id) {
+                streak++;
+            } else {
+                break;
+            }
         }
 
         return {
