@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -10,14 +10,11 @@ export async function GET(req: Request) {
     }
 
     try {
+        const supabase = createClient();
         const actions: any[] = [];
 
-        if (!supabaseAdmin) {
-            return NextResponse.json({ error: "Database not available" }, { status: 500 });
-        }
-
         // 1. Get pending challenges (where user is challenged)
-        const { data: challenges } = await supabaseAdmin
+        const { data: challenges, error: challengesError } = await supabase
             .from("challenges")
             .select(`
         id,
@@ -32,6 +29,8 @@ export async function GET(req: Request) {
       `)
             .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
             .eq("status", "Pending");
+
+        if (challengesError) throw challengesError;
 
         if (challenges) {
             for (const challenge of challenges) {
@@ -51,7 +50,7 @@ export async function GET(req: Request) {
         }
 
         // 2. Get matches awaiting score confirmation
-        const { data: matches } = await supabaseAdmin
+        const { data: matches, error: matchesError } = await supabase
             .from("matches")
             .select(`
         id,
@@ -66,6 +65,8 @@ export async function GET(req: Request) {
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "ScoreSubmitted");
+
+        if (matchesError) throw matchesError;
 
         if (matches) {
             for (const match of matches) {
@@ -90,7 +91,7 @@ export async function GET(req: Request) {
         }
 
         // 3. Get matches awaiting score submission (status: Pending)
-        const { data: pendingMatches } = await supabaseAdmin
+        const { data: pendingMatches, error: pendingError } = await supabase
             .from("matches")
             .select(`
         id,
@@ -104,6 +105,8 @@ export async function GET(req: Request) {
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Pending");
+
+        if (pendingError) throw pendingError;
 
         if (pendingMatches) {
             for (const match of pendingMatches) {

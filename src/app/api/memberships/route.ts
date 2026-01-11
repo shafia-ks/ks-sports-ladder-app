@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -10,12 +10,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: "Database not available" }, { status: 500 });
-    }
+    const supabase = createClient();
 
     // 1. Get memberships with ladder details
-    const { data: memberships, error } = await supabaseAdmin
+    const { data: memberships, error } = await supabase
       .from("ladder_memberships")
       .select(`
         *,
@@ -39,13 +37,13 @@ export async function GET(req: Request) {
 
     // 2. Calculate match counts for each membership
     // We do this by querying matches table for this user per ladder
-    const { data: matches } = await supabaseAdmin
+    const { data: matches } = await supabase
       .from("matches")
       .select("ladder_id, played_at, created_at")
       .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
       .eq("status", "Confirmed");
 
-    const enrichedMemberships = memberships.map((membership) => {
+    const enrichedMemberships = (memberships || []).map((membership) => {
       const ladderMatches = (matches || []).filter(
         (m) => m.ladder_id === membership.ladder_id
       );
@@ -71,7 +69,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ active: enrichedMemberships });
   } catch (error: any) {
-    console.error("[GET /api/memberships] Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[GET /api/memberships] Exception:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

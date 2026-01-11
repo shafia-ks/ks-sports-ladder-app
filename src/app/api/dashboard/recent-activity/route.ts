@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -10,11 +10,10 @@ export async function GET(req: Request) {
     }
 
     try {
-        if (!supabaseAdmin) {
-            return NextResponse.json({ error: "Database not available" }, { status: 500 });
-        }
+        const supabase = createClient();
 
-        const { data: matches, error } = await supabaseAdmin
+        // Use .or() correctly with authenticated client
+        const { data: matches, error } = await supabase
             .from("matches")
             .select(`
         id,
@@ -39,8 +38,6 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        console.log(`[recent-activity] Found ${matches?.length || 0} matches for user ${userId}`);
-
         const activities = (matches || []).map((match) => {
             const isPlayer1 = match.player1_id === userId;
             const opponent = isPlayer1 ? (match.player2 as any) : (match.player1 as any);
@@ -55,7 +52,6 @@ export async function GET(req: Request) {
                 won,
                 set_scores: match.set_scores || [],
                 played_at: match.played_at || match.created_at,
-                // TODO: Calculate rank change from ranking_history
                 rank_change: undefined,
             };
         });

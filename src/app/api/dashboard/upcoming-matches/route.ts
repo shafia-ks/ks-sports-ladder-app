@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -10,11 +10,9 @@ export async function GET(req: Request) {
     }
 
     try {
-        if (!supabaseAdmin) {
-            return NextResponse.json({ error: "Database not available" }, { status: 500 });
-        }
+        const supabase = createClient();
 
-        const { data: matches, error } = await supabaseAdmin
+        const { data: matches, error } = await supabase
             .from("matches")
             .select(`
         id,
