@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { useLadders } from "@/features/ladders/api";
-import { Loader2, MapPin, Plus, Shield, Clock } from "lucide-react";
+import { Loader2, MapPin, Plus, Shield, Clock, Trophy } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useEffect, useState } from "react";
 
@@ -14,6 +14,8 @@ export default function LaddersPage() {
   const { data, isLoading, error, refetch } = useLadders();
   const [memberships, setMemberships] = useState<any[]>([]);
   const [membershipLoading, setMembershipLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sportFilter, setSportFilter] = useState("all");
   const canCreateLadder = user?.role === "admin" || user?.role === "organizer";
   const ladders = data?.ladders ?? [];
 
@@ -76,6 +78,20 @@ export default function LaddersPage() {
     );
   };
 
+  // Filter ladders based on search and sport
+  const filteredLadders = ladders.filter((ladder: any) => {
+    const matchesSearch = !searchQuery ||
+      ladder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ladder.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesSport = sportFilter === "all" || ladder.sport_id === sportFilter;
+
+    return matchesSearch && matchesSport;
+  });
+
+  // Get unique sports for filter
+  const availableSports = Array.from(new Set(ladders.map((l: any) => l.sport_id).filter(Boolean))) as string[];
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
@@ -130,43 +146,95 @@ export default function LaddersPage() {
         )}
 
         {!isLoading && !error && ladders.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-2">
-            {ladders.map((ladder: any) => (
-              <div key={ladder.id} className="card p-5 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
-                    <p className="text-xs text-slate-500">{ladder.description || "No description provided"}</p>
-                  </div>
-                  <Badge variant={ladder.status === "active" ? "success" : "neutral"}>
-                    {ladder.status ?? "pending"}
-                  </Badge>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                  {ladder.location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {ladder.location}
-                    </span>
-                  )}
-                  {ladder.visibility && (
-                    <span className="flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      {ladder.visibility}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Link href={`/ladders/${ladder.id}`} className="btn btn-secondary text-sm flex-1">
-                    View
-                  </Link>
-                  {renderJoinButton(ladder.id)}
-                </div>
+          <>
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="relative flex-1 w-full">
+                <input
+                  type="search"
+                  placeholder="Search ladders..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
-            ))}
-          </div>
+
+              {availableSports.length > 0 && (
+                <select
+                  value={sportFilter}
+                  onChange={(e) => setSportFilter(e.target.value)}
+                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                >
+                  <option value="all">All Sports</option>
+                  {availableSports.map((sport: string) => (
+                    <option key={sport} value={sport}>{sport}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Ladders List - Vertical Stack */}
+            <div className="space-y-4">
+              {filteredLadders.length === 0 ? (
+                <div className="card p-8 text-center text-slate-500">
+                  <p className="text-sm">No ladders found matching your criteria.</p>
+                  <button
+                    onClick={() => { setSearchQuery(""); setSportFilter("all"); }}
+                    className="mt-3 text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              ) : (
+                filteredLadders.map((ladder: any) => (
+                  <div key={ladder.id} className="card p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
+                          {ladder.sport_id && (
+                            <Badge variant="info">
+                              <Trophy className="h-3 w-3 mr-1" />
+                              {ladder.sport_id}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500">{ladder.description || "No description provided"}</p>
+                      </div>
+                      <Badge variant={ladder.status === "active" ? "success" : "neutral"}>
+                        {ladder.status ?? "pending"}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                      {ladder.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {ladder.location}
+                        </span>
+                      )}
+                      {ladder.visibility && (
+                        <span className="flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          {ladder.visibility}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <Link href={`/ladders/${ladder.id}`} className="btn btn-secondary text-sm flex-1">
+                        View
+                      </Link>
+                      {renderJoinButton(ladder.id)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
         )}
       </div>
     </ProtectedRoute>
