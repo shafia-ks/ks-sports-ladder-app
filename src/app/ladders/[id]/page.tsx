@@ -808,8 +808,22 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     try {
       await joinLadder(user.id);
       trackEvent({ action: 'ladder_joined', category: 'growth', label: params.id });
+
+      // Refresh ladder data to update UI
+      await fetchLadder(true); // Silent refetch
+
+      // Show success message
+      showToast({
+        title: "Joined ladder!",
+        description: "You have successfully joined the ladder.",
+        variant: "success",
+      });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to join ladder");
+      showToast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to join ladder",
+        variant: "error",
+      });
     }
   };
 
