@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/layout/top-nav";
@@ -9,6 +9,14 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 
 const fontSans = Space_Grotesk({ subsets: ["latin"], variable: "--font-sans" });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#2563eb",
+};
+
 export const metadata: Metadata = {
   title: "KS Sports Ladder",
   description: "Modern ladder challenge app for racket sports.",
@@ -18,13 +26,6 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "KS Sports Ladder",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  themeColor: "#2563eb",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
