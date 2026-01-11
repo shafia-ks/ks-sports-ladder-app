@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -684,7 +685,34 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     currentMember
   } = memberData;
 
-  const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches" | "settings">("dashboard");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Initialize tab from URL parameter or default to dashboard
+  const initialTab = (searchParams?.get('tab') as "dashboard" | "ranking" | "challenges" | "matches" | "settings") || "dashboard";
+  const [tab, setTab] = useState<"dashboard" | "ranking" | "challenges" | "matches" | "settings">(initialTab);
+
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const urlTab = searchParams?.get('tab') as "dashboard" | "ranking" | "challenges" | "matches" | "settings" | null;
+    if (urlTab && urlTab !== tab) {
+      setTab(urlTab);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: "dashboard" | "ranking" | "challenges" | "matches" | "settings") => {
+    setTab(newTab);
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (newTab === "dashboard") {
+      params.delete('tab');
+    } else {
+      params.set('tab', newTab);
+    }
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : (pathname || '');
+    router.push(newUrl, { scroll: false });
+  };
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [fixingRanks, setFixingRanks] = useState(false);
   const [settingsForms, setSettingsForms] = useState({
@@ -1209,7 +1237,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           {/* Tab Navigation */}
           <div className="flex gap-4 border-b border-slate-200">
             <button
-              onClick={() => setTab("dashboard")}
+              onClick={() => handleTabChange("dashboard")}
               className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
                 ? "border-brand-600 text-brand-700"
                 : "border-transparent text-slate-600 hover:text-slate-900"
@@ -1221,7 +1249,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             {canAccessMembers && (
               <>
                 <button
-                  onClick={() => setTab("ranking")}
+                  onClick={() => handleTabChange("ranking")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === "ranking"
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-slate-600 hover:text-slate-900"
@@ -1230,7 +1258,17 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   Ranking
                 </button>
                 <button
-                  onClick={() => setTab("matches")}
+                  onClick={() => handleTabChange("challenges")}
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "challenges"
+                    ? "border-brand-600 text-brand-700"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                    }`}
+                >
+                  <Swords className="h-4 w-4" />
+                  Challenges
+                </button>
+                <button
+                  onClick={() => handleTabChange("matches")}
                   className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "matches"
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-slate-600 hover:text-slate-900"
@@ -1241,7 +1279,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </button>
                 {isOrganizer && (
                   <button
-                    onClick={() => setTab("settings")}
+                    onClick={() => handleTabChange("settings")}
                     className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "settings"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
@@ -1559,6 +1597,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </table>
               </div>
             </div>
+          )}
+
+          {/* Challenges Tab */}
+          {tab === "challenges" && canAccessMembers && (
+            <ChallengesTabContent ladderId={params.id} userId={user?.id} />
           )}
 
           {/* Matches Tab */}
