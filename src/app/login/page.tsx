@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Trophy, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -18,13 +18,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isSignedIn, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isSignedIn) {
-      router.push("/dashboard");
+      const redirectTo = searchParams?.get("redirectTo") || "/dashboard";
+      router.push(redirectTo as any);
     }
-  }, [isSignedIn, isLoading, router]);
+  }, [isSignedIn, isLoading, router, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

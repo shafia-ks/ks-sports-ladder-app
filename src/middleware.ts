@@ -66,6 +66,14 @@ export async function middleware(req: NextRequest) {
   const publicRoutes = ['/login', '/signup', '/reset-password', '/auth/callback', '/'];
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
 
+  // Redirect authenticated users away from auth pages
+  if (session && (pathname === '/login' || pathname === '/signup')) {
+    const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/dashboard';
+    // Validate redirect to prevent open redirect vulnerabilities (basic check: must start with /)
+    const validRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+    return NextResponse.redirect(new URL(validRedirect, req.url));
+  }
+
   // Admin routes - require admin or organizer role
   if (pathname.startsWith('/admin')) {
     if (!session) {
