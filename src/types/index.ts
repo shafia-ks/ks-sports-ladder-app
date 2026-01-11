@@ -104,3 +104,15 @@ export interface DashboardStats {
     currentRank: number | null;
     eloRating?: number;
 }
+
+export interface Notification {
+    id: string;
+    user_id: string;
+    type: 'challenge_received' | 'challenge_accepted' | 'challenge_declined' | 'match_submitted' | 'match_confirmed' | 'match_disputed' | 'match_scheduled' | 'rank_changed';
+    title: string;
+    message: string;
+    link_url?: string;
+    read_at?: string;
+    created_at: string;
+    metadata?: any;
+}

@@ -7,6 +7,7 @@ import { Home, LayoutDashboard, Trophy, Bell, Settings, Menu, X, LogOut, LogIn, 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Avatar } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 // No public links - landing page is separate
 
@@ -14,7 +15,7 @@ import { Avatar } from "@/components/ui/avatar";
 const playerLinks = [
   { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
   { href: { pathname: "/ladders" }, label: "Ladders", icon: Trophy },
-  { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+  // Notifications moved to Bell icon
   { href: { pathname: "/help" }, label: "Help", icon: HelpCircle },
   { href: { pathname: "/profile" }, label: "Profile", icon: User },
 ];
@@ -22,7 +23,7 @@ const playerLinks = [
 const organizerLinks = [
   { href: { pathname: "/organizer" }, label: "My Ladders", icon: Trophy },
   { href: { pathname: "/dashboard" }, label: "Dashboard", icon: LayoutDashboard },
-  { href: { pathname: "/notifications" }, label: "Notifications", icon: Bell },
+  // Notifications moved to Bell icon
   { href: { pathname: "/help" }, label: "Help", icon: HelpCircle },
   { href: { pathname: "/profile" }, label: "Profile", icon: User },
 ];
@@ -172,6 +173,13 @@ export function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {!isLoading && isSignedIn && (
+            <>
+              <NotificationBell />
+              <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
+            </>
+          )}
+
           {!isLoading && (
             <>
               {isSignedIn && user ? (
