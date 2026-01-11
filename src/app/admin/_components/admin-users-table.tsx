@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, UserX, UserCheck, Shield, Check, X, Search, Filter } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useToast } from "@/components/ui/toast";
 
 interface User {
     id: string;
@@ -18,6 +19,7 @@ interface User {
 
 export function AdminUsersTable() {
     const { user: currentUser } = useAuth();
+    const { push: showToast } = useToast();
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -115,10 +117,24 @@ export function AdminUsersTable() {
                 setDisabling(userId);
                 try {
                     const res = await fetch(`/api/users/${userId}/disable`, { method: "PATCH" });
-                    if (!res.ok) throw new Error("Failed to disable user");
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || "Failed to disable user");
+                    }
                     await fetchUsers();
+                    showToast({
+                        title: "User disabled",
+                        description: "User account has been disabled successfully.",
+                        variant: "success",
+                    });
                 } catch (err) {
-                    setError(err instanceof Error ? err.message : "Failed to disable user");
+                    const errorMsg = err instanceof Error ? err.message : "Failed to disable user";
+                    setError(errorMsg);
+                    showToast({
+                        title: "Error",
+                        description: errorMsg,
+                        variant: "error",
+                    });
                 } finally {
                     setDisabling(null);
                 }
@@ -137,10 +153,24 @@ export function AdminUsersTable() {
                 setDisabling(userId);
                 try {
                     const res = await fetch(`/api/users/${userId}/enable`, { method: "PATCH" });
-                    if (!res.ok) throw new Error("Failed to enable user");
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || "Failed to enable user");
+                    }
                     await fetchUsers();
+                    showToast({
+                        title: "User enabled",
+                        description: "User account has been re-enabled successfully.",
+                        variant: "success",
+                    });
                 } catch (err) {
-                    setError(err instanceof Error ? err.message : "Failed to enable user");
+                    const errorMsg = err instanceof Error ? err.message : "Failed to enable user";
+                    setError(errorMsg);
+                    showToast({
+                        title: "Error",
+                        description: errorMsg,
+                        variant: "error",
+                    });
                 } finally {
                     setDisabling(null);
                 }

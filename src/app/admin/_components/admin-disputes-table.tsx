@@ -99,9 +99,17 @@ export function AdminDisputesTable() {
 
                     <div className="bg-slate-50 rounded-lg p-3">
                         <p className="text-xs font-semibold text-slate-600 mb-1">Score</p>
-                        <p className="text-sm text-slate-900 overflow-x-auto whitespace-pre-wrap">
-                            {JSON.stringify(match.set_scores)}
-                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                            {Array.isArray(match.set_scores) ? (
+                                match.set_scores.map((score: string, idx: number) => (
+                                    <span key={idx} className="px-3 py-1 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-900">
+                                        Set {idx + 1}: {score}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-sm text-slate-500">No scores recorded</span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex gap-2">

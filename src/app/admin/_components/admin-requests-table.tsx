@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Check, X, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface OrganizerRequest {
     id: string;
@@ -21,6 +22,21 @@ export function AdminRequestsTable() {
     const [requests, setRequests] = useState<OrganizerRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        variant?: "danger" | "warning" | "primary";
+        requiresInput?: boolean;
+        inputPlaceholder?: string;
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+    });
+    const [rejectReason, setRejectReason] = useState("");
 
     useEffect(() => {
         fetchRequests();
@@ -53,48 +69,69 @@ export function AdminRequestsTable() {
     };
 
     const handleApprove = async (requestId: string) => {
-        if (!confirm("Approve this request?")) return;
-        setProcessing(requestId);
-        try {
-            const response = await fetch(`/api/leader-requests/${requestId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    status: "approved",
-                    admin_id: user?.id,
-                }),
-            });
-            if (!response.ok) throw new Error("Failed to approve");
-            await fetchRequests();
-        } catch (error) {
-            alert("Failed to approve request");
-        } finally {
-            setProcessing(null);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Approve Request",
+            message: "Are you sure you want to approve this organizer request?",
+            variant: "primary",
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setProcessing(requestId);
+                try {
+                    const response = await fetch(`/api/leader-requests/${requestId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            status: "approved",
+                            admin_id: user?.id,
+                        }),
+                    });
+                    if (!response.ok) throw new Error("Failed to approve");
+                    await fetchRequests();
+                } catch (error) {
+                    alert("Failed to approve request");
+                } finally {
+                    setProcessing(null);
+                }
+            },
+        });
     };
 
     const handleReject = async (requestId: string) => {
-        const reason = prompt("Enter rejection reason:");
-        if (!reason) return;
-
-        setProcessing(requestId);
-        try {
-            const response = await fetch(`/api/leader-requests/${requestId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    status: "rejected",
-                    rejection_reason: reason,
-                    admin_id: user?.id,
-                }),
-            });
-            if (!response.ok) throw new Error("Failed to reject");
-            await fetchRequests();
-        } catch (error) {
-            alert("Failed to reject request");
-        } finally {
-            setProcessing(null);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Reject Request",
+            message: "Please provide a reason for rejecting this request:",
+            variant: "danger",
+            requiresInput: true,
+            inputPlaceholder: "Enter rejection reason...",
+            onConfirm: async () => {
+                if (!rejectReason.trim()) {
+                    alert("Please provide a rejection reason");
+                    return;
+                }
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setProcessing(requestId);
+                try {
+                    const response = await fetch(`/api/leader-requests/${requestId}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            status: "rejected",
+                            rejection_reason: rejectReason,
+                            admin_id: user?.id,
+                        }),
+                    });
+                    if (!response.ok) throw new Error("Failed to reject");
+                    await fetchRequests();
+                    setRejectReason("");
+                } catch (error) {
+                    alert("Failed to reject request");
+                } finally {
+                    setProcessing(null);
+                }
+            },
+        });
     };
 
     if (loading) return <div className="p-8 text-center text-slate-500"><Loader2 className="h-6 w-6 animate-spin inline mr-2" /> Loading...</div>;
@@ -127,8 +164,8 @@ export function AdminRequestsTable() {
                                 <td className="px-4 py-3 text-slate-500 italic max-w-xs truncate" title={req.reason}>{req.reason}</td>
                                 <td className="px-4 py-3">
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${req.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                                            req.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                                'bg-red-100 text-red-800'
+                                        req.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                            'bg-red-100 text-red-800'
                                         }`}>
                                         {req.status}
                                     </span>
