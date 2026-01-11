@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isFetching) {
         return cachedProfile;
       }
-      
+
       // Return in-memory cache if available
       if (cachedProfile && cachedProfile.id === sessionUser.id) {
         return cachedProfile;
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             `${firstName} ${lastName}`.trim();
 
           // Insert new profile only (don't update existing ones to preserve role)
-          const { data: inserted, error: insertError} = await client
+          const { data: inserted, error: insertError } = await client
             .from("users")
             .insert({
               id: sessionUser.id,
@@ -133,13 +133,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       try {
         const {
-          data: { session },
-        } = await client.auth.getSession();
+          data: { user: sessionUser },
+          error: userError
+        } = await client.auth.getUser();
 
-        if (session?.user) {
+        if (sessionUser) {
           // Try localStorage first (instant, synchronous)
-          const cachedFromStorage = loadCachedProfile(session.user.id);
-          
+          const cachedFromStorage = loadCachedProfile(sessionUser.id);
+
           if (cachedFromStorage) {
             // Set user immediately from cache - no waiting
             setUser({
@@ -153,16 +154,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             setIsSignedIn(true);
             setIsLoading(false);
-            
+
             // Optionally refresh in background to verify (non-blocking)
-            ensureProfile(session.user, false).catch(err => 
+            ensureProfile(sessionUser, false).catch(err =>
               console.error("Background profile refresh failed:", err)
             );
             return;
           }
 
           // No cache - fetch from database (first-time load)
-          const profile = await ensureProfile(session.user);
+          const profile = await ensureProfile(sessionUser);
 
           if (profile) {
             setUser({
@@ -178,8 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Fallback: don't set role if profile fetch failed
             // This prevents the "unauthorized" redirect on slow networks
             setUser({
-              id: session.user.id,
-              email: session.user.email || "",
+              id: sessionUser.id,
+              email: sessionUser.email || "",
             } as any);
           }
 
@@ -204,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         return;
       }
-      
+
       if (event === "SIGNED_OUT") {
         setUser(null);
         setIsSignedIn(false);
@@ -224,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           // Try localStorage first (instant load)
           const localCached = loadCachedProfile(session.user.id);
-          
+
           if (localCached) {
             // Set user immediately from cache for instant UI
             setUser({
@@ -237,14 +238,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: localCached.role || "player",
             });
             setIsSignedIn(true);
-            
+
             // Skip background refresh - cache is fresh enough
             return;
           }
 
           // No cache - fetch from database (first-time load)
           const startedAt = Date.now();
-          
+
           try {
             const timeoutPromise = new Promise<any>((_, reject) =>
               setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
@@ -289,15 +290,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const client = supabase;
     if (!client) return;
-    
+
     try {
       // Sign out from Supabase (global scope to clear all sessions)
       await client.auth.signOut({ scope: "global" });
-      
+
       // Clear local state
       setUser(null);
       setIsSignedIn(false);
-      
+
       // Clear all auth-related storage to prevent auto-restore
       if (typeof window !== "undefined") {
         // Clear ALL localStorage items (Supabase uses sb-* and auth-* keys)
@@ -307,10 +308,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem(key);
           }
         });
-        
+
         // Clear sessionStorage completely
         sessionStorage.clear();
-        
+
         // Reload to clear in-memory state and redirect to login
         window.location.href = "/login";
       }

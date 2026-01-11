@@ -132,9 +132,7 @@ export function UpcomingMatchesWidget() {
                     <Calendar className="h-5 w-5 text-brand-600" />
                     Upcoming Matches
                 </h3>
-                <Link href={"/matches" as any} className="text-xs font-medium text-brand-600 hover:text-brand-700">
-                    View all
-                </Link>
+
             </div>
 
             <div className="space-y-3">
