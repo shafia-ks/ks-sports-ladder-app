@@ -18,7 +18,7 @@ interface Match {
     player1_id: string;
     player2_id: string;
     winner_id: string | null;
-    status: "Pending" | "Submitted" | "Confirmed" | "Disputed";
+    status: "Pending" | "ScoreSubmitted" | "Confirmed" | "Disputed";
     set_scores: string[] | null;
     played_at: string | null;
     created_at: string;
@@ -26,9 +26,10 @@ interface Match {
     player2: Player;
     location?: string | null;
     scheduled_time?: string | null;
+    submitted_by?: string | null;
 }
 
-type FilterStatus = "all" | "Pending" | "Submitted" | "Confirmed";
+type FilterStatus = "all" | "Pending" | "ScoreSubmitted" | "Confirmed";
 
 interface MatchesListProps {
     ladderId: string;
@@ -79,7 +80,7 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
     const counts = {
         all: matches.length,
         Pending: matches.filter((m) => m.status === "Pending").length,
-        Submitted: matches.filter((m) => m.status === "Submitted").length,
+        ScoreSubmitted: matches.filter((m) => m.status === "ScoreSubmitted").length,
         Confirmed: matches.filter((m) => m.status === "Confirmed").length,
     };
 
@@ -108,13 +109,13 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                         Pending ({counts.Pending})
                     </button>
                     <button
-                        onClick={() => setFilter("Submitted")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Submitted"
+                        onClick={() => setFilter("ScoreSubmitted")}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "ScoreSubmitted"
                             ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                     >
-                        Awaiting Confirmation ({counts.Submitted})
+                        Awaiting Confirmation ({counts.ScoreSubmitted})
                     </button>
                     <button
                         onClick={() => setFilter("Confirmed")}

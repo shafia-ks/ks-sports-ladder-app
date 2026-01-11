@@ -20,7 +20,7 @@ interface Match {
     player1_id: string;
     player2_id: string;
     winner_id: string | null;
-    status: "Pending" | "Submitted" | "Confirmed" | "Disputed";
+    status: "Pending" | "ScoreSubmitted" | "Confirmed" | "Disputed";
     set_scores: string[] | null;
     played_at: string | null;
     created_at: string;
@@ -28,6 +28,7 @@ interface Match {
     player2: Player;
     location?: string | null;
     scheduled_time?: string | null;
+    submitted_by?: string | null;
 }
 
 interface MatchCardProps {
@@ -184,7 +185,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         switch (match.status) {
             case "Pending":
                 return <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">⏱ Pending</span>;
-            case "Submitted":
+            case "ScoreSubmitted":
                 return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">🔵 Awaiting Confirmation</span>;
             case "Confirmed":
                 return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Completed</span>;
@@ -197,7 +198,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         switch (match.status) {
             case "Pending":
                 return "border-l-orange-500";
-            case "Submitted":
+            case "ScoreSubmitted":
                 return "border-l-blue-500";
             case "Confirmed":
                 return "border-l-green-500";
@@ -286,9 +287,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         }
     };
 
-    const canEdit = match.status === "Pending" || (match.status === "Submitted" && isOrganizer);
-    const canConfirm = match.status === "Submitted" &&
-        (match.player1_id === currentUserId || match.player2_id === currentUserId);
+    const canEdit = match.status === "Pending" || (match.status === "ScoreSubmitted" && isOrganizer);
+    const canConfirm = match.status === "ScoreSubmitted" &&
+        (match.player1_id === currentUserId || match.player2_id === currentUserId) &&
+        currentUserId !== match.submitted_by;
 
     return (
         <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-6 hover:shadow-md transition-shadow`}>

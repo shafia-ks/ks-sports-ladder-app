@@ -115,10 +115,24 @@ export function AdminUsersTable() {
             onConfirm: async () => {
                 setConfirmModal(prev => ({ ...prev, isOpen: false }));
                 setDisabling(userId);
+
+                // Optimistic UI update
+                setUsers(prevUsers =>
+                    prevUsers.map(u =>
+                        u.id === userId ? { ...u, disabled: true } : u
+                    )
+                );
+
                 try {
                     const res = await fetch(`/api/users/${userId}/disable`, { method: "PATCH" });
                     if (!res.ok) {
                         const data = await res.json();
+                        // Revert optimistic update on error
+                        setUsers(prevUsers =>
+                            prevUsers.map(u =>
+                                u.id === userId ? { ...u, disabled: false } : u
+                            )
+                        );
                         throw new Error(data.error || "Failed to disable user");
                     }
                     await fetchUsers();
@@ -151,10 +165,24 @@ export function AdminUsersTable() {
             onConfirm: async () => {
                 setConfirmModal(prev => ({ ...prev, isOpen: false }));
                 setDisabling(userId);
+
+                // Optimistic UI update
+                setUsers(prevUsers =>
+                    prevUsers.map(u =>
+                        u.id === userId ? { ...u, disabled: false } : u
+                    )
+                );
+
                 try {
                     const res = await fetch(`/api/users/${userId}/enable`, { method: "PATCH" });
                     if (!res.ok) {
                         const data = await res.json();
+                        // Revert optimistic update on error
+                        setUsers(prevUsers =>
+                            prevUsers.map(u =>
+                                u.id === userId ? { ...u, disabled: true } : u
+                            )
+                        );
                         throw new Error(data.error || "Failed to enable user");
                     }
                     await fetchUsers();
