@@ -1,7 +1,9 @@
 /**
  * Error logging utility
- * Logs errors to console in development and can be extended to send to external services
+ * Logs errors to console in development and sends to Sentry in production
  */
+
+import * as Sentry from '@sentry/nextjs';
 
 interface ErrorContext {
     userId?: string;
@@ -38,10 +40,21 @@ export class ErrorLogger {
 
         if (this.isDevelopment) {
             console.error("Error logged:", errorData);
+        } else {
+            // Send to Sentry in production
+            Sentry.captureException(error, {
+                contexts: {
+                    custom: context || {},
+                },
+                tags: {
+                    userId: context?.userId,
+                    userRole: context?.userRole,
+                    route: context?.route,
+                },
+            });
         }
 
         // TODO: Send to external error tracking service
-        // this.sendToSentry(errorData);
         // this.sendToLogRocket(errorData);
     }
 
