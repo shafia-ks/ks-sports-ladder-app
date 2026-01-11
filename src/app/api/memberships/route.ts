@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     const supabase = createClient();
 
     // 1. Get memberships with ladder details
+    // REMOVED: .eq("status", "active") to get ALL memberships
     const { data: memberships, error } = await supabase
       .from("ladder_memberships")
       .select(`
@@ -27,7 +28,6 @@ export async function GET(req: Request) {
         )
       `)
       .eq("user_id", userId)
-      .eq("status", "active") // Only get active memberships
       .order("joined_at", { ascending: false });
 
     if (error) {
@@ -67,7 +67,15 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json({ active: enrichedMemberships });
+    const active = enrichedMemberships.filter((m) => m.status === "active");
+    const pending = enrichedMemberships.filter((m) => m.status === "pending");
+
+    // Return all memberships + subsets for different consumers
+    return NextResponse.json({
+      memberships: enrichedMemberships,
+      active,
+      pending
+    });
   } catch (error: any) {
     console.error("[GET /api/memberships] Exception:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
