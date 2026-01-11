@@ -124,9 +124,9 @@ export function ActionRequiredWidget() {
 
     const getActionLink = (action: PendingAction) => {
         if (action.type === "challenge") {
-            return `/ladders/${action.ladder_id}/challenges`;
+            return `/ladders/${action.ladder_id}?tab=challenges`;
         }
-        return `/ladders/${action.ladder_id}/matches`;
+        return `/ladders/${action.ladder_id}?tab=matches`;
     };
 
     const getTimeRemaining = (expiresAt?: string) => {

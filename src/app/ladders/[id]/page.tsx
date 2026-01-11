@@ -646,7 +646,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
 
 
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   // Use custom hooks for data fetching
   const { data, isLoading, error, refetch: fetchLadder } = useLadderData(params.id, user?.id);
@@ -1079,6 +1079,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   );
 
   const renderJoinButton = () => {
+    if (authLoading) return null;
+
     if (!user) {
       return (
         <Link
@@ -1117,6 +1119,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       </button>
     );
   };
+
+
 
   return (
     <div className="space-y-6">

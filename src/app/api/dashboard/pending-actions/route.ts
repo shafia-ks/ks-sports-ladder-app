@@ -85,7 +85,7 @@ export async function GET(req: Request) {
         // 4. Fetch Users manually
         const { data: users } = await supabase
             .from("users")
-            .select("id, full_name")
+            .select("id, full_name, first_name, last_name, email")
             .in("id", Array.from(userIds));
 
         const userMap = new Map(users?.map(u => [u.id, u]) || []);
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
                         type: "challenge",
                         ladder_id: challenge.ladder_id,
                         ladder_name: (challenge.ladders as any)?.name || "Unknown Ladder",
-                        opponent_name: challenger?.full_name || "Unknown",
+                        opponent_name: challenger?.full_name || challenger?.email || "Unknown",
                         expires_at: challenge.expires_at,
                         status: challenge.status,
                     });

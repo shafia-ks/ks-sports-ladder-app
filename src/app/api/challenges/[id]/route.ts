@@ -68,51 +68,63 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
         console.log("[PATCH /api/challenges/:id] Match data:", matchInsertData);
 
-        const { data: matchData, error: matchError } = await supabaseAdmin
+        // Check if match already exists for this challenge (Idempotency Check)
+        const { data: existingMatch } = await supabaseAdmin
           .from("matches")
-          .insert(matchInsertData)
           .select("id")
-          .single();
+          .eq("challenge_id", params.id)
+          .maybeSingle();
 
-        if (matchError) {
-          console.error("[PATCH /api/challenges/:id] Match creation failed:");
-          console.error("  Error message:", matchError.message);
-          console.error("  Error code:", matchError.code);
-          console.error("  Error details:", matchError.details);
-          console.error("  Error hint:", matchError.hint);
+        if (existingMatch) {
+          console.log("[PATCH /api/challenges/:id] Match already exists:", existingMatch.id);
+          updateData.match_id = existingMatch.id;
+        } else {
+          // Create new match only if one doesn't exist
+          const { data: matchData, error: matchError } = await supabaseAdmin
+            .from("matches")
+            .insert(matchInsertData)
+            .select("id")
+            .single();
 
-          // If status constraint fails, try with capitalized "Pending"
-          if (matchError.code === "23514" || matchError.message?.includes("status")) {
-            console.log("[PATCH /api/challenges/:id] Retrying with status 'Pending'");
-            const retryData = { ...matchInsertData, status: "Pending" };
-            const { data: retryMatch, error: retryError } = await supabaseAdmin
-              .from("matches")
-              .insert(retryData)
-              .select("id")
-              .single();
+          if (matchError) {
+            console.error("[PATCH /api/challenges/:id] Match creation failed:");
+            console.error("  Error message:", matchError.message);
+            console.error("  Error code:", matchError.code);
+            console.error("  Error details:", matchError.details);
+            console.error("  Error hint:", matchError.hint);
 
-            if (retryError) {
-              console.error("[PATCH /api/challenges/:id] Retry also failed:", retryError);
+            // If status constraint fails, try with capitalized "Pending"
+            if (matchError.code === "23514" || matchError.message?.includes("status")) {
+              console.log("[PATCH /api/challenges/:id] Retrying with status 'Pending'");
+              const retryData = { ...matchInsertData, status: "Pending" };
+              const { data: retryMatch, error: retryError } = await supabaseAdmin
+                .from("matches")
+                .insert(retryData)
+                .select("id")
+                .single();
+
+              if (retryError) {
+                console.error("[PATCH /api/challenges/:id] Retry also failed:", retryError);
+                return NextResponse.json({
+                  error: "Failed to create match",
+                  details: retryError.message
+                }, { status: 500 });
+              }
+
+              updateData.match_id = retryMatch.id;
+              console.log("[PATCH /api/challenges/:id] Match created successfully (retry):", retryMatch.id);
+            } else {
               return NextResponse.json({
                 error: "Failed to create match",
-                details: retryError.message
+                details: matchError.message,
+                code: matchError.code
               }, { status: 500 });
             }
-
-            updateData.match_id = retryMatch.id;
-            console.log("[PATCH /api/challenges/:id] Match created successfully (retry):", retryMatch.id);
           } else {
-            return NextResponse.json({
-              error: "Failed to create match",
-              details: matchError.message,
-              code: matchError.code
-            }, { status: 500 });
+            updateData.match_id = matchData.id;
+            console.log("[PATCH /api/challenges/:id] Match created successfully:", matchData.id);
           }
-        } else {
-          updateData.match_id = matchData.id;
-          console.log("[PATCH /api/challenges/:id] Match created successfully:", matchData.id);
         }
-
       } else if (parsed.data.status === "Declined") {
         updateData.declined_at = new Date().toISOString();
       } else if (parsed.data.status === "Cancelled") {
