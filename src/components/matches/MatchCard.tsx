@@ -216,7 +216,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 }),
             });
 
-            if (!response.ok) throw new Error("Failed to confirm match");
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to confirm match");
+            }
 
             showToast({
                 title: "Match confirmed!",
@@ -231,7 +234,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             console.error("Error confirming match:", error);
             showToast({
                 title: "Error",
-                description: "Failed to confirm match. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to confirm match. Please try again.",
                 variant: "error",
             });
         } finally {
@@ -255,7 +258,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 }),
             });
 
-            if (!response.ok) throw new Error("Failed to dispute match");
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to dispute match");
+            }
 
             showToast({
                 title: "Match disputed",
@@ -268,7 +274,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             console.error("Error disputing match:", error);
             showToast({
                 title: "Error",
-                description: "Failed to dispute match. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to dispute match. Please try again.",
                 variant: "error",
             });
         } finally {
