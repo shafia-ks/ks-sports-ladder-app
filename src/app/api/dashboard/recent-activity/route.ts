@@ -25,8 +25,8 @@ export async function GET(req: Request) {
         played_at,
         created_at,
         ladders (name),
-        player1:users!matches_player1_id_fkey (full_name),
-        player2:users!matches_player2_id_fkey (full_name)
+        player1:users!player1_id (full_name),
+        player2:users!player2_id (full_name)
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Confirmed")

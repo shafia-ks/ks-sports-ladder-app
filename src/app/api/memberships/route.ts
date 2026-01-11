@@ -28,7 +28,7 @@ export async function GET(req: Request) {
         )
       `)
       .eq("user_id", userId)
-      .order("joined_at", { ascending: false });
+      .order("join_date", { ascending: false });
 
     if (error) {
       console.error("[GET /api/memberships] Error:", error);

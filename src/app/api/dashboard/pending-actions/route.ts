@@ -24,8 +24,8 @@ export async function GET(req: Request) {
         status,
         expires_at,
         ladders (name),
-        challenger:users!challenges_challenger_id_fkey (full_name),
-        challenged:users!challenges_challenged_id_fkey (full_name)
+        challenger:users!challenger_id (full_name),
+        challenged:users!challenged_id (full_name)
       `)
             .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
             .eq("status", "Pending");
@@ -60,8 +60,8 @@ export async function GET(req: Request) {
         status,
         submitted_by,
         ladders (name),
-        player1:users!matches_player1_id_fkey (full_name),
-        player2:users!matches_player2_id_fkey (full_name)
+        player1:users!player1_id (full_name),
+        player2:users!player2_id (full_name)
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "ScoreSubmitted");
@@ -100,8 +100,8 @@ export async function GET(req: Request) {
         ladder_id,
         status,
         ladders (name),
-        player1:users!matches_player1_id_fkey (full_name),
-        player2:users!matches_player2_id_fkey (full_name)
+        player1:users!player1_id (full_name),
+        player2:users!player2_id (full_name)
       `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Pending");
