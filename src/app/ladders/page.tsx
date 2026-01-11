@@ -54,12 +54,9 @@ export default function LaddersPage() {
 
     const status = getMembershipStatus(ladderId);
 
+    // If already a member (active), don't show any button - just View is enough
     if (status === "active") {
-      return (
-        <span className="btn btn-secondary text-sm flex-1 bg-success-50 border-success-200 text-success-700 cursor-default">
-          ✓ Member
-        </span>
-      );
+      return null;
     }
 
     if (status === "pending") {
@@ -192,17 +189,38 @@ export default function LaddersPage() {
                 filteredLadders.map((ladder: any) => (
                   <div key={ladder.id} className="card p-5 space-y-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
-                          {ladder.sport_id && (
-                            <Badge variant="info">
-                              <Trophy className="h-3 w-3 mr-1" />
-                              {ladder.sport_id}
-                            </Badge>
-                          )}
+                      <div className="flex items-start gap-3 flex-1">
+                        {/* Ladder Avatar */}
+                        <div className="flex-shrink-0">
+                          {ladder.image_url ? (
+                            <img
+                              src={ladder.image_url}
+                              alt={ladder.name}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-slate-200"
+                              onError={(e) => {
+                                // Fallback to default icon if image fails to load
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-lg ${ladder.image_url ? 'hidden' : ''}`}>
+                            {ladder.name.charAt(0).toUpperCase()}
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500">{ladder.description || "No description provided"}</p>
+
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-slate-900">{ladder.name}</h3>
+                            {ladder.sport_id && (
+                              <Badge variant="info">
+                                <Trophy className="h-3 w-3 mr-1" />
+                                {ladder.sport_id}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500">{ladder.description || "No description provided"}</p>
+                        </div>
                       </div>
                       <Badge variant={ladder.status === "active" ? "success" : "neutral"}>
                         {ladder.status ?? "pending"}
@@ -225,10 +243,10 @@ export default function LaddersPage() {
                     </div>
 
                     <div className="flex gap-2 pt-1">
-                      <Link href={`/ladders/${ladder.id}`} className="btn btn-secondary text-sm flex-1">
+                      <Link href={`/ladders/${ladder.id}`} className={`btn btn-secondary text-sm ${getMembershipStatus(ladder.id) === "active" ? "flex-1" : "flex-1"}`}>
                         View
                       </Link>
-                      {renderJoinButton(ladder.id)}
+                      {getMembershipStatus(ladder.id) !== "active" && renderJoinButton(ladder.id)}
                     </div>
                   </div>
                 ))

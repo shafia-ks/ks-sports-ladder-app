@@ -30,6 +30,7 @@ export default function CreateLadderPage() {
     description: "",
     sport: "",
     location: "",
+    image_url: "",
     visibility: "public" as "public" | "private",
     ranking: "default-swap-minimal-drop",
     maxPositionsUp: 3,
@@ -77,6 +78,7 @@ export default function CreateLadderPage() {
         description: formData.description,
         sport_id: formData.sport,
         location: formData.location,
+        image_url: formData.image_url || null,
         visibility: formData.visibility,
         challenge_rules: {
           max_positions_up: formData.maxPositionsUp,
@@ -211,6 +213,24 @@ export default function CreateLadderPage() {
                     className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="image_url" className="block text-sm font-medium text-slate-700">
+                  Ladder Image URL (optional)
+                </label>
+                <input
+                  id="image_url"
+                  name="image_url"
+                  type="url"
+                  value={formData.image_url}
+                  onChange={handleChange}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <p className="text-xs text-slate-500">
+                  Provide a URL to an image for your ladder (recommended: 400x400px)
+                </p>
               </div>
             </div>
 
