@@ -813,13 +813,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       await fetchLadder(true); // Silent refetch
 
       // Show success message
-      showToast({
+      toastPush({
         title: "Joined ladder!",
         description: "You have successfully joined the ladder.",
         variant: "success",
       });
     } catch (err) {
-      showToast({
+      toastPush({
         title: "Error",
         description: err instanceof Error ? err.message : "Failed to join ladder",
         variant: "error",
