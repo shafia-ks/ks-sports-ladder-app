@@ -75,3 +75,25 @@ export function SkeletonList({ items = 5, className }: SkeletonListProps) {
         </div>
     );
 }
+
+export function SkeletonActionCard({ className }: { className?: string }) {
+    return (
+        <div className={cn("rounded-lg border-2 border-slate-100 bg-slate-50 p-4 animate-pulse", className)}>
+            <div className="flex items-start justify-between">
+                <div className="space-y-2 w-full">
+                    <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 bg-slate-200 rounded"></div>
+                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                    </div>
+                    <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                </div>
+                <div className="h-6 w-12 bg-slate-200 rounded"></div>
+            </div>
+            <div className="mt-3 flex gap-2">
+                <div className="h-8 bg-slate-200 rounded flex-1"></div>
+                <div className="h-8 bg-slate-200 rounded flex-1"></div>
+            </div>
+        </div>
+    );
+}

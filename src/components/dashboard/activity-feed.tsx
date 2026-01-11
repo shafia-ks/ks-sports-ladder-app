@@ -2,9 +2,24 @@ import Link from "next/link";
 import { Calendar, CheckCircle2, Clock, Trophy, XCircle } from "lucide-react";
 import { SkeletonList } from "@/components/ui/skeleton-card";
 
+interface DashboardChallenge {
+    id: string;
+    opponentName: string;
+    ladderName: string;
+    scheduledFor?: string;
+}
+
+interface DashboardMatch {
+    id: string;
+    opponentName: string;
+    ladderName: string;
+    score?: string;
+    winnerId?: string;
+}
+
 interface ActivityFeedProps {
-    activeChallenges: any[];
-    recentMatches: any[];
+    activeChallenges: DashboardChallenge[];
+    recentMatches: DashboardMatch[];
     loading: boolean;
     userId: string;
 }
@@ -33,7 +48,7 @@ export function ActivityFeed({ activeChallenges, recentMatches, loading, userId 
                         {activeChallenges.map((challenge) => (
                             <div key={challenge.id} className="flex items-start gap-4 rounded-lg bg-white p-3 shadow-sm border border-slate-100">
                                 <div className="rounded-full bg-blue-50 p-2">
-                                    <Clock className="h-4 w-4 text-brand-600" />
+                                    <Clock className="h-4 w-4 text-brand-600" aria-hidden="true" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-slate-900">
@@ -43,7 +58,7 @@ export function ActivityFeed({ activeChallenges, recentMatches, loading, userId 
                                         <span className="font-medium text-slate-600">{challenge.ladderName}</span>
                                         <span>•</span>
                                         <span className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
+                                            <Calendar className="h-3 w-3" aria-hidden="true" />
                                             {challenge.scheduledFor || "Scheduled"}
                                         </span>
                                     </div>
@@ -69,9 +84,9 @@ export function ActivityFeed({ activeChallenges, recentMatches, loading, userId 
                                 <div key={match.id} className="flex items-start gap-4 rounded-lg bg-white p-3 shadow-sm border border-slate-100">
                                     <div className={`rounded-full p-2 ${isWinner ? "bg-green-50" : "bg-red-50"}`}>
                                         {isWinner ? (
-                                            <Trophy className="h-4 w-4 text-green-600" />
+                                            <Trophy className="h-4 w-4 text-green-600" aria-hidden="true" />
                                         ) : (
-                                            <XCircle className="h-4 w-4 text-red-600" />
+                                            <XCircle className="h-4 w-4 text-red-600" aria-hidden="true" />
                                         )}
                                     </div>
                                     <div>

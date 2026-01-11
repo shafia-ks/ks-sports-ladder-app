@@ -87,8 +87,9 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                             onClick={() => onChallenge(player.user_id)}
                                             disabled={isBusy}
                                             className={`btn btn-sm flex items-center gap-1 ${isBusy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
+                                            aria-label={isBusy ? `Cannot challenge ${displayName}, player is busy` : `Challenge ${displayName}`}
                                         >
-                                            {isBusy ? <Lock className="h-3 w-3" /> : <Swords className="h-3 w-3" />}
+                                            {isBusy ? <Lock className="h-3 w-3" aria-hidden="true" /> : <Swords className="h-3 w-3" aria-hidden="true" />}
                                             {isBusy ? "Busy" : "Challenge"}
                                         </button>
                                     ) : (
@@ -96,8 +97,9 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                             disabled
                                             className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed flex items-center gap-1"
                                             title="Out of challenge range"
+                                            aria-label={`Cannot challenge ${displayName}, out of rank range`}
                                         >
-                                            <Lock className="h-3 w-3" />
+                                            <Lock className="h-3 w-3" aria-hidden="true" />
                                             Locked
                                         </button>
                                     )}
@@ -107,14 +109,16 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                     );
                 })}
             </div>
-            {onViewFullRankings && (
-                <button
-                    onClick={onViewFullRankings}
-                    className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4 w-full"
-                >
-                    View Full Rankings →
-                </button>
-            )}
-        </div>
+            {
+                onViewFullRankings && (
+                    <button
+                        onClick={onViewFullRankings}
+                        className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4 w-full"
+                    >
+                        View Full Rankings →
+                    </button>
+                )
+            }
+        </div >
     );
 }

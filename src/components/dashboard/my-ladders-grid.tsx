@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { ArrowRight, Trophy } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
+import type { LadderMembership, Ladder } from "../../types";
+
+// Extended type for membership with joined ladder data
+interface EnrichedMembership extends LadderMembership {
+    ladders?: Ladder;
+    match_count?: number;
+    last_played?: string;
+}
 
 interface MyLaddersGridProps {
-    memberships: any[]; // TODO: proper types
+    memberships: EnrichedMembership[];
     loading: boolean;
 }
 
@@ -23,7 +31,7 @@ export function MyLaddersGrid({ memberships, loading }: MyLaddersGridProps) {
         return (
             <div className="card p-8 text-center bg-slate-50 border-dashed">
                 <div className="mx-auto h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center mb-3">
-                    <Trophy className="h-6 w-6 text-slate-400" />
+                    <Trophy className="h-6 w-6 text-slate-400" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900">No Active Ladders</h3>
                 <p className="text-sm text-slate-600 mb-4 max-w-xs mx-auto">

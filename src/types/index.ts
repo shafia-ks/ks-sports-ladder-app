@@ -18,6 +18,7 @@ export interface Ladder {
     sport: string;
     location?: string;
     visibility: 'public' | 'private';
+    status?: 'active' | 'archived' | 'pending';
     created_by: string;
     created_at: string;
     profile_picture_url?: string;

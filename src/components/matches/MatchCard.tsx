@@ -317,19 +317,19 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
                             {matchDate && (
                                 <span className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
+                                    <Calendar className="h-4 w-4" aria-hidden="true" />
                                     {new Date(matchDate).toLocaleDateString()}
                                 </span>
                             )}
                             {matchTime && (
                                 <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
+                                    <Clock className="h-4 w-4" aria-hidden="true" />
                                     {matchTime}
                                 </span>
                             )}
                             {location && (
                                 <span className="flex items-center gap-1">
-                                    <MapPin className="h-4 w-4" />
+                                    <MapPin className="h-4 w-4" aria-hidden="true" />
                                     {location}
                                 </span>
                             )}
@@ -380,8 +380,9 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            aria-label={isExpanded ? "Collapse match details" : "Expand match details"}
                         >
-                            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            {isExpanded ? <ChevronUp className="h-5 w-5" aria-hidden="true" /> : <ChevronDown className="h-5 w-5" aria-hidden="true" />}
                         </button>
                     )}
                 </div>
@@ -433,14 +434,16 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         onChange={(e) => updateSet(idx, "player1", e.target.value)}
                                         className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
+                                        aria-label={`Player 1 Set ${idx + 1} score`}
                                     />
                                 ))}
                                 {sets.length < 5 && (
                                     <button
                                         onClick={addSet}
                                         className="flex items-center justify-center gap-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                        aria-label="Add another set"
                                     >
-                                        <Plus className="h-4 w-4" />
+                                        <Plus className="h-4 w-4" aria-hidden="true" />
                                     </button>
                                 )}
                             </div>
@@ -460,6 +463,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         onChange={(e) => updateSet(idx, "player2", e.target.value)}
                                         className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
+                                        aria-label={`Player 2 Set ${idx + 1} score`}
                                     />
                                 ))}
                                 <div></div>

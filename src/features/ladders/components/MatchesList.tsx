@@ -92,8 +92,8 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                     <button
                         onClick={() => setFilter("all")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "all"
-                                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                     >
                         All ({counts.all})
@@ -101,8 +101,8 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                     <button
                         onClick={() => setFilter("Pending")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Pending"
-                                ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-md"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                     >
                         Pending ({counts.Pending})
@@ -110,8 +110,8 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                     <button
                         onClick={() => setFilter("Submitted")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Submitted"
-                                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                     >
                         Awaiting Confirmation ({counts.Submitted})
@@ -119,8 +119,8 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                     <button
                         onClick={() => setFilter("Confirmed")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "Confirmed"
-                                ? "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                     >
                         Completed ({counts.Confirmed})
@@ -129,13 +129,14 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
 
                 {/* Search */}
                 <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden="true" />
                     <input
                         type="text"
                         placeholder="Search by player name..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        aria-label="Search matches by player name"
                     />
                 </div>
             </div>

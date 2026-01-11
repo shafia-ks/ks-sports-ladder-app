@@ -139,15 +139,16 @@ export function RankingsTable({
                                             onClick={() => onChallenge(player.user_id)}
                                             disabled={player.is_busy}
                                             className={`btn btn-sm w-full inline-flex items-center justify-center gap-1 ${player.is_busy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
+                                            aria-label={player.is_busy ? `Cannot challenge ${displayName}, player is busy` : `Challenge ${displayName}`}
                                         >
                                             {player.is_busy ? (
                                                 <>
-                                                    <Clock className="h-3 w-3" />
+                                                    <Clock className="h-3 w-3" aria-hidden="true" />
                                                     Busy
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Swords className="h-3 w-3" />
+                                                    <Swords className="h-3 w-3" aria-hidden="true" />
                                                     Challenge
                                                 </>
                                             )}
@@ -157,8 +158,9 @@ export function RankingsTable({
                                             disabled
                                             className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed w-full inline-flex items-center justify-center gap-1"
                                             title="Out of challenge range"
+                                            aria-label={`Cannot challenge ${displayName}, out of rank range`}
                                         >
-                                            <Lock className="h-3 w-3" />
+                                            <Lock className="h-3 w-3" aria-hidden="true" />
                                             Out of Range
                                         </button>
                                     )}
@@ -228,15 +230,16 @@ export function RankingsTable({
                                                         onClick={() => onChallenge(player.user_id)}
                                                         disabled={player.is_busy}
                                                         className={`btn btn-sm inline-flex items-center gap-1 ${player.is_busy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
+                                                        aria-label={player.is_busy ? `Cannot challenge ${displayName}, player is busy` : `Challenge ${displayName}`}
                                                     >
                                                         {player.is_busy ? (
                                                             <>
-                                                                <Clock className="h-3 w-3" />
+                                                                <Clock className="h-3 w-3" aria-hidden="true" />
                                                                 Busy
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <Swords className="h-3 w-3" />
+                                                                <Swords className="h-3 w-3" aria-hidden="true" />
                                                                 Challenge
                                                             </>
                                                         )}
@@ -246,8 +249,9 @@ export function RankingsTable({
                                                         disabled
                                                         className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed inline-flex items-center gap-1"
                                                         title="Out of challenge range"
+                                                        aria-label={`Cannot challenge ${displayName}, out of rank range`}
                                                     >
-                                                        <Lock className="h-3 w-3" />
+                                                        <Lock className="h-3 w-3" aria-hidden="true" />
                                                         Out of Range
                                                     </button>
                                                 )}
