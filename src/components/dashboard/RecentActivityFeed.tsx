@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface RecentActivity {
     id: string;
@@ -20,29 +21,56 @@ export function RecentActivityFeed() {
     const { user } = useAuth();
     const [activities, setActivities] = useState<RecentActivity[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    const fetchRecentActivity = async () => {
+        if (!user) return;
+        try {
+            const res = await fetch(`/api/dashboard/recent-activity?user_id=${user.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setActivities(data.activities || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch recent activity:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!user) return;
 
-        const fetchRecentActivity = async () => {
-            try {
-                const res = await fetch(`/api/dashboard/recent-activity?user_id=${user.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setActivities(data.activities || []);
-                }
-            } catch (error) {
-                console.error("Failed to fetch recent activity:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchRecentActivity();
 
-        // Refresh every minute
-        const interval = setInterval(fetchRecentActivity, 60000);
-        return () => clearInterval(interval);
+        // Event-Driven: Subscribe to match changes
+        const channel = supabase
+            .channel('recent-activity-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'matches',
+                    filter: `player1_id=eq.${user.id}`,
+                },
+                () => fetchRecentActivity()
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'matches',
+                    filter: `player2_id=eq.${user.id}`,
+                },
+                () => fetchRecentActivity()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     const formatTimeAgo = (playedAt: string) => {
@@ -103,15 +131,15 @@ export function RecentActivityFeed() {
                 {activities.map((activity) => (
                     <Link
                         key={activity.id}
-                        href={`/ladders/${activity.ladder_id}/matches`}
+                        href={`/ladders/${activity.ladder_id}/matches` as any}
                         className="block group"
                     >
                         <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                             {/* Win/Loss Icon */}
                             <div
                                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${activity.won
-                                        ? "bg-green-100 text-green-600"
-                                        : "bg-red-100 text-red-600"
+                                    ? "bg-green-100 text-green-600"
+                                    : "bg-red-100 text-red-600"
                                     }`}
                             >
                                 {activity.won ? (
@@ -145,8 +173,8 @@ export function RecentActivityFeed() {
                                     {activity.rank_change !== undefined && activity.rank_change !== 0 && (
                                         <div
                                             className={`flex items-center gap-1 text-xs font-medium ${activity.rank_change > 0
-                                                    ? "text-green-600"
-                                                    : "text-red-600"
+                                                ? "text-green-600"
+                                                : "text-red-600"
                                                 }`}
                                         >
                                             {activity.rank_change > 0 ? (

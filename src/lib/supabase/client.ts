@@ -8,6 +8,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase env vars are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
 }
 
+// Singleton instance
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createBrowserClient(supabaseUrl, supabaseAnonKey)
   : undefined;
+
+// Helper to match server-side pattern and ensure we get a client (or undefined)
+export function createClient() {
+  if (!supabase) {
+    throw new Error("Supabase client not initialized. Check environment variables.");
+  }
+  return supabase;
+}

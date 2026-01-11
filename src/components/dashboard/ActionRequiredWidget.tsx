@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AlertCircle, CheckCircle, Clock, Swords } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface PendingAction {
     id: string;
@@ -20,29 +21,79 @@ export function ActionRequiredWidget() {
     const { user } = useAuth();
     const [actions, setActions] = useState<PendingAction[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    // Function to fetch actions (reused for initial load and updates)
+    const fetchPendingActions = async () => {
+        if (!user) return;
+        try {
+            const res = await fetch(`/api/dashboard/pending-actions?user_id=${user.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setActions(data.actions || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch pending actions:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!user) return;
 
-        const fetchPendingActions = async () => {
-            try {
-                const res = await fetch(`/api/dashboard/pending-actions?user_id=${user.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setActions(data.actions || []);
-                }
-            } catch (error) {
-                console.error("Failed to fetch pending actions:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchPendingActions();
 
-        // Refresh every 30 seconds
-        const interval = setInterval(fetchPendingActions, 30000);
-        return () => clearInterval(interval);
+        // Event-Driven: Subscribe to Realtime changes
+        const channel = supabase
+            .channel('action-required-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for INSERT, UPDATE, DELETE
+                    schema: 'public',
+                    table: 'challenges',
+                    filter: `challenged_id=eq.${user.id}`, // Only my challenges
+                },
+                () => {
+                    console.log('Realtime update: challenges changed');
+                    fetchPendingActions();
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'matches',
+                    // We can't filter complex OR conditions in realtime easily, so we listen to all and re-fetch.
+                    // Optimization: Ideally filter by user partcipation if RLS allows, but RLS should filter visible rows anyway.
+                    // For matches, we listen for changes where I am involved.
+                    filter: `player1_id=eq.${user.id}`,
+                },
+                () => {
+                    console.log('Realtime update: matches changed (player1)');
+                    fetchPendingActions();
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'matches',
+                    filter: `player2_id=eq.${user.id}`,
+                },
+                () => {
+                    console.log('Realtime update: matches changed (player2)');
+                    fetchPendingActions();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     const getActionIcon = (type: string) => {
