@@ -142,8 +142,22 @@ export async function POST(
                 link: `/ladders/${match.ladder_id}/matches`,
             });
 
-            // TODO: Trigger ranking update here
-            console.log("[POST /api/matches/:id/confirm] Match confirmed, rankings should be updated");
+            // Mark the associated challenge as Completed
+            if (match.challenge_id) {
+                console.log(`[POST /api/matches/:id/confirm] Marking challenge ${match.challenge_id} as Completed`);
+                const { error: challengeUpdateError } = await supabaseAdmin
+                    .from("challenges")
+                    .update({ status: "Completed", completed_at: new Date().toISOString() })
+                    .eq("id", match.challenge_id);
+
+                if (challengeUpdateError) {
+                    console.error("[POST /api/matches/:id/confirm] Failed to update challenge:", challengeUpdateError);
+                } else {
+                    console.log("[POST /api/matches/:id/confirm] Challenge marked as Completed");
+                }
+            }
+
+            console.log("[POST /api/matches/:id/confirm] Match confirmed, rankings updated, challenge completed");
 
             return NextResponse.json({ success: true, message: "Match confirmed successfully" });
 
