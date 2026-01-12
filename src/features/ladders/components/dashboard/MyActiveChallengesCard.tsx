@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Swords, CheckCircle, XCircle, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface Challenge {
     id: string;
@@ -26,6 +27,23 @@ export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: 
 
     useEffect(() => {
         fetchChallenges();
+
+        // Realtime subscription for instant updates
+        const supabase = createClient();
+        const channel = supabase
+            .channel('challenges-changes')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'challenges', filter: `ladder_id=eq.${ladderId}` },
+                (payload) => {
+                    console.log('[MyActiveChallengesCard] Challenge changed:', payload);
+                    fetchChallenges();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [userId, ladderId]);
 
     const fetchChallenges = async () => {
