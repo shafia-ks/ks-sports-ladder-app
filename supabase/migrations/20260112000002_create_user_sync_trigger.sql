@@ -16,6 +16,10 @@ BEGIN
     last_name,
     full_name,
     role,
+    gdpr_accepted,
+    gdpr_accepted_at,
+    sportsmanship_accepted,
+    sportsmanship_accepted_at,
     created_at,
     updated_at
   )
@@ -26,6 +30,10 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
     COALESCE(NEW.raw_user_meta_data->>'role', 'player'),
+    true,  -- GDPR must be accepted for signup
+    NOW(),
+    true,  -- Code of Conduct must be accepted for signup
+    NOW(),
     NOW(),
     NOW()
   )
@@ -45,7 +53,7 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- Backfill: Create public.users records for any auth.users that don't have them
-INSERT INTO public.users (id, email, first_name, last_name, full_name, role, created_at, updated_at)
+INSERT INTO public.users (id, email, first_name, last_name, full_name, role, gdpr_accepted, gdpr_accepted_at, sportsmanship_accepted, sportsmanship_accepted_at, created_at, updated_at)
 SELECT 
   au.id,
   au.email,
@@ -53,6 +61,10 @@ SELECT
   COALESCE(au.raw_user_meta_data->>'last_name', ''),
   COALESCE(au.raw_user_meta_data->>'full_name', au.email),
   COALESCE(au.raw_user_meta_data->>'role', 'player'),
+  true,  -- Assume GDPR was accepted (they signed up somehow)
+  au.created_at,
+  true,  -- Assume Code of Conduct was accepted
+  au.created_at,
   au.created_at,
   au.created_at
 FROM auth.users au
