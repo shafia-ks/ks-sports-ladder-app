@@ -44,6 +44,13 @@ export default function LaddersPage() {
   };
 
   const renderJoinButton = (ladderId: string) => {
+    // Show subtle loading state during initial membership fetch
+    if (membershipLoading) {
+      return (
+        <div className="flex-1 h-9 bg-slate-100 rounded-lg animate-pulse" />
+      );
+    }
+
     const status = getMembershipStatus(ladderId);
 
     // If already a member (active), don't show any button - just View is enough
@@ -60,7 +67,6 @@ export default function LaddersPage() {
       );
     }
 
-    // Show Join button for non-members (don't wait for loading to complete)
     return (
       <Link href={`/ladders/${ladderId}`} className="btn btn-primary text-sm flex-1">
         Join
