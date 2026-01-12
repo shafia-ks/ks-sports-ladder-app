@@ -70,7 +70,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                             </div>
                             <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 truncate">
+                                <p className="text-xs sm:text-sm font-semibold text-slate-900 break-words">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}
                                 </p>
                                 {isBusy && (

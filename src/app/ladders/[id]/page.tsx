@@ -1239,7 +1239,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               <>
                 <button
                   onClick={() => handleTabChange("ranking")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === "ranking"
+                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${tab === "ranking"
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
@@ -1248,17 +1248,18 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 </button>
                 <button
                   onClick={() => handleTabChange("challenges")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "challenges"
+                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "challenges"
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   <Swords className="h-4 w-4" />
-                  Challenges
+                  <span className="hidden sm:inline">Challenges</span>
+                  <span className="sm:hidden">Chall.</span>
                 </button>
                 <button
                   onClick={() => handleTabChange("matches")}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "matches"
+                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "matches"
                     ? "border-brand-600 text-brand-700"
                     : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
@@ -1269,7 +1270,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 {isOrganizer && (
                   <button
                     onClick={() => handleTabChange("settings")}
-                    className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "settings"
+                    className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "settings"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                       }`}
@@ -1278,7 +1279,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Settings
+                    <span className="hidden sm:inline">Settings</span>
                   </button>
                 )}
               </>
@@ -1497,9 +1498,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-4 py-2">Rank</th>
-                      <th className="px-4 py-2">Player</th>
-                      <th className="px-4 py-2 text-right">Action</th>
+                      <th className="px-3 sm:px-4 py-2">Rank</th>
+                      <th className="px-3 sm:px-4 py-2">Player</th>
+                      <th className="px-3 sm:px-4 py-2 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1557,24 +1558,24 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-2 text-right">
+                          <td className="px-3 sm:px-4 py-2 text-right">
                             {canChallenge ? (
                               <button
                                 onClick={() => handleQuickChallenge(member.user_id)}
-                                className="text-sm font-semibold text-brand-700 hover:text-brand-900"
+                                className="text-xs sm:text-sm font-semibold text-brand-700 hover:text-brand-900"
                               >
                                 Challenge
                               </button>
                             ) : (
                               !isCurrentUser && (
-                                <span className="text-xs text-slate-400">
+                                <span className="text-[10px] sm:text-xs text-slate-400">
                                   {isBusy
                                     ? "Busy"
                                     : currentMember?.is_busy
-                                      ? "You are busy"
+                                      ? "Busy"
                                       : targetRank >= currentUserRank
-                                        ? "Can't challenge down"
-                                        : "Out of range"}
+                                        ? "—"
+                                        : "Range"}
                                 </span>
                               )
                             )}
