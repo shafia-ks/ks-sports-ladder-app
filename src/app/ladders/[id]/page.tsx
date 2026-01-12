@@ -34,28 +34,7 @@ import { MatchesList } from "@/features/ladders/components/MatchesList";
 import { useLadderRealtime } from "@/hooks/useLadderRealtime";
 
 // Lazy load heavy components for better performance
-const RankingsTable = dynamic(
-  () => import("@/features/ladders/components/RankingsTable").then(mod => ({ default: mod.RankingsTable })),
-  {
-    loading: () => (
-      <div className="card p-6 animate-pulse">
-        <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-    ssr: false
-  }
-);
+
 
 
 
@@ -1239,7 +1218,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       {!isLoading && !error && (
         <>
           {/* Tab Navigation */}
-          <div className="flex gap-4 border-b border-slate-200">
+          <div className="flex gap-4 border-b border-slate-200 overflow-x-auto whitespace-nowrap scrollbar-hide">
             <button
               onClick={() => handleTabChange("dashboard")}
               className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
@@ -1479,7 +1458,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               )}
 
               <div className="card overflow-hidden">
-                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <p className="text-sm font-semibold text-slate-700">Ranking</p>
                     <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
