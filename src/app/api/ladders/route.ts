@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("ladders")
-    .select("id, name, description, sport_id, location, status, visibility, challenge_rules, ranking_rules, created_at")
+    .select("id, name, description, sport_id, location, status, visibility, challenge_rules, ranking_rules, created_at, profile_picture_url, created_by")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -71,13 +71,13 @@ export async function POST(req: NextRequest) {
       accepted_by: created_by,
     });
 
-      // Create audit log
-      await createAuditLog({
-        entityType: "ladder",
-        entityId: ladder.id,
-        action: `Ladder created: ${name}`,
-        performedBy: created_by,
-      });
+    // Create audit log
+    await createAuditLog({
+      entityType: "ladder",
+      entityId: ladder.id,
+      action: `Ladder created: ${name}`,
+      performedBy: created_by,
+    });
 
     return NextResponse.json(ladder, { status: 201 });
   } catch (error) {
