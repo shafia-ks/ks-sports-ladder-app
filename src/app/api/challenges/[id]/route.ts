@@ -93,8 +93,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             console.error("  Error details:", matchError.details);
             console.error("  Error hint:", matchError.hint);
 
+            // Handle unique constraint violation (match already exists for this challenge)
+            if (matchError.code === "23505") {
+              console.log("[PATCH /api/challenges/:id] Match already exists (unique constraint), fetching it");
+              const { data: existingMatchRetry } = await supabaseAdmin
+                .from("matches")
+                .select("id")
+                .eq("challenge_id", params.id);
+
+              if (existingMatchRetry && existingMatchRetry.length > 0) {
+                updateData.match_id = existingMatchRetry[0].id;
+                console.log("[PATCH /api/challenges/:id] Using existing match:", existingMatchRetry[0].id);
+              } else {
+                return NextResponse.json({
+                  error: "Match already exists but couldn't be retrieved",
+                  details: matchError.message
+                }, { status: 409 });
+              }
+            }
             // If status constraint fails, try with capitalized "Pending"
-            if (matchError.code === "23514" || matchError.message?.includes("status")) {
+            else if (matchError.code === "23514" || matchError.message?.includes("status")) {
               console.log("[PATCH /api/challenges/:id] Retrying with status 'Pending'");
               const retryData = { ...matchInsertData, status: "Pending" };
               const { data: retryMatch, error: retryError } = await supabaseAdmin
