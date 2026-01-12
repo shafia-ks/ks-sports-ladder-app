@@ -1227,7 +1227,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           <div className="flex flex-nowrap gap-4 border-b border-slate-200 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => handleTabChange("dashboard")}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
+              className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "dashboard"
                 ? "border-brand-600 text-brand-700"
                 : "border-transparent text-slate-600 hover:text-slate-900"
                 }`}
