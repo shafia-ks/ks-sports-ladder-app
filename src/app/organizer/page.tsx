@@ -14,6 +14,7 @@ interface Ladder {
   status: string;
   description?: string;
   location?: string;
+  profile_picture_url?: string | null;
 }
 
 function OrganizerDashboard() {
@@ -89,14 +90,33 @@ function OrganizerDashboard() {
           {ladders.map((ladder) => (
             <div key={ladder.id} className="card p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">{ladder.name}</h3>
-                  {ladder.description && (
-                    <p className="text-sm text-slate-600 mt-1">{ladder.description}</p>
-                  )}
-                  {ladder.location && (
-                    <p className="text-xs text-slate-500 mt-1">📍 {ladder.location}</p>
-                  )}
+                <div className="flex items-start gap-3 flex-1">
+                  {/* Ladder Avatar */}
+                  <div className="flex-shrink-0">
+                    {ladder.profile_picture_url ? (
+                      <img
+                        src={ladder.profile_picture_url}
+                        alt={ladder.name}
+                        className="w-14 h-14 rounded-full object-cover border-2 border-slate-200"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-xl ${ladder.profile_picture_url ? 'hidden' : ''}`}>
+                      {ladder.name.charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-900">{ladder.name}</h3>
+                    {ladder.description && (
+                      <p className="text-sm text-slate-600 mt-1">{ladder.description}</p>
+                    )}
+                    {ladder.location && (
+                      <p className="text-xs text-slate-500 mt-1">📍 {ladder.location}</p>
+                    )}
+                  </div>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${ladder.status === "active"
                   ? "bg-success-100 text-success-700"
