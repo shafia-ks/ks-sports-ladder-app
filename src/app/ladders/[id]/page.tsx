@@ -1058,7 +1058,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   );
 
   const renderJoinButton = () => {
-    if (authLoading) return null;
+    if (authLoading) {
+      return (
+        <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
+      );
+    }
 
     if (!user) {
       return (
@@ -1114,11 +1118,13 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         title={ladderName}
         description={data?.ladder?.description || "Ranking overview and membership."}
         cta={
-          !isLoading && (
-            <div className="flex gap-2">
-              {renderJoinButton()}
-            </div>
-          )
+          <div className="flex gap-2">
+            {isLoading ? (
+              <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
+            ) : (
+              renderJoinButton()
+            )}
+          </div>
         }
       />
 
@@ -1218,7 +1224,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       {!isLoading && !error && (
         <>
           {/* Tab Navigation */}
-          <div className="flex gap-4 border-b border-slate-200 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="flex flex-nowrap gap-4 border-b border-slate-200 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => handleTabChange("dashboard")}
               className={`px-4 py-3 text-sm font-semibold border-b-2 transition flex items-center gap-2 ${tab === "dashboard"
