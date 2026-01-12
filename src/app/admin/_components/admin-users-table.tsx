@@ -63,6 +63,29 @@ export function AdminUsersTable() {
 
     useEffect(() => {
         fetchUsers();
+
+        // Set up realtime subscription for immediate updates
+        const supabase = require('@/lib/supabase/client').supabase;
+        const channel = supabase
+            .channel('admin-users-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for INSERT, UPDATE, DELETE
+                    schema: 'public',
+                    table: 'users',
+                },
+                (payload: any) => {
+                    console.log('[Admin] Users table changed:', payload);
+                    // Refetch users immediately when table changes
+                    fetchUsers();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     useEffect(() => {
