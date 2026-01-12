@@ -115,7 +115,7 @@ export function ChallengesTab({ ladderId, userId }: Props) {
                 body: JSON.stringify({ status: "Accepted" }),
             });
             if (res.ok) {
-        track Event({ action: 'challenge_accepted', category: 'engagement', label: ladderId });
+                trackEvent({ action: 'challenge_accepted', category: 'engagement', label: ladderId });
                 // Realtime will auto-refresh, but we fetch anyway for immediate feedback
                 fetchChallenges();
             }
