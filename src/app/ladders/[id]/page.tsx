@@ -354,12 +354,7 @@ function ChallengesTabContent({ ladderId, userId }: { ladderId: string; userId?:
                     <div className="flex items-center gap-2">
                       {!isChallenger && challenge.status === "Pending" && (
                         <>
-                          <button
-                            onClick={() => setShowCounterProposal(challenge.id)}
-                            className="btn btn-sm border border-brand-300 text-brand-700 hover:bg-brand-50"
-                          >
-                            Counter
-                          </button>
+
                           <button
                             onClick={() => handleAccept(challenge.id)}
                             className="btn btn-sm btn-primary"
