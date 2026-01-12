@@ -22,7 +22,7 @@ export async function GET(req: Request) {
           id,
           name,
           sport_id,
-          image_url,
+          profile_picture_url,
           status,
           visibility
         )

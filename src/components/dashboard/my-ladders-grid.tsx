@@ -12,7 +12,7 @@ interface EnrichedMembership {
     ladders?: {
         name: string;
         status: string;
-        image_url?: string;
+        profile_picture_url?: string;
         sport_id?: string;
     };
     match_count?: number;
@@ -28,9 +28,7 @@ export function MyLaddersGrid({ memberships, loading }: MyLaddersGridProps) {
     if (loading) {
         return (
             <div className="space-y-4">
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
+                <SkeletonCard rows={4} />
             </div>
         );
     }
@@ -59,9 +57,9 @@ export function MyLaddersGrid({ memberships, loading }: MyLaddersGridProps) {
                     <div className="flex items-start gap-4">
                         {/* Ladder Avatar */}
                         <div className="flex-shrink-0">
-                            {membership.ladders?.image_url ? (
+                            {membership.ladders?.profile_picture_url ? (
                                 <img
-                                    src={membership.ladders.image_url}
+                                    src={membership.ladders.profile_picture_url}
                                     alt={membership.ladders.name}
                                     className="w-16 h-16 rounded-full object-cover border-2 border-slate-200"
                                     onError={(e) => {
@@ -71,7 +69,7 @@ export function MyLaddersGrid({ memberships, loading }: MyLaddersGridProps) {
                                     }}
                                 />
                             ) : null}
-                            <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-2xl ${membership.ladders?.image_url ? 'hidden' : ''}`}>
+                            <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-2xl ${membership.ladders?.profile_picture_url ? 'hidden' : ''}`}>
                                 {membership.ladders?.name?.charAt(0).toUpperCase() || 'L'}
                             </div>
                         </div>
@@ -88,8 +86,8 @@ export function MyLaddersGrid({ memberships, loading }: MyLaddersGridProps) {
                                     </p>
                                 </div>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${membership.ladders?.status === 'active'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-slate-100 text-slate-600'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-slate-100 text-slate-600'
                                     }`}>
                                     {membership.ladders?.status}
                                 </span>
