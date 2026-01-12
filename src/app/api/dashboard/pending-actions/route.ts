@@ -82,7 +82,59 @@ export async function GET(req: Request) {
             if (m.player2_id) userIds.add(m.player2_id);
         });
 
-        // 4. Fetch Users manually
+        // 4. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
+        const { data: organizedLadders } = await supabase
+            .from("ladder_leaders")
+            .select("ladder_id")
+            .eq("user_id", userId);
+
+
+        const organizedLadderIds = organizedLadders?.map(l => l.ladder_id) || [];
+
+        let pendingMemberApprovals: any[] = [];
+        if (organizedLadderIds.length > 0) {
+            const { data: pendingApprovals } = await supabase
+                .from("ladder_memberships")
+                .select(`
+                    id,
+                    user_id,
+                    ladder_id,
+                    requested_at,
+                    ladders (name)
+                `)
+                .in("ladder_id", organizedLadderIds)
+                .eq("status", "pending");
+
+            pendingApprovals?.forEach(approval => {
+                if (approval.user_id) userIds.add(approval.user_id);
+            });
+
+            pendingMemberApprovals = pendingApprovals || [];
+        }
+
+        // 5. Get pending organizer requests for ladders user organizes (ORGANIZER ACTIONS)
+        let pendingOrganizerRequests: any[] = [];
+        if (organizedLadderIds.length > 0) {
+            const { data: orgRequests } = await supabase
+                .from("leader_requests")
+                .select(`
+                    id,
+                    user_id,
+                    ladder_id,
+                    created_at,
+                    ladders (name)
+                `)
+                .in("ladder_id", organizedLadderIds)
+                .eq("status", "pending");
+
+            orgRequests?.forEach(req => {
+                if (req.user_id) userIds.add(req.user_id);
+            });
+
+            pendingOrganizerRequests = orgRequests || [];
+        }
+
+        // 6. Fetch Users manually
         const { data: users } = await supabase
             .from("users")
             .select("id, full_name, first_name, last_name, email")
@@ -90,7 +142,7 @@ export async function GET(req: Request) {
 
         const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
-        // 5. Build Actions List
+        // 7. Build Actions List
 
         // Challenges
         if (challenges) {
@@ -150,12 +202,40 @@ export async function GET(req: Request) {
             }
         }
 
-        // Sort by expires_at
+        // Pending Member Approvals (ORGANIZER)
+        for (const approval of pendingMemberApprovals) {
+            const requestingUser = userMap.get(approval.user_id);
+            actions.push({
+                id: approval.id,
+                type: "approve_member",
+                ladder_id: approval.ladder_id,
+                ladder_name: (approval.ladders as any)?.name || "Unknown Ladder",
+                requester_name: requestingUser?.full_name || requestingUser?.email || "Unknown",
+                requested_at: approval.requested_at,
+            });
+        }
+
+        // Pending Organizer Requests (ORGANIZER)
+        for (const orgReq of pendingOrganizerRequests) {
+            const requestingUser = userMap.get(orgReq.user_id);
+            actions.push({
+                id: orgReq.id,
+                type: "approve_organizer",
+                ladder_id: orgReq.ladder_id,
+                ladder_name: (orgReq.ladders as any)?.name || "Unknown Ladder",
+                requester_name: requestingUser?.full_name || requestingUser?.email || "Unknown",
+                requested_at: orgReq.created_at,
+            });
+        }
+
+        // Sort by expires_at or requested_at
         actions.sort((a, b) => {
-            if (a.expires_at && !b.expires_at) return -1;
-            if (!a.expires_at && b.expires_at) return 1;
-            if (a.expires_at && b.expires_at) {
-                return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+            const dateA = a.expires_at || a.requested_at;
+            const dateB = b.expires_at || b.requested_at;
+            if (dateA && !dateB) return -1;
+            if (!dateA && dateB) return 1;
+            if (dateA && dateB) {
+                return new Date(dateA).getTime() - new Date(dateB).getTime();
             }
             return 0;
         });

@@ -8,12 +8,14 @@ import { createClient } from "@/lib/supabase/client";
 
 interface PendingAction {
     id: string;
-    type: "challenge" | "confirm_score" | "submit_score";
+    type: "challenge" | "confirm_score" | "submit_score" | "approve_member" | "approve_organizer";
     ladder_id: string;
     ladder_name: string;
-    opponent_name: string;
+    opponent_name?: string;
+    requester_name?: string;
     expires_at?: string;
-    status: string;
+    requested_at?: string;
+    status?: string;
     match_id?: string;
 }
 
@@ -104,6 +106,9 @@ export function ActionRequiredWidget() {
                 return <CheckCircle className="h-5 w-5" />;
             case "submit_score":
                 return <AlertCircle className="h-5 w-5" />;
+            case "approve_member":
+            case "approve_organizer":
+                return <Clock className="h-5 w-5" />;
             default:
                 return <Clock className="h-5 w-5" />;
         }
@@ -117,6 +122,10 @@ export function ActionRequiredWidget() {
                 return `Confirm score vs ${action.opponent_name}`;
             case "submit_score":
                 return `Submit score for match vs ${action.opponent_name}`;
+            case "approve_member":
+                return `Approve ${action.requester_name} to join`;
+            case "approve_organizer":
+                return `Approve ${action.requester_name} as organizer`;
             default:
                 return "Action required";
         }
@@ -125,6 +134,9 @@ export function ActionRequiredWidget() {
     const getActionLink = (action: PendingAction) => {
         if (action.type === "challenge") {
             return `/ladders/${action.ladder_id}?tab=challenges`;
+        }
+        if (action.type === "approve_member" || action.type === "approve_organizer") {
+            return `/ladders/${action.ladder_id}?tab=dashboard`;
         }
         return `/ladders/${action.ladder_id}?tab=matches`;
     };

@@ -1147,8 +1147,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Home", href: "/" },
-          { label: "My Ladders", href: "/ladders" },
+          { label: "Ladders", href: "/ladders" },
           { label: ladderName }
         ]}
       />
