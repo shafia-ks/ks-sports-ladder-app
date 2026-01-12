@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ArrowRight, Shield, ShieldCheck, Timer, BarChart3, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
 
 const featureList = [
   {
@@ -13,7 +15,6 @@ const featureList = [
   {
     title: "Challenge governance",
     body: "Challenge limits, expiry, and busy player checks to keep ladders fair.",
-
     icon: Timer,
   },
   {
@@ -28,23 +29,24 @@ const featureList = [
   },
 ];
 
-export default function HomePage() {
+function HomeContent() {
   const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Primary hero CTA logic (only dashboard when signed in)
-  // User requested removing "Sign in" below text for non-users, so we only show this if signed in?
-  // User said "remove sign in below text create ladders...". 
-  // If signed in, "Go to dashboard" is useful. If not, maybe show nothing or just not "Sign in"?
-  // Re-reading: "2) remove sign in below text create ladders..."
-  // I will hide the hero button entirely for non-signed-in users, or remove it as requested.
-  // Actually, typical pattern is if signed in -> Dashboard. If not -> maybe nothing since bottom banner has it?
+  // Check for invitation token and redirect to signup
+  useEffect(() => {
+    const invitationToken = searchParams?.get("invitation") || searchParams?.get("token");
+    if (invitationToken) {
+      router.push(`/signup?invitation=${invitationToken}`);
+    }
+  }, [searchParams, router]);
 
   return (
     <div className="space-y-8">
       <section className="card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-slate-50" />
         <div className="relative grid gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-
           {/* Left Column: Hero Text */}
           <div className="space-y-6">
             <div className="space-y-4">
@@ -60,7 +62,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* CTA Button: Only show if signed in, otherwise empty as per request to remove "Sign in" below text */}
             {isSignedIn && (
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link href="/dashboard" className="btn btn-primary shadow inline-flex items-center gap-2">
@@ -111,5 +112,13 @@ export default function HomePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px] text-slate-600">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

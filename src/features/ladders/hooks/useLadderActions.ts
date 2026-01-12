@@ -48,8 +48,8 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
                 throw new Error(json.error || "Failed to join ladder");
             }
 
-            // Refetch to get actual data
-            await queryClient.invalidateQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Refetch immediately to update UI - don't just invalidate
+            await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -96,8 +96,8 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
                 throw new Error(json.error || "Failed to approve member");
             }
 
-            // Refetch to get actual data
-            await queryClient.invalidateQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Refetch immediately to update UI
+            await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -139,8 +139,8 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
                 throw new Error(json.error || "Failed to reject member");
             }
 
-            // Refetch to get actual data
-            await queryClient.invalidateQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Refetch immediately to update UI
+            await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -165,8 +165,8 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
                 throw new Error(json.error || "Failed to update settings");
             }
 
-            // Invalidate to refetch
-            await queryClient.invalidateQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Refetch immediately to update UI
+            await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
             onSuccess?.();
             return true;
         } catch (err) {

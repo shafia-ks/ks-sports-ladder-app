@@ -21,6 +21,13 @@ function LoginForm() {
   const { isSignedIn, isLoading } = useAuth();
 
   useEffect(() => {
+    // Check for invitation token - redirect to signup if present
+    const invitationToken = searchParams?.get("invitation") || searchParams?.get("token");
+    if (invitationToken) {
+      router.push(`/signup?invitation=${invitationToken}`);
+      return;
+    }
+
     if (!isLoading && isSignedIn) {
       const redirectTo = searchParams?.get("redirectTo") || "/dashboard";
       router.push(redirectTo as any);
