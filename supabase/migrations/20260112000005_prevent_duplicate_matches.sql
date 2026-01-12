@@ -1,35 +1,25 @@
 -- Prevent duplicate match creation
--- Adds a unique constraint to ensure only ONE match per challenge
+-- IMPORTANT: Run CLEANUP_duplicate_matches.sql FIRST, then run this migration
 
--- Step 1: Delete any existing duplicates first
--- Keep only the oldest match for each challenge_id
-DELETE FROM matches m1
-USING matches m2
-WHERE m1.id > m2.id
-  AND m1.challenge_id = m2.challenge_id
-  AND m1.challenge_id IS NOT NULL;
-
--- Step 2: Add unique  constraint on challenge_id
--- This prevents the race condition where two API calls create duplicate matches
+-- Step 1: Add unique constraint on challenge_id (one match per challenge)
+-- This is the primary fix for the race condition bug
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_match_per_challenge
 ON matches (challenge_id)
 WHERE challenge_id IS NOT NULL;
 
--- Step 3: Also prevent duplicate pending matches between same players
--- This catches cases where challenges are created separately but matches are duplicated
+-- Step 2: Add unique constraint on pending matches between same players
+-- This prevents duplicate pending matches even if challenges are separate
+-- NOTE: If this fails with error 23505, run CLEANUP_duplicate_matches.sql first
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_pending_match_per_players
 ON matches (player1_id, player2_id, ladder_id)
 WHERE status = 'Pending';
 
--- Verify no duplicates remain
+-- Step 3: Verify constraints are in place
 SELECT 
-  challenge_id,
-  player1_id,
-  player2_id,
-  COUNT(*) as match_count
-FROM matches
-WHERE challenge_id IS NOT NULL
-GROUP BY challenge_id, player1_id, player2_id
-HAVING COUNT(*) > 1;
+  indexname,
+  indexdef
+FROM pg_indexes
+WHERE tablename = 'matches'
+  AND indexname IN ('idx_unique_match_per_challenge', 'idx_unique_pending_match_per_players');
 
--- This should return 0 rows if all duplicates are gone
+-- Should show 2 rows with the unique indexes
