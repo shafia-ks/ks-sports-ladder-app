@@ -130,21 +130,64 @@ export async function POST(req: Request) {
     rules: deriveRules(parsed.data.ruleType, parsed.data.rankingRules),
   });
 
-  const { data: matchRow, error: matchError } = await supabaseAdmin
-    .from("matches")
-    .insert({
-      ladder_id: parsed.data.ladderId,
-      challenge_id: parsed.data.challengeId ?? null,
-      player1_id: parsed.data.player1Id,
-      player2_id: parsed.data.player2Id,
-      winner_id: parsed.data.winnerId,
-      status: "Confirmed",
-      set_scores: parsed.data.setScores ?? null,
-      played_at: parsed.data.playedAt ?? null,
-      confirmed_by: parsed.data.winnerId,
-    })
-    .select("id")
-    .single();
+  // Check for existing pending match linked to this challenge
+  let matchIdToUpdate = null;
+  if (parsed.data.challengeId) {
+    const { data: existingMatch } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .eq("challenge_id", parsed.data.challengeId)
+      .eq("status", "Pending") // Only update if it's the pending match we created earlier
+      .maybeSingle();
+
+    matchIdToUpdate = existingMatch?.id;
+  }
+
+  let matchRow;
+  let matchError;
+
+  const matchData = {
+    ladder_id: parsed.data.ladderId,
+    challenge_id: parsed.data.challengeId ?? null,
+    player1_id: parsed.data.player1Id,
+    player2_id: parsed.data.player2Id,
+    winner_id: parsed.data.winnerId,
+    status: "Confirmed",
+    set_scores: parsed.data.setScores ?? null,
+    played_at: parsed.data.playedAt ?? null,
+    confirmed_by: parsed.data.winnerId,
+  };
+
+  if (matchIdToUpdate) {
+    // Update existing match
+    const res = await supabaseAdmin
+      .from("matches")
+      .update(matchData)
+      .eq("id", matchIdToUpdate)
+      .select("id")
+      .single();
+
+    matchRow = res.data;
+    matchError = res.error;
+  } else {
+    // Insert new match
+    const res = await supabaseAdmin
+      .from("matches")
+      .insert(matchData)
+      .select("id")
+      .single();
+
+    matchRow = res.data;
+    matchError = res.error;
+  }
+
+  // Also update the challenge status to Completed if this was part of a challenge
+  if (parsed.data.challengeId && !matchError) {
+    await supabaseAdmin
+      .from("challenges")
+      .update({ status: "Completed", completed_at: new Date().toISOString() })
+      .eq("id", parsed.data.challengeId);
+  }
 
   if (matchError) {
     return NextResponse.json({ error: matchError.message }, { status: 500 });
