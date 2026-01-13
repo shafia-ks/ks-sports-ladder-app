@@ -17,12 +17,10 @@
 - **Challenge Tab**: Removed unused components causing build errors.
 
 ### 3. 📚 Documentation (Help Center)
-- **Ranking Systems**: Updated Help page to match exact App UI names:
-  1. **Swap Positions**
-  2. **Default Swap (Minimal Drop)**
-  3. **Slide Shift**
-  4. **Points/ELO**
-  - Included 3 detailed examples for EACH system.
+- **Ranking Systems**: 
+  - Updated section to match UI names: **Swap Positions**, **Default Swap**, **Slide Shift**, **Points/ELO**.
+  - **New Examples**: Added 3-4 specific examples for each system.
+  - **Settings Included**: Explicitly demonstrated how **K-Factor** (for ELO) and **Max Drop** (for Default Swap) settings change the math/outcome of a match.
 - **Mobile App Guide**: Added "Mobile App" section with specific iOS/Android installation instructions.
 - **Refactoring Plan**: Documented Realtime architecture.
 
@@ -31,3 +29,4 @@ The application is fully built, tested, and ready for deployment.
 - **Build**: PASS (`npm run build`)
 - **Visuals**: Stable header, no flicker, no flashing widgets.
 - **Logic**: Robust invitation handling.
+- **Docs**: Comprehensive and matches UI specific settings.

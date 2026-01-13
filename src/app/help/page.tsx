@@ -407,27 +407,22 @@ There are 4 different ranking systems available in KS Sports Ladder. Choosing th
                 tags: ["rankings", "swap"],
                 content: `
 **How It Works:**
-A simple trade. If the lower-ranked player (Challenger) wins, they trade exact positions with the higher-ranked player (Defender). If the defender wins, nothing happens.
+A simple trade. If the lower-ranked player (Challenger) wins, they trade exact positions with the higher-ranked player (Defender).
 
-**Scenario: You are ranked #10.**
+**Does it use Max Drop?** No. The "drop" is always a full swap.
+**Does it use K-Factor?** No.
+
+**Example Scenario: You are **#10** challenging **#5**.**
 
 **Example 1: The Upset (You Win)**
-- You challenge #5.
 - **Result:** You win.
-- **Outcome:** You become #5. Your opponent becomes #10.
-- *Reasoning:* You proved you are better, so you take their spot.
+- **Outcome:** You become **#5**. Your opponent drops to **#10**.
+- *Reasoning:* Full position exchange.
 
 **Example 2: The Defense (You Lose)**
-- You challenge #5.
 - **Result:** You lose.
-- **Outcome:** No change. (#10 stays #10, #5 stays #5).
-- *Reasoning:* You failed to beat the incumbent.
-
-**Example 3: Adjacent Challenge**
-- You (#10) challenge #9.
-- **Result:** You win.
-- **Outcome:** Swap. You are #9, they are #10.
-- *Reasoning:* Works the same regardless of rank distance.
+- **Outcome:** No change.
+- *Reasoning:* Defenders hold their ground.
         `
             },
             {
@@ -437,25 +432,29 @@ A simple trade. If the lower-ranked player (Challenger) wins, they trade exact p
                 content: `
 **How It Works:**
 Combines "Swap" for upsets with a penalty for losing a challenge.
-- **Upset:** If Challenger wins -> Swap (Standard).
-- **Defense:** If Challenger loses -> Challenger drops 1 spot (Penalty).
+- **Upset (Challenger Wins):** Full Swap.
+- **Defense (Challenger Loses):** Challenger drops by the **Max Drop** setting.
 
-**Scenario: You are #10.**
+**Key Setting: Max Drop**
+This controls how many spots a challenger falls punishment for losing.
 
-**Example 1: Successful Challenge (Upset)**
-- You (#10) challenge #5 and **WIN**.
-- **Outcome:** Swap. You become #5, they become #10.
-- *Note:* No penalty for the loser here because they were defending.
+**Scenario: You are #10 challenging #5.**
 
-**Example 2: Failed Challenge (Penalty)**
-- You (#10) challenge #5 and **LOSE**.
-- **Outcome:** You drop to #11. The old #11 moves up to #10.
-- *Reasoning:* You "punched up" and lost, so you slide down slightly.
+**Example 1: Max Drop = 1 (Standard)**
+- You challenge #5 and **LOSE**.
+- **Outcome:** You drop 1 spot to **#11**.
+- *Reasoning:* A small penalty for a failed challenge.
 
-**Example 3: Safe from Bottom**
-- You are #last (e.g., #20). You challenge #15 and **LOSE**.
-- **Outcome:** No change.
-- *Reasoning:* You can't drop lower than last place.
+**Example 2: Max Drop = 3 (High Risk)**
+- Setting: **Max Drop = 3**.
+- You challenge #5 and **LOSE**.
+- **Outcome:** You drop 3 spots to **#13**.
+- *Reasoning:* Higher risk setting makes challenges dangerous!
+
+**Example 3: Successful Upset**
+- You challenge #5 and **WIN**.
+- **Outcome:** You become **#5**, Opponent becomes **#10**.
+- *Note:* Max Drop does NOT apply on wins, only on losses.
         `
             },
             {
@@ -464,35 +463,20 @@ Combines "Swap" for upsets with a penalty for losing a challenge.
                 tags: ["rankings", "slide", "leapfrog"],
                 content: `
 **How It Works:**
-The winner "inserts" themselves at the loser's position. The loser and everyone below them (down to the winner's old spot) shifts down by one.
+The winner "inserts" themselves at the loser's position. Everyone in between shifts down 1 spot.
 
-**Scenario:**
-1. Alice (#1)
-2. Bob (#2)
-3. Charlie (#3)
-4. Dave (#4)
-5. Eve (#5)
+**Does it use Max Drop?** No. The shift is always 1 spot for everyone below.
 
-**Example 1: Big Jump**
-- Eve (#5) challenges Bob (#2) and **WINS**.
-- **Outcome:**
-  1. Alice (#1)
-  2. Eve (#2) ← Eve inserts here
-  3. Bob (#3) ← Bumped down
-  4. Charlie (#4) ← Bumped down
-  5. Dave (#5) ← Bumped down (fills Eve's old spot)
+**Scenario: Ranks 1-5 (Alice, Bob, Charlie, Dave, Eve)**
 
-**Example 2: Small Jump**
-- Eve (#5) challenges Dave (#4) and **WINS**.
-- **Outcome:**
-  - Eve becomes #4.
-  - Dave becomes #5.
-- *Note:* Effectively a swap since they are adjacent.
+**Example 1: Long Range Challenge**
+- Eve (#5) beats Bob (#2).
+- **Outcome:** Eve inserts at #2. Bob bumps to #3, Charlie to #4, Dave to #5.
+- *Analysis:* Multiple players are affected (pushed down 1).
 
-**Example 3: Failed Challenge**
-- Eve (#5) challenges Bob (#2) and **LOSES**.
+**Example 2: Failed Challenge**
+- Eve (#5) loses to Bob (#2).
 - **Outcome:** No change.
-- *Reasoning:* Slide only happens on a win.
         `
             },
             {
@@ -501,27 +485,33 @@ The winner "inserts" themselves at the loser's position. The loser and everyone 
                 tags: ["rankings", "elo", "points"],
                 content: `
 **How It Works:**
-Every player has a numeric rating (starts at 1500). Matches exchange points. Beating a stronger player awards MORE points. The "Rank" is just 1, 2, 3 based on who has the most points.
+Math-based rating (starts at 1500). Points are exchanged based on win probability.
 
-**Examples (Assuming K-Factor = 32):**
+**Key Setting: K-Factor**
+This controls the "Speed" of the ranking. High K = Fast changes. Low K = Stable rankings.
 
-**Example 1: Even Match**
-- Player A (1500) vs Player B (1500).
-- **Player A Wins:** +16 points (New: 1516).
-- **Player B Loses:** -16 points (New: 1484).
-- *Result:* Player A likely moves up in rank.
+**Scenario: Equal Match (1500 vs 1500)**
+*Player A wins.*
 
-**Example 2: The Giant Killer (Big Upset)**
-- Underdog (1200) vs Favorite (1800).
-- **Underdog Wins:** +30 points.
-- **Favorite Loses:** -30 points.
-- *Reasoning:* The system heavily rewards beating a much stronger opponent.
+**Example 1: K-Factor = 16 (Stable/Slow)**
+- **Winner:** Gains +8 points.
+- **Loser:** Loses -8 points.
+- *Analysis:* Good for long-term accuracy, hard to climb fast.
 
-**Example 3: Expected Outcome**
-- Favorite (1800) vs Underdog (1200).
-- **Favorite Wins:** +2 points.
-- **Underdog Loses:** -2 points.
-- *Reasoning:* The favorite was expected to win, so the rating change is tiny.
+**Example 2: K-Factor = 32 (Standard)**
+- **Winner:** Gains +16 points.
+- **Loser:** Loses -16 points.
+- *Analysis:* Standard movement.
+
+**Example 3: K-Factor = 50 (Volatile/Agile)**
+- **Winner:** Gains +25 points.
+- **Loser:** Loses -25 points.
+- *Analysis:* Ratings swing wildly. Good for placement brackets or short seasons.
+
+**Scenario: Huge Upset (1200 beats 1800)**
+*With K-Factor = 32:*
+- **Winner:** Gains ~30 points! (Huge reward)
+- **Loser:** Loses ~30 points.
         `
             }
         ]
