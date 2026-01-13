@@ -135,7 +135,7 @@ export function TopNav() {
   const visibleLinks = getVisibleLinks();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-2 sm:px-4 py-3 gap-2">
         <Link href={{ pathname: isSignedIn ? "/dashboard" : "/" }} className="flex items-center gap-1 sm:gap-3 font-semibold text-brand-700 shrink-0">
           <div className="relative h-8 w-8 md:h-9 md:w-9 overflow-hidden rounded-lg shadow-sm">
@@ -173,15 +173,28 @@ export function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {!isLoading && isSignedIn && (
+          {isLoading ? (
+            /* Loading Skeleton to prevent flicker */
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 bg-slate-100 rounded-full animate-pulse" />
+              <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
+              <div className="hidden md:flex items-center gap-3">
+                <div className="h-8 w-8 bg-slate-100 rounded-full animate-pulse" />
+                <div className="hidden xl:flex flex-col gap-1">
+                  <div className="h-3 w-20 bg-slate-100 rounded animate-pulse" />
+                  <div className="h-2 w-12 bg-slate-100 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ) : (
             <>
-              <NotificationBell />
-              <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
-            </>
-          )}
+              {isSignedIn && (
+                <>
+                  <NotificationBell />
+                  <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
+                </>
+              )}
 
-          {!isLoading && (
-            <>
               {isSignedIn && user ? (
                 <div className="hidden items-center gap-3 md:flex">
                   <Link
@@ -217,18 +230,18 @@ export function TopNav() {
                   <span>Sign in</span>
                 </Link>
               )}
-            </>
-          )}
 
-          {/* Mobile profile avatar - shown before menu button */}
-          {!isLoading && isSignedIn && user && (
-            <Link
-              href={{ pathname: "/profile" }}
-              className="mr-2 md:hidden"
-              title="Profile settings"
-            >
-              <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
-            </Link>
+              {/* Mobile profile avatar - shown before menu button */}
+              {isSignedIn && user && (
+                <Link
+                  href={{ pathname: "/profile" }}
+                  className="mr-2 md:hidden"
+                  title="Profile settings"
+                >
+                  <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
+                </Link>
+              )}
+            </>
           )}
 
           <button
