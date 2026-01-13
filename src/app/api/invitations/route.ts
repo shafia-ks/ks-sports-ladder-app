@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabaseAdmin
           .from("invitations")
-          .insert(invitations)
+          .upsert(invitations, { onConflict: 'email,ladder_id' })
           .select();
 
         if (error) {
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabaseAdmin
           .from("invitations")
-          .insert(invitations)
+          .upsert(invitations, { onConflict: 'email,ladder_id' })
           .select();
 
         if (error) {
@@ -338,12 +338,14 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from("invitations")
-      .insert({
+      .upsert({
         email,
         invited_by,
         ladder_id: ladder_id || null,
         expires_at: expiresAt.toISOString(),
-      })
+        status: 'pending', // Reset status in case it was declined/expired
+        created_at: new Date().toISOString() // Refresh timestamp
+      }, { onConflict: 'email,ladder_id' })
       .select()
       .single();
 
