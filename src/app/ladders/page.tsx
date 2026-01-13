@@ -44,38 +44,41 @@ export default function LaddersPage() {
 
   // Derived state: Split ladders into "My Ladders" and "Explore"
   const { myLadders, exploreLadders, sportsOptions } = useMemo(() => {
-    if (!ladders || membershipLoading) return { myLadders: [], exploreLadders: [], sportsOptions: [] };
+    // If memberships are loading, we can't determine "My Ladders" yet.
+    // However, we can show what we have if we want, but safer to return empty until loaded to prevent jumps.
+    // Actually, memberships load independently.
 
-    const myLadderIds = new Map(memberships.map((m: any) => [m.ladder_id, m]));
+    // 1. Build "My Ladders" directly from memberships source
+    // This ensures Private ladders (which are not in 'ladders' public list) still appear here!
+    const my = memberships
+      .filter((m: any) => m.ladders) // Ensure ladder data exists
+      .map((m: any) => ({
+        ...m.ladders, // specific ladder details (name, sport, etc)
+        membership: m
+      }));
 
-    const my = [];
+    const myLadderIds = new Set(memberships.map((m: any) => m.ladder_id));
+
+    // 2. Build "Explore" from Public Ladders list
     const explore = [];
     const sports = new Set<string>();
 
-    for (const ladder of ladders) {
-      if (ladder.sport_id) sports.add(ladder.sport_id);
+    if (ladders) {
+      for (const ladder of ladders) {
+        if (ladder.sport_id) sports.add(ladder.sport_id);
 
-      // Filter Logic
-      const matchesSearch = !searchQuery ||
-        ladder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ladder.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        // Filter Logic
+        const matchesSearch = !searchQuery ||
+          ladder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ladder.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSport = sportFilter === "all" || ladder.sport_id === sportFilter;
+        const matchesSport = sportFilter === "all" || ladder.sport_id === sportFilter;
 
-      if (myLadderIds.has(ladder.id)) {
-        // "My Ladder" - include membership data
-        // For "My Ladders", un-filtered list is usually better? 
-        // Or should we apply filters to explore only? 
-        // User requested: "My Ladders on top and others listed in second section".
-        // Usually "My Ladders" shouldn't change when searching "Explore". 
-        // Let's keep "My Ladders" ALWAYS visible unless explicitly filtered? 
-        // Actually, let's allow filtering My Ladders too, but often users expect to see them.
-        // Let's include them in "My" list regardless of filter for now to ensure quick access.
-        my.push({ ...ladder, membership: myLadderIds.get(ladder.id) });
-      } else {
-        // "Explore" - Apply filters here
-        if (matchesSearch && matchesSport) {
-          explore.push(ladder);
+        // Only show in Explore if NOT in "My Ladders"
+        if (!myLadderIds.has(ladder.id)) {
+          if (matchesSearch && matchesSport) {
+            explore.push(ladder);
+          }
         }
       }
     }
@@ -85,7 +88,7 @@ export default function LaddersPage() {
       exploreLadders: explore,
       sportsOptions: Array.from(sports)
     };
-  }, [ladders, memberships, membershipLoading, searchQuery, sportFilter]);
+  }, [ladders, memberships, searchQuery, sportFilter]);
 
 
   const pageLoading = laddersLoading || membershipLoading;

@@ -13,11 +13,16 @@
 
 ### 2. 🛡️ Privacy & Logic
 - **Ladder Visibility (API Fix)**: 
-  - Updated `/api/ladders` to strictly return only **Public** ladders. Private ladders are now truly hidden from the "Find Ladders" directory.
-  - **Member Privacy**: Verified that non-members (even via direct link) **cannot** see the member list or ranking table. They only see basic info (Sport, Location) and Organizer names.
-- **Invitation System**: 
-  - Fixed `duplicate key` crash when re-inviting users.
-  - Changed API logic from `insert` to `upsert`.
+  - Updated `/api/ladders` to strictly return only **Public** ladders for standard users.
+  - **Private Ladders**: Verified that non-members cannot see private ladders in Explore.
+  - **My Ladders Fix**: Fixed bug where Private Ladders were missing from "My Ladders" list by using membership data directly.
+- **Admin Capabilities**:
+  - **Console Visibility**: Updated API to allow Admins to see **ALL** ladders (Public & Private) in the Admin Console / Explore.
+  - **User Management**: Fixed "Disable User" button flicker/failure.
+    - Added `no-store` cache policy to ensure fresh status.
+    - Fixed crash in `createNotification` (removed invalid `read` column).
+    - Updated DB Schema to allow `account_disabled` notification type.
+- **Member Privacy**: Verified that non-members (even via direct link) **cannot** see the member list or ranking table.
 
 ### 3. 📚 Documentation & Styling (Help Center)
 - **Engine Upgrade**: Switched Help Center rendering from a manual parser to `react-markdown` with `@tailwindcss/typography`.
@@ -34,4 +39,5 @@
 The application is fully built, tested, and ready for deployment.
 - **Build**: PASS
 - **Privacy**: **SECURE**. Private ladders hidden; Member lists protected.
+- **Admin**: **POWERFUL**. Full visibility and control over users/ladders.
 - **Visuals**: Professional typography in Help, stable header, smooth dashboard, organized Ladders page.

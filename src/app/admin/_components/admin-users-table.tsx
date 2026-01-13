@@ -49,7 +49,7 @@ export function AdminUsersTable() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/users");
+            const res = await fetch("/api/users", { cache: "no-store" });
             if (!res.ok) throw new Error("Failed to load users");
             const data = await res.json();
             setUsers(data.users || []);

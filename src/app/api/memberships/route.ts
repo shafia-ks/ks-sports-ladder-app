@@ -24,7 +24,9 @@ export async function GET(req: Request) {
           sport_id,
           profile_picture_url,
           status,
-          visibility
+          visibility,
+          description,
+          location
         )
       `)
       .eq("user_id", userId)

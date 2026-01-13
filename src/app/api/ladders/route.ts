@@ -2,16 +2,37 @@ import { NextResponse, NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createAuditLog } from "@/lib/supabase/audit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const userId = req.headers.get("x-user-id");
+  let isAdmin = false;
+
+  if (userId) {
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle(); // Use maybeSingle to avoid errors if sync hasn't happened
+
+    if (user?.role === "admin") {
+      isAdmin = true;
+    }
+  }
+
+  let query = supabaseAdmin
     .from("ladders")
     .select("id, name, description, sport_id, location, status, visibility, challenge_rules, ranking_rules, created_at, profile_picture_url, created_by")
-    .eq("visibility", "public")
     .order("created_at", { ascending: false });
+
+  // Only filter by public visibility if NOT an admin
+  if (!isAdmin) {
+    query = query.eq("visibility", "public");
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

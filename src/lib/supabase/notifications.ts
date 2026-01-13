@@ -46,7 +46,6 @@ export async function createNotification(params: CreateNotificationParams) {
         message: params.message,
         link: params.link || null,
         metadata: params.metadata || {},
-        read: false,
       })
       .select()
       .single();
@@ -82,7 +81,6 @@ export async function createNotifications(notifications: CreateNotificationParam
           message: n.message,
           link: n.link || null,
           metadata: n.metadata || {},
-          read: false,
         }))
       )
       .select();
