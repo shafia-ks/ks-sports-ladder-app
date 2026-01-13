@@ -6,13 +6,15 @@
 - **Header Design & flicker**: 
   - Changed transparent "glass" header to **solid white** to fix visual artifacts and content bleeding.
   - Added **Skeleton Loader** to header buttons to prevent layout shift (flicker) during auth check.
-- **Ladders Page**: Removed blocking "Loading..." buttons. Page loads instantly with background verification.
+- **Ladders Page (Organization & Loading)**:
+  - **Refactored Layout**: Split into clean "**My Ladders**" (Top) and "**Explore**" (Bottom) sections.
+  - **Fixed Loading**: Removed per-card "grey skeletons" for join buttons. Implemented a smooth **Page-Level Skeleton** that waits for all data, preventing layout shifts.
 - **Dashboard**: Fixed widget flashing by caching data (1-min stale time) using `usePendingActions`.
 
 ### 2. 🛡️ Privacy & Logic
 - **Ladder Visibility (API Fix)**: 
   - Updated `/api/ladders` to strictly return only **Public** ladders. Private ladders are now truly hidden from the "Find Ladders" directory.
-  - **Member Privacy**: Verified that non-members (even when visiting a ladder via direct link) **cannot** see the member list or ranking table. They only see basic info (Sport, Location) and Organizer names.
+  - **Member Privacy**: Verified that non-members (even via direct link) **cannot** see the member list or ranking table. They only see basic info (Sport, Location) and Organizer names.
 - **Invitation System**: 
   - Fixed `duplicate key` crash when re-inviting users.
   - Changed API logic from `insert` to `upsert`.
@@ -32,4 +34,4 @@
 The application is fully built, tested, and ready for deployment.
 - **Build**: PASS
 - **Privacy**: **SECURE**. Private ladders hidden; Member lists protected.
-- **Visuals**: Professional typography in Help, stable header, smooth dashboard.
+- **Visuals**: Professional typography in Help, stable header, smooth dashboard, organized Ladders page.
