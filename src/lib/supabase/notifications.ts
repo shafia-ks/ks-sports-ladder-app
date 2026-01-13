@@ -24,8 +24,35 @@ export interface CreateNotificationParams {
   | "account_disabled"
   | "account_deleted";
   message: string;
+  title?: string;
   link?: string;
   metadata?: Record<string, any>;
+}
+
+function getDefaultTitle(type: string): string {
+  const titles: Record<string, string> = {
+    ladder_invitation: "Ladder Invitation",
+    challenge_received: "New Challenge",
+    challenge_accepted: "Challenge Accepted",
+    challenge_declined: "Challenge Declined",
+    challenge_expired: "Challenge Expired",
+    challenge_reminder: "Challenge Reminder",
+    match_ready: "Match Ready",
+    score_to_confirm: "Score Submitted",
+    match_confirmed: "Match Confirmed",
+    match_completed: "Match Completed",
+    match_score_submitted: "Score Submitted",
+    match_disputed: "Match Disputed",
+    rank_changed: "Rank Update",
+    role_changed: "Role Updated",
+    membership_approved: "Membership Approved",
+    membership_rejected: "Membership Rejected",
+    membership_removed: "Membership Removed",
+    join_request: "New Join Request",
+    account_disabled: "Account Disabled",
+    account_deleted: "Account Deleted"
+  };
+  return titles[type] || "Notification";
 }
 
 /**
@@ -43,6 +70,7 @@ export async function createNotification(params: CreateNotificationParams) {
       .insert({
         user_id: params.userId,
         type: params.type,
+        title: params.title || getDefaultTitle(params.type),
         message: params.message,
         link: params.link || null,
         metadata: params.metadata || {},
@@ -78,6 +106,7 @@ export async function createNotifications(notifications: CreateNotificationParam
         notifications.map(n => ({
           user_id: n.userId,
           type: n.type,
+          title: n.title || getDefaultTitle(n.type),
           message: n.message,
           link: n.link || null,
           metadata: n.metadata || {},

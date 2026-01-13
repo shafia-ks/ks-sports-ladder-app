@@ -6,10 +6,12 @@
 - **Header Design & flicker**: 
   - Changed transparent "glass" header to **solid white** to fix visual artifacts and content bleeding.
   - Added **Skeleton Loader** to header buttons to prevent layout shift (flicker) during auth check.
-- **Ladders Page (Organization & Loading)**:
-  - **Refactored Layout**: Split into clean "**My Ladders**" (Top) and "**Explore**" (Bottom) sections.
-  - **Fixed Loading**: Removed per-card "grey skeletons" for join buttons. Implemented a smooth **Page-Level Skeleton** that waits for all data, preventing layout shifts.
-- **Dashboard**: Fixed widget flashing by caching data (1-min stale time) using `usePendingActions`.
+- **Ladders Page (Redesigned)**:
+  - **Layout**: Search/Filter moved to **Top** (Sticky).
+  - **Structure**: Both "My Ladders" and "Explore" now use a clean **Vertical List** layout.
+  - **Loading**: Implemented smooth **Page-Level Skeleton** preventing layout shifts.
+  - **Logic**: Search filter now applies globally (including My Ladders) for consistent behavior.
+- **Dashboard**: Fixed widget flashing by caching data (1-min stale time).
 
 ### 2. 🛡️ Privacy & Security
 - **Middleware Upgrade**: 
@@ -24,11 +26,11 @@
 ### 3. ⚙️ Admin & Logic
 - **Admin Capabilities**:
   - **Console Visibility**: Updated API to allow Admins to see **ALL** ladders (Public & Private).
-  - **User Management**: Fixed "Disable User" button flicker/failure.
+  - **User Management**: Fixed "Disable User" failures.
+    - **Notification Fix**: Added strict `title` support to `createNotification` to fix DB constraint violation. (Critical Fix)
     - **Backend Fix**: Fixed crash in `createNotification` (removed invalid `read` column).
     - **Schema Fix**: Updated DB to allow `account_disabled` notification type.
-    - **Persistence Fix**: Added `force-dynamic` to API routes to prevent server-side caching of stale user status.
-    - **Frontend Fix**: Added `no-store` cache policy for extra safety.
+    - **Persistence Fix**: Added `force-dynamic` to API routes + `no-store` on frontend to prevent stale status caching.
 
 ### 4. 📚 Documentation (Help Center)
 - **Engine Upgrade**: Switched to `react-markdown` with `@tailwindcss/typography`.
@@ -39,4 +41,4 @@ The application is fully built, secure, and ready for deployment.
 - **Build**: PASS
 - **Security**: **HIGH** (Secure Auth, Privacy Enforced).
 - **Admin**: **POWERFUL** (Full control, Real-time status).
-- **UX**: **POLISHED** (Professional visuals, Smooth loading).
+- **UX**: **POLISHED** (Professional visuals, Vertical Lists, Smooth loading).

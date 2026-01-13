@@ -44,22 +44,28 @@ export default function LaddersPage() {
 
   // Derived state: Split ladders into "My Ladders" and "Explore"
   const { myLadders, exploreLadders, sportsOptions } = useMemo(() => {
-    // If memberships are loading, we can't determine "My Ladders" yet.
-    // However, we can show what we have if we want, but safer to return empty until loaded to prevent jumps.
-    // Actually, memberships load independently.
+    // Helper to check match
+    const isMatch = (ladder: any) => {
+      const matchesSearch = !searchQuery ||
+        ladder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ladder.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // 1. Build "My Ladders" directly from memberships source
-    // This ensures Private ladders (which are not in 'ladders' public list) still appear here!
+      const matchesSport = sportFilter === "all" || ladder.sport_id === sportFilter;
+      return matchesSearch && matchesSport;
+    };
+
+    // 1. Build "My Ladders"
     const my = memberships
-      .filter((m: any) => m.ladders) // Ensure ladder data exists
+      .filter((m: any) => m.ladders)
       .map((m: any) => ({
-        ...m.ladders, // specific ladder details (name, sport, etc)
+        ...m.ladders,
         membership: m
-      }));
+      }))
+      .filter(isMatch); // Apply filter to My Ladders too
 
     const myLadderIds = new Set(memberships.map((m: any) => m.ladder_id));
 
-    // 2. Build "Explore" from Public Ladders list
+    // 2. Build "Explore"
     const explore = [];
     const sports = new Set<string>();
 
@@ -67,16 +73,8 @@ export default function LaddersPage() {
       for (const ladder of ladders) {
         if (ladder.sport_id) sports.add(ladder.sport_id);
 
-        // Filter Logic
-        const matchesSearch = !searchQuery ||
-          ladder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ladder.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesSport = sportFilter === "all" || ladder.sport_id === sportFilter;
-
-        // Only show in Explore if NOT in "My Ladders"
         if (!myLadderIds.has(ladder.id)) {
-          if (matchesSearch && matchesSport) {
+          if (isMatch(ladder)) {
             explore.push(ladder);
           }
         }
@@ -90,7 +88,6 @@ export default function LaddersPage() {
     };
   }, [ladders, memberships, searchQuery, sportFilter]);
 
-
   const pageLoading = laddersLoading || membershipLoading;
 
   if (pageLoading) {
@@ -99,14 +96,11 @@ export default function LaddersPage() {
         <div className="space-y-8 animate-pulse">
           {/* Header Skeleton */}
           <div className="h-20 bg-slate-100 rounded-lg"></div>
-          {/* My Ladders Skeleton */}
+          {/* Search Skeleton */}
+          <div className="h-14 bg-slate-100 rounded-lg"></div>
+          {/* List Skeleton */}
           <div className="space-y-4">
-            <div className="h-6 w-32 bg-slate-100 rounded"></div>
-            <div className="h-32 bg-slate-100 rounded-lg"></div>
-          </div>
-          {/* Explore Skeleton */}
-          <div className="space-y-4">
-            <div className="h-10 bg-slate-100 rounded-lg"></div>
+            <div className="h-40 bg-slate-100 rounded-lg"></div>
             <div className="h-40 bg-slate-100 rounded-lg"></div>
             <div className="h-40 bg-slate-100 rounded-lg"></div>
           </div>
@@ -117,7 +111,7 @@ export default function LaddersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-10 pb-20">
+      <div className="space-y-8 pb-20">
         <PageHeader
           title="Ladders"
           description="Join a competition or manage your active leagues."
@@ -137,21 +131,47 @@ export default function LaddersPage() {
           </div>
         )}
 
-        {/* SECTION 1: MY LADDERS */}
+        {/* SEARCH & FILTER (Moved to Top) */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 sticky top-[73px] z-10">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, description..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          {sportsOptions.length > 0 && (
+            <select
+              value={sportFilter}
+              onChange={(e) => setSportFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white min-w-[150px]"
+            >
+              <option value="all">All Sports</option>
+              {sportsOptions.map(sport => (
+                <option key={sport} value={sport}>{sport.charAt(0).toUpperCase() + sport.slice(1)}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* SECTION 1: MY LADDERS (Vertical Stack) */}
         {myLadders.length > 0 && (
           <section>
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Trophy className="h-5 w-5 text-brand-600" />
               My Ladders
             </h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <div className="space-y-4">
               {myLadders.map((ladder: any) => (
                 <div key={ladder.id} className="card p-5 hover:border-brand-300 transition-colors group relative overflow-hidden">
                   {/* Active Status Strip */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${ladder.membership.status === 'active' ? 'bg-brand-500' : 'bg-amber-400'}`} />
 
-                  <div className="flex items-start gap-4 pl-3">
-                    <div className="relative">
+                  <div className="flex items-center gap-4 pl-3">
+                    <div className="relative flex-shrink-0">
                       {ladder.profile_picture_url ? (
                         <img src={ladder.profile_picture_url} className="w-14 h-14 rounded-full object-cover border border-slate-100 shadow-sm" alt={ladder.name} />
                       ) : (
@@ -179,9 +199,11 @@ export default function LaddersPage() {
                       </div>
                     </div>
 
-                    <Link href={`/ladders/${ladder.id}`} className="btn btn-sm btn-secondary self-center shrink-0">
-                      Dashboard
-                    </Link>
+                    <div className="flex-shrink-0">
+                      <Link href={`/ladders/${ladder.id}`} className="btn btn-sm btn-secondary">
+                        Dashboard
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -189,7 +211,7 @@ export default function LaddersPage() {
           </section>
         )}
 
-        {/* SECTION 2: EXPLORE */}
+        {/* SECTION 2: EXPLORE (Vertical Stack) */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -201,35 +223,14 @@ export default function LaddersPage() {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by name, description..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            {sportsOptions.length > 0 && (
-              <select
-                value={sportFilter}
-                onChange={(e) => setSportFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white min-w-[150px]"
-              >
-                <option value="all">All Sports</option>
-                {sportsOptions.map(sport => (
-                  <option key={sport} value={sport}>{sport.charAt(0).toUpperCase() + sport.slice(1)}</option>
-                ))}
-              </select>
-            )}
-          </div>
+          {/* Search bar removed from here */}
 
           <div className="space-y-4">
             {exploreLadders.length === 0 ? (
               <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <p className="text-slate-500">No matching ladders found.</p>
+                <p className="text-slate-500">
+                  {searchQuery ? "No matching ladders found." : "No other ladders found."}
+                </p>
                 {searchQuery && (
                   <button onClick={() => { setSearchQuery(''); setSportFilter('all'); }} className="mt-2 text-brand-600 hover:underline text-sm font-medium">Clear filters</button>
                 )}
