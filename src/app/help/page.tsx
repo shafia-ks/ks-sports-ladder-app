@@ -16,7 +16,12 @@ import {
     ChevronRight,
     Award,
     Clock,
-    CheckCircle
+    CheckCircle,
+    Smartphone,
+    Share,
+    MoreVertical,
+    PlusSquare,
+    Menu
 } from "lucide-react";
 
 interface HelpSection {
@@ -103,6 +108,57 @@ If you're ranked #5, you can challenge players ranked #1-4. If you win, you swap
 - New members typically start at the bottom
 - Some ladders may assess your skill level first
 - You can climb by winning challenges!
+        `
+            }
+        ]
+    },
+    {
+        id: "mobile-app",
+        title: "Mobile App",
+        icon: Smartphone,
+        description: "Install the app on your phone",
+        articles: [
+            {
+                id: "install-ios",
+                title: "Install on iOS (iPhone/iPad)",
+                tags: ["mobile", "ios", "iphone", "install"],
+                content: `
+**Step 1: Open in Safari**
+Open **KS Sports Ladder** in the Safari browser. 
+*(Note: Chrome on iOS also supports this, but Safari is recommended)*
+
+**Step 2: Tap Share**
+Look for the **Share** icon (square with arrow up) at the bottom of the screen.
+
+**Step 3: Add to Home Screen**
+Scroll down the menu and find **"Add to Home Screen"** (square with plus sign).
+
+**Step 4: Confirm**
+Tap **Add** in the top right corner.
+
+**Done!**
+The app icon will appear on your home screen like a native app. It will open in full-screen mode without browser bars.
+        `
+            },
+            {
+                id: "install-android",
+                title: "Install on Android",
+                tags: ["mobile", "android", "install"],
+                content: `
+**Step 1: Open in Chrome**
+Open **KS Sports Ladder** in the Chrome browser.
+
+**Step 2: Tap Menu**
+Tap the **Menu** icon (three vertical dots) in the top right corner.
+
+**Step 3: Install**
+Look for **"Install app"** or **"Add to Home screen"** in the menu.
+
+**Step 4: Confirm**
+Follow the prompt to install.
+
+**Done!**
+The app will be added to your app drawer and home screen. It runs like a native app.
         `
             }
         ]
@@ -760,8 +816,8 @@ export default function HelpPage() {
                                         setSelectedArticle(null);
                                     }}
                                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${selectedSection === section.id
-                                            ? "bg-brand-50 text-brand-700"
-                                            : "hover:bg-slate-50 text-slate-700"
+                                        ? "bg-brand-50 text-brand-700"
+                                        : "hover:bg-slate-50 text-slate-700"
                                         }`}
                                 >
                                     <Icon className="h-4 w-4 flex-shrink-0" />
