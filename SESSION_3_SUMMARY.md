@@ -20,9 +20,10 @@
 - **Visuals**:
   - Eliminated raw Markdown syntax (****, -) appearing in text.
   - Applied professional **Prose** styling (rich headings, lists, bolding).
-- **Ranking Systems**: 
-  - Updated section to match UI names: **Swap Positions**, **Default Swap**, **Slide Shift**, **Points/ELO**.
-  - Added specific examples for **K-Factor** and **Max Drop** settings.
+- **Ladder Settings Guide**:
+  - **Expert Rewrite**: Rewrote the "Ladder Settings" article to be less "listy" and more "explanatory".
+  - **Challenge Rules**: Added specific scenarios/examples for **Max Positions Up**, **Expiry Days**, and **Cooldown Hours**.
+  - **Ranking Systems**: Updated to match UI exact names and examples.
 
 ## 🏁 Status
 The application is fully built, tested, and ready for deployment.

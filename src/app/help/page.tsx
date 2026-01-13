@@ -569,53 +569,50 @@ This controls the "Speed" of the ranking. High K = Fast changes. Low K = Stable 
                 title: "Ladder Settings Explained",
                 tags: ["organizer", "settings"],
                 content: `
-**Challenge Rules:**
+### Challenge Rules
 
-**Max Positions Up (Default: 3)**
-- How many ranks above can players challenge?
-- Lower = more conservative, slower movement
-- Higher = more dynamic, faster movement
-- Example: 3 means rank #10 can challenge #7, #8, #9
+These settings control the flow and pace of your ladder. Adjusting them allows you to balance competitive fairness with participation.
 
-**Expiry Days (Default: 7)**
-- Days to respond to a challenge
-- Too short = hard to coordinate
-- Too long = ladder stagnates
-- 7 days is a good balance
+**Max Positions Up**
+This setting determines the "reach" of a challenger. It limits how far up the ladder a player can issue a challenge.
 
-**Cooldown Hours (Default: 0)**
-- Time between issuing challenges
-- Prevents spam challenges
-- 24-48 hours recommended if enabled
+*   *Example 1: Conservative (Range = 3)*
+    If you are ranked #10, you can only challenge players #7, #8, #9. This forces players to climb step-by-step and protects the top seeds from constant challenges by lower ranks.
 
-**Ranking Rules:**
+*   *Example 2: Aggressive (Range = 10)*
+    If you are ranked #20, you can challenge anyone up to #10. This creates a very dynamic ladder with frequent large jumps in ranking.
 
-**System Type:**
-- **Swap**: Simple position swapping
-- **ELO**: Points-based rating
-- **Hybrid**: Best of both worlds
+**Expiry Days**
+The number of days a challenged player has to respond (accept/decline) before the request automatically expires.
 
-**K-Factor (ELO only, Default: 24)**
-- How much ratings change per match
-- 16 = very stable
-- 24 = balanced
-- 32 = volatile, fast changes
+*   *Scenario*: You set this to 5 days.
+    Alice challenges Bob on Monday at 2 PM. Bob has until Saturday at 2 PM to respond. If he does nothing, the challenge is cancelled, and Alice acts free to challenge someone else.
 
-**Max Drop (Swap only, Default: 1)**
-- Maximum positions to drop when losing
-- 1 = minimal disruption
-- Unlimited = full swap
+**Cooldown Hours**
+A mandatory waiting period after a match is completed before a player can issue a new challenge. This prevents "spamming" matches and gives everyone a fair chance to play.
 
-**Match Settings:**
+*   *Example 1: No Cooldown (0 hours)*
+    Players can play back-to-back matches all day. Good for "ladder days" or intense weekends.
 
-**Confirmation Required:**
-- Yes: Both players must confirm
-- No: Submitter's score is final
-- Recommended: Yes (prevents disputes)
+*   *Example 2: Standard Pace (48 hours)*
+    After Alice finishes a match on Friday at 6 PM, she cannot issue another challenge until Sunday at 6 PM. This ensures she doesn't monopolize the ladder.
 
-**Dispute Window (Default: 48 hours)**
-- Time to dispute a result
-- After this, result is final
+### Ranking Rules
+
+**K-Factor (ELO Systems Only)**
+Control the volatility of your ratings.
+*   **Low (16)**: Ratings change slowly. A lucky win won't skyrocket a rank.
+*   **High (32+)**: Ratings swing fast. Good for new ladders to separate skill levels quickly.
+
+**Max Drop (Swap Systems Only)**
+A safety net for defenders.
+*   **Standard (1)**: If a higher-ranked player loses, they only drop 1 spot, rather than swapping all the way down.
+*   **Unlimited**: The loser takes the challenger's old spot, no matter how low it is. High risk!
+
+### Match Settings
+
+**Confirmation Required**
+We strongly recommend enabling this. It requires the losing player to confirm the score entered by the winner within the dispute window, preventing score manipulation.
         `
             },
             {
