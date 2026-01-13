@@ -23,6 +23,7 @@ import {
     PlusSquare,
     Menu
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface HelpSection {
     id: string;
@@ -174,25 +175,25 @@ The app will be added to your app drawer and home screen. It runs like a native 
                 title: "Player Role",
                 tags: ["roles", "player"],
                 content: `
-**Players** are standard members who participate in ladders.
+Players are standard members who participate in ladders.
 
-**What Players Can Do:**
-✅ Join ladders (with approval)
-✅ Challenge other players
-✅ Accept/decline challenges
-✅ Submit match results
-✅ View rankings and stats
-✅ Receive notifications
-✅ Update their profile
+### What Players Can Do:
+- ✅ **Join ladders** (with approval)
+- ✅ **Challenge other players**
+- ✅ **Accept/decline challenges**
+- ✅ **Submit match results**
+- ✅ **View rankings and stats**
+- ✅ **Receive notifications**
+- ✅ **Update their profile**
 
-**What Players Cannot Do:**
-❌ Create ladders
-❌ Approve new members
-❌ Change ladder settings
-❌ Delete matches
-❌ Manage other users
+### What Players Cannot Do:
+- ❌ **Create ladders**
+- ❌ **Approve new members**
+- ❌ **Change ladder settings**
+- ❌ **Delete matches**
+- ❌ **Manage other users**
 
-**Becoming an Organizer:**
+### Becoming an Organizer:
 Players can request organizer status for specific ladders. Admins review and approve these requests.
         `
             },
@@ -201,25 +202,25 @@ Players can request organizer status for specific ladders. Admins review and app
                 title: "Organizer Role",
                 tags: ["roles", "organizer"],
                 content: `
-**Organizers** manage specific ladders they create or are assigned to.
+Organizers manage specific ladders they create or are assigned to.
 
-**What Organizers Can Do:**
-✅ Everything a Player can do, PLUS:
-✅ Create new ladders
-✅ Configure ladder settings
-✅ Invite members to their ladders
-✅ Approve/reject membership requests
-✅ Approve/dispute match results
-✅ View ladder analytics
-✅ Archive/reactivate their ladders
-✅ Manage ladder visibility
+### What Organizers Can Do:
+- ✅ **Everything a Player can do, PLUS:**
+- ✅ **Create new ladders**
+- ✅ **Configure ladder settings**
+- ✅ **Invite members to their ladders**
+- ✅ **Approve/reject membership requests**
+- ✅ **Approve/dispute match results**
+- ✅ **View ladder analytics**
+- ✅ **Archive/reactivate their ladders**
+- ✅ **Manage ladder visibility**
 
-**Scope:**
+### Scope:
 - Organizers only manage ladders they created or were assigned to
 - They cannot manage other organizers' ladders
 - They cannot access admin functions
 
-**Best For:**
+### Best For:
 - Club managers
 - Tournament organizers
 - Community leaders
@@ -230,26 +231,26 @@ Players can request organizer status for specific ladders. Admins review and app
                 title: "Admin Role",
                 tags: ["roles", "admin"],
                 content: `
-**Admins** have full system access and manage the entire platform.
+Admins have full system access and manage the entire platform.
 
-**What Admins Can Do:**
-✅ Everything Organizers can do, PLUS:
-✅ Manage ALL ladders (not just their own)
-✅ Promote/demote user roles
-✅ Disable/enable user accounts
-✅ Delete user accounts permanently
-✅ View all audit logs
-✅ Access admin dashboard
-✅ Manage system settings
-✅ Review organizer requests
+### What Admins Can Do:
+- ✅ **Everything Organizers can do, PLUS:**
+- ✅ **Manage ALL ladders** (not just their own)
+- ✅ **Promote/demote user roles**
+- ✅ **Disable/enable user accounts**
+- ✅ **Delete user accounts permanently**
+- ✅ **View all audit logs**
+- ✅ **Access admin dashboard**
+- ✅ **Manage system settings**
+- ✅ **Review organizer requests**
 
-**Responsibilities:**
+### Responsibilities:
 - Ensure fair play across all ladders
 - Handle disputes and violations
 - Maintain platform integrity
 - Support organizers and players
 
-**Security:**
+### Security:
 Admin accounts should be carefully protected with strong passwords and 2FA.
         `
             }
@@ -969,54 +970,8 @@ export default function HelpPage() {
                                     ))}
                                 </div>
 
-                                <div className="prose prose-slate max-w-none">
-                                    {currentArticle.content.split('\n').map((paragraph, idx) => {
-                                        // Handle headers
-                                        if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
-                                            const text = paragraph.replace(/\*\*/g, '');
-                                            if (text.startsWith('Q:')) {
-                                                return (
-                                                    <h3 key={idx} className="text-lg font-semibold text-slate-900 mt-6 mb-2">
-                                                        {text}
-                                                    </h3>
-                                                );
-                                            }
-                                            return (
-                                                <h3 key={idx} className="text-lg font-semibold text-slate-900 mt-6 mb-2">
-                                                    {text}
-                                                </h3>
-                                            );
-                                        }
-
-                                        // Handle list items
-                                        if (paragraph.trim().startsWith('✅') || paragraph.trim().startsWith('❌')) {
-                                            return (
-                                                <div key={idx} className="flex items-start gap-2 mb-2">
-                                                    <span className="text-lg">{paragraph.trim()[0]}</span>
-                                                    <span className="text-slate-700">{paragraph.trim().substring(2)}</span>
-                                                </div>
-                                            );
-                                        }
-
-                                        if (paragraph.trim().startsWith('-')) {
-                                            return (
-                                                <li key={idx} className="text-slate-700 ml-4">
-                                                    {paragraph.trim().substring(1).trim()}
-                                                </li>
-                                            );
-                                        }
-
-                                        // Regular paragraphs
-                                        if (paragraph.trim()) {
-                                            return (
-                                                <p key={idx} className="text-slate-700 mb-4">
-                                                    {paragraph.trim()}
-                                                </p>
-                                            );
-                                        }
-
-                                        return null;
-                                    })}
+                                <div className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-strong:font-bold">
+                                    <ReactMarkdown>{currentArticle.content}</ReactMarkdown>
                                 </div>
                             </div>
                         </div>

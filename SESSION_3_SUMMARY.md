@@ -12,21 +12,20 @@
 ### 2. 🐛 Bug Fixes
 - **Invitation System**: 
   - Fixed `duplicate key` crash when re-inviting users (e.g. inviting a signed-up user to a ladder).
-  - Changed API logic from `insert` to `upsert`, which intelligently updates existing records instead of crashing.
-- **TrackEvent Typo**: Fixed syntax error in `ChallengesTab.tsx` (found during build).
-- **Challenge Tab**: Removed unused components causing build errors.
+  - Changed API logic from `insert` to `upsert`.
+- **Typo Fixes**: Corrected minor typos in Help content.
 
-### 3. 📚 Documentation (Help Center)
+### 3. 📚 Documentation & Styling (Help Center)
+- **Engine Upgrade**: Switched Help Center rendering from a manual parser to `react-markdown` with `@tailwindcss/typography`.
+- **Visuals**:
+  - Eliminated raw Markdown syntax (****, -) appearing in text.
+  - Applied professional **Prose** styling (rich headings, lists, bolding).
 - **Ranking Systems**: 
   - Updated section to match UI names: **Swap Positions**, **Default Swap**, **Slide Shift**, **Points/ELO**.
-  - **New Examples**: Added 3-4 specific examples for each system.
-  - **Settings Included**: Explicitly demonstrated how **K-Factor** (for ELO) and **Max Drop** (for Default Swap) settings change the math/outcome of a match.
-- **Mobile App Guide**: Added "Mobile App" section with specific iOS/Android installation instructions.
-- **Refactoring Plan**: Documented Realtime architecture.
+  - Added specific examples for **K-Factor** and **Max Drop** settings.
 
 ## 🏁 Status
 The application is fully built, tested, and ready for deployment.
-- **Build**: PASS (`npm run build`)
-- **Visuals**: Stable header, no flicker, no flashing widgets.
+- **Build**: PASS
+- **Visuals**: Professional typography in Help, stable header, smooth dashboard.
 - **Logic**: Robust invitation handling.
-- **Docs**: Comprehensive and matches UI specific settings.
