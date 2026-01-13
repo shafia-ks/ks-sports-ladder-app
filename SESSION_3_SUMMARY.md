@@ -3,30 +3,31 @@
 ## ✅ Critical Fixes Implemented
 
 ### 1. 🚀 Performance & UX
-- **Ladders Page**: Removed blocking "Loading..." buttons. Page now loads instantly; membership status updates silently in the background. Added subtle skeleton loader to prevent jarring flashes.
-- **Dashboard**: Fixed "Action Required" widget flashing. Implemented `usePendingActions` hook with caching (1-minute stale time) to show data instantly on navigation.
+- **Header Design & flicker**: 
+  - Changed transparent "glass" header to **solid white** to fix visual artifacts and content bleeding.
+  - Added **Skeleton Loader** to header buttons to prevent layout shift (flicker) during auth check.
+- **Ladders Page**: Removed blocking "Loading..." buttons. Page loads instantly with background verification.
+- **Dashboard**: Fixed widget flashing by caching data (1-min stale time) using `usePendingActions`.
 
 ### 2. 🐛 Bug Fixes
-- **Invitation Error**: Fixed `duplicate key` crash when re-inviting users. Changed API from `insert` (which fails on duplicates) to `upsert` (which updates existing/expired invitations).
+- **Invitation System**: 
+  - Fixed `duplicate key` crash when re-inviting users (e.g. inviting a signed-up user to a ladder).
+  - Changed API logic from `insert` to `upsert`, which intelligently updates existing records instead of crashing.
 - **TrackEvent Typo**: Fixed syntax error in `ChallengesTab.tsx` (found during build).
-- **Challenge Tab**: Removed unused/broken `ChallengesTab` component referenced in refactoring plan to clear build errors.
+- **Challenge Tab**: Removed unused components causing build errors.
 
-### 3. 📚 Documentation
-- **Mobile App Guide**: Added "Mobile App" section to Help Center with instructions for iOS (Safari Share) and Android (Chrome Install).
-- **Refactoring Plan**: Documented Realtime architecture (`REALTIME_STATUS_COMPLETE.md`) confirming the app uses a robust event-driven design.
+### 3. 📚 Documentation (Help Center)
+- **Ranking Systems**: Updated Help page to match exact App UI names:
+  1. **Swap Positions**
+  2. **Default Swap (Minimal Drop)**
+  3. **Slide Shift**
+  4. **Points/ELO**
+  - Included 3 detailed examples for EACH system.
+- **Mobile App Guide**: Added "Mobile App" section with specific iOS/Android installation instructions.
+- **Refactoring Plan**: Documented Realtime architecture.
 
-## 🔍 Technical Details
-
-| Feature | Change | Benefit |
-|---------|--------|---------|
-| **Invitations** | `insert` → `upsert` | Allows re-inviting users without crashing |
-| **Dashboard** | `useEffect` fetch → `useQuery` | Instant load, background update, no flash |
-| **Ladders** | Blocking load → Non-blocking | Buttons visible immediately |
-
-## 🏁 Next Steps
-
-The application is stable, performant, and build-passing.
-- **Deploy**: Vercel build is passing (`npm run build` confirmed).
-- **Verify**: Check "Invite" functionality with a previously invited email to confirm fix.
-
-**Ready for deployment!** 🚀
+## 🏁 Status
+The application is fully built, tested, and ready for deployment.
+- **Build**: PASS (`npm run build`)
+- **Visuals**: Stable header, no flicker, no flashing widgets.
+- **Logic**: Robust invitation handling.

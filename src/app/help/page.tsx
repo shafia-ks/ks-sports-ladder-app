@@ -382,120 +382,146 @@ If your opponent disputes:
                 title: "Ranking Systems Overview",
                 tags: ["rankings", "overview"],
                 content: `
-Different ladders use different ranking systems. Here are the main types:
+There are 4 different ranking systems available in KS Sports Ladder. Choosing the right one depends on how dynamic you want your ladder to be.
 
-**1. Position-Based (Swap)**
-- Simple position swapping
-- Winner takes loser's position
-- Loser drops one position
-- Easy to understand
-- Example: #5 beats #3 → they swap positions
+**1. Swap Positions**
+- **Rule**: Pure exchange. Winner takes loser's spot, loser takes winner's spot.
+- **Best for**: Friendly ladders where maintaining position is key.
 
-**2. ELO Rating**
-- Points-based system (like chess)
-- Gain/lose points based on opponent's rating
-- Beating higher-rated players = more points
-- More sophisticated and fair
-- Example: 1500 rating beats 1600 → gains ~16 points
+**2. Default Swap (Minimal Drop)**
+- **Rule**: Swaps on upsets (if challenger wins). But if a higher-ranked player defends, the challenger drops 1 spot.
+- **Best for**: Competitive ladders where challenging has a risk.
 
-**3. Hybrid Systems**
-- Combines position and points
-- Limits how far you can drop
-- Rewards consistency
-- Balances fairness and simplicity
+**3. Slide Shift**
+- **Rule**: Winner "inserts" into the loser's spot. Everyone in between shifts down 1 spot.
+- **Best for**: Rapidly moving ladders where multiple players can be affected by one match.
 
-**Your Ladder's System:**
-Check your ladder's settings page to see which system is used and the specific rules.
+**4. Points/ELO**
+- **Rule**: Mathematical rating system (like chess). Points are exchanged based on win probability.
+- **Best for**: Assessing true skill level independent of rank.
         `
             },
             {
-                id: "swap-ranking",
-                title: "Swap Ranking System (Detailed)",
+                id: "swap-positions",
+                title: "1. Swap Positions",
                 tags: ["rankings", "swap"],
                 content: `
-**How Swap Ranking Works:**
+**How It Works:**
+A simple trade. If the lower-ranked player (Challenger) wins, they trade exact positions with the higher-ranked player (Defender). If the defender wins, nothing happens.
 
-**Basic Rule:**
-When a lower-ranked player beats a higher-ranked player, they swap positions.
+**Scenario: You are ranked #10.**
 
-**Example Scenario:**
+**Example 1: The Upset (You Win)**
+- You challenge #5.
+- **Result:** You win.
+- **Outcome:** You become #5. Your opponent becomes #10.
+- *Reasoning:* You proved you are better, so you take their spot.
 
-**Before Match:**
-1. Alice
-2. Bob
-3. Charlie ← challenges
-4. Diana
-5. Emma ← challenger
+**Example 2: The Defense (You Lose)**
+- You challenge #5.
+- **Result:** You lose.
+- **Outcome:** No change. (#10 stays #10, #5 stays #5).
+- *Reasoning:* You failed to beat the incumbent.
 
-**Emma (#5) challenges and beats Charlie (#3)**
-
-**After Match:**
-1. Alice
-2. Bob
-3. Emma ← moved up 2 positions
-4. Charlie ← dropped 1 position
-5. Diana ← dropped 1 position
-
-**Variations:**
-
-**Minimal Drop:**
-- Loser only drops 1 position
-- Others don't move
-- Less disruptive
-
-**Full Swap:**
-- Winner takes exact position
-- Everyone in between shifts down
-- More dramatic changes
-
-**Your ladder's settings determine which variation is used.**
+**Example 3: Adjacent Challenge**
+- You (#10) challenge #9.
+- **Result:** You win.
+- **Outcome:** Swap. You are #9, they are #10.
+- *Reasoning:* Works the same regardless of rank distance.
         `
             },
             {
-                id: "elo-ranking",
-                title: "ELO Ranking System (Detailed)",
-                tags: ["rankings", "elo"],
+                id: "default-swap",
+                title: "2. Default Swap (Minimal Drop)",
+                tags: ["rankings", "hybrid", "drop"],
                 content: `
-**How ELO Works:**
+**How It Works:**
+Combines "Swap" for upsets with a penalty for losing a challenge.
+- **Upset:** If Challenger wins -> Swap (Standard).
+- **Defense:** If Challenger loses -> Challenger drops 1 spot (Penalty).
 
-**Rating Points:**
-- Everyone starts with a base rating (e.g., 1500)
-- Win matches → gain points
-- Lose matches → lose points
-- Amount depends on opponent's rating
+**Scenario: You are #10.**
 
-**Calculation:**
+**Example 1: Successful Challenge (Upset)**
+- You (#10) challenge #5 and **WIN**.
+- **Outcome:** Swap. You become #5, they become #10.
+- *Note:* No penalty for the loser here because they were defending.
 
-**Expected Score:**
-E = 1 / (1 + 10^((OpponentRating - YourRating) / 400))
+**Example 2: Failed Challenge (Penalty)**
+- You (#10) challenge #5 and **LOSE**.
+- **Outcome:** You drop to #11. The old #11 moves up to #10.
+- *Reasoning:* You "punched up" and lost, so you slide down slightly.
 
-**Rating Change:**
-NewRating = OldRating + K × (ActualScore - ExpectedScore)
+**Example 3: Safe from Bottom**
+- You are #last (e.g., #20). You challenge #15 and **LOSE**.
+- **Outcome:** No change.
+- *Reasoning:* You can't drop lower than last place.
+        `
+            },
+            {
+                id: "slide-shift",
+                title: "3. Slide Shift",
+                tags: ["rankings", "slide", "leapfrog"],
+                content: `
+**How It Works:**
+The winner "inserts" themselves at the loser's position. The loser and everyone below them (down to the winner's old spot) shifts down by one.
 
-Where:
-- K = K-factor (usually 24-32)
-- ActualScore = 1 for win, 0 for loss
-- ExpectedScore = probability of winning
+**Scenario:**
+1. Alice (#1)
+2. Bob (#2)
+3. Charlie (#3)
+4. Dave (#4)
+5. Eve (#5)
 
-**Example:**
+**Example 1: Big Jump**
+- Eve (#5) challenges Bob (#2) and **WINS**.
+- **Outcome:**
+  1. Alice (#1)
+  2. Eve (#2) ← Eve inserts here
+  3. Bob (#3) ← Bumped down
+  4. Charlie (#4) ← Bumped down
+  5. Dave (#5) ← Bumped down (fills Eve's old spot)
 
-**You (1500) vs Opponent (1600):**
-- Expected: 36% chance to win
-- You win: +16 points → 1516
-- You lose: -16 points → 1484
+**Example 2: Small Jump**
+- Eve (#5) challenges Dave (#4) and **WINS**.
+- **Outcome:**
+  - Eve becomes #4.
+  - Dave becomes #5.
+- *Note:* Effectively a swap since they are adjacent.
 
-**You (1500) vs Opponent (1400):**
-- Expected: 64% chance to win
-- You win: +8 points → 1508
-- You lose: -24 points → 1476
+**Example 3: Failed Challenge**
+- Eve (#5) challenges Bob (#2) and **LOSES**.
+- **Outcome:** No change.
+- *Reasoning:* Slide only happens on a win.
+        `
+            },
+            {
+                id: "points-elo",
+                title: "4. Points/ELO",
+                tags: ["rankings", "elo", "points"],
+                content: `
+**How It Works:**
+Every player has a numeric rating (starts at 1500). Matches exchange points. Beating a stronger player awards MORE points. The "Rank" is just 1, 2, 3 based on who has the most points.
 
-**Key Insight:**
-Beating higher-rated players gives more points!
+**Examples (Assuming K-Factor = 32):**
 
-**K-Factor:**
-- Higher K = more volatile ratings
-- Lower K = more stable ratings
-- Your ladder's K-factor is in settings
+**Example 1: Even Match**
+- Player A (1500) vs Player B (1500).
+- **Player A Wins:** +16 points (New: 1516).
+- **Player B Loses:** -16 points (New: 1484).
+- *Result:* Player A likely moves up in rank.
+
+**Example 2: The Giant Killer (Big Upset)**
+- Underdog (1200) vs Favorite (1800).
+- **Underdog Wins:** +30 points.
+- **Favorite Loses:** -30 points.
+- *Reasoning:* The system heavily rewards beating a much stronger opponent.
+
+**Example 3: Expected Outcome**
+- Favorite (1800) vs Underdog (1200).
+- **Favorite Wins:** +2 points.
+- **Underdog Loses:** -2 points.
+- *Reasoning:* The favorite was expected to win, so the rating change is tiny.
         `
             }
         ]
