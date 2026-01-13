@@ -10,6 +10,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("ladders")
     .select("id, name, description, sport_id, location, status, visibility, challenge_rules, ranking_rules, created_at, profile_picture_url, created_by")
+    .eq("visibility", "public")
     .order("created_at", { ascending: false });
 
   if (error) {

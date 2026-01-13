@@ -9,11 +9,13 @@
 - **Ladders Page**: Removed blocking "Loading..." buttons. Page loads instantly with background verification.
 - **Dashboard**: Fixed widget flashing by caching data (1-min stale time) using `usePendingActions`.
 
-### 2. 🐛 Bug Fixes
+### 2. 🛡️ Privacy & Logic
+- **Ladder Visibility (API Fix)**: 
+  - Updated `/api/ladders` to strictly return only **Public** ladders. Private ladders are now truly hidden from the "Find Ladders" directory.
+  - **Member Privacy**: Verified that non-members (even when visiting a ladder via direct link) **cannot** see the member list or ranking table. They only see basic info (Sport, Location) and Organizer names.
 - **Invitation System**: 
-  - Fixed `duplicate key` crash when re-inviting users (e.g. inviting a signed-up user to a ladder).
+  - Fixed `duplicate key` crash when re-inviting users.
   - Changed API logic from `insert` to `upsert`.
-- **Typo Fixes**: Corrected minor typos in Help content.
 
 ### 3. 📚 Documentation & Styling (Help Center)
 - **Engine Upgrade**: Switched Help Center rendering from a manual parser to `react-markdown` with `@tailwindcss/typography`.
@@ -23,11 +25,11 @@
 - **Ladder Settings Guide**:
   - **Expert Rewrite**: Rewrote the "Ladder Settings" article to be less "listy" and more "explanatory".
   - **Challenge Rules**: Added specific scenarios/examples for **Max Positions Up**, **Expiry Days**, and **Cooldown Hours**.
-  - **Visibility**: Added clear section defining **Public** (Discoverable) vs **Private** (Invite-only) ladders.
+  - **Visibility**: Added clear section defining **Public** vs **Private** ladders.
   - **Ranking Systems**: Updated to match UI exact names and examples.
 
 ## 🏁 Status
 The application is fully built, tested, and ready for deployment.
 - **Build**: PASS
+- **Privacy**: **SECURE**. Private ladders hidden; Member lists protected.
 - **Visuals**: Professional typography in Help, stable header, smooth dashboard.
-- **Logic**: Robust invitation handling.
