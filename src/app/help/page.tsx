@@ -609,6 +609,20 @@ A safety net for defenders.
 *   **Standard (1)**: If a higher-ranked player loses, they only drop 1 spot, rather than swapping all the way down.
 *   **Unlimited**: The loser takes the challenger's old spot, no matter how low it is. High risk!
 
+### Visibility Settings
+
+**Public Ladders**
+Designed for growth and community visibility.
+*   **Discoverability**: The ladder appears in the main "Find Ladders" directory. Any user on the platform can see it.
+*   **Joining**: Users can click "Join" to submit a request. The organizer must review and approve these requests before they become active members.
+*   **Ideal For**: City-wide leagues, club ladders open to new members, and community groups.
+
+**Private Ladders**
+Designed for exclusivity and privacy.
+*   **Discoverability**: Hidden from the "Find Ladders" directory. Non-members cannot see that it exists.
+*   **Joining**: Invite-only. Users can only join if they receive a direct invitation or link from the organizer.
+*   **Ideal For**: Corporate wellness events, closed friend groups, or internal club tournaments.
+
 ### Match Settings
 
 **Confirmation Required**

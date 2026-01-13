@@ -23,6 +23,7 @@
 - **Ladder Settings Guide**:
   - **Expert Rewrite**: Rewrote the "Ladder Settings" article to be less "listy" and more "explanatory".
   - **Challenge Rules**: Added specific scenarios/examples for **Max Positions Up**, **Expiry Days**, and **Cooldown Hours**.
+  - **Visibility**: Added clear section defining **Public** (Discoverable) vs **Private** (Invite-only) ladders.
   - **Ranking Systems**: Updated to match UI exact names and examples.
 
 ## 🏁 Status
