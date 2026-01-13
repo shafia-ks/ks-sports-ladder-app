@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type AuthMetadata = Record<string, unknown> & {
   full_name?: string;
   fullName?: string;

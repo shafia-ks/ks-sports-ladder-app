@@ -55,10 +55,14 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // Refresh session if expired
+  // Refresh session if expired verification with secure getUser()
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    response.headers.set('x-user-id', user.id);
+  }
 
   const { pathname } = req.nextUrl;
 
@@ -67,7 +71,7 @@ export async function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
 
   // Redirect authenticated users away from auth pages
-  if (session && (pathname === '/login' || pathname === '/signup')) {
+  if (user && (pathname === '/login' || pathname === '/signup')) {
     const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/dashboard';
     // Validate redirect to prevent open redirect vulnerabilities (basic check: must start with /)
     const validRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
@@ -76,26 +80,26 @@ export async function middleware(req: NextRequest) {
 
   // Admin routes - require admin or organizer role
   if (pathname.startsWith('/admin')) {
-    if (!session) {
+    if (!user) {
       const redirectUrl = new URL('/login', req.url);
       redirectUrl.searchParams.set('redirectTo', pathname);
       return NextResponse.redirect(redirectUrl);
     }
 
     // Check user role
-    const { data: user, error } = await supabase
+    const { data: userRole, error } = await supabase
       .from('users')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    if (error || !user) {
+    if (error || !userRole) {
       console.error('[Middleware] Failed to fetch user role:', error);
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
 
     // Only admin and organizer can access admin routes
-    if (user.role !== 'admin' && user.role !== 'organizer') {
+    if (userRole.role !== 'admin' && userRole.role !== 'organizer') {
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
   }
@@ -105,7 +109,7 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (isProtectedRoute && !isPublicRoute) {
-    if (!session) {
+    if (!user) {
       const redirectUrl = new URL('/login', req.url);
       redirectUrl.searchParams.set('redirectTo', pathname);
       return NextResponse.redirect(redirectUrl);

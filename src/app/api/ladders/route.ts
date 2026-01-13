@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createAuditLog } from "@/lib/supabase/audit";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
