@@ -1,50 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AlertCircle, CheckCircle, Clock, Swords } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-
-interface PendingAction {
-    id: string;
-    type: "challenge" | "confirm_score" | "submit_score" | "approve_member" | "approve_organizer";
-    ladder_id: string;
-    ladder_name: string;
-    opponent_name?: string;
-    requester_name?: string;
-    expires_at?: string;
-    requested_at?: string;
-    status?: string;
-    match_id?: string;
-}
+import { usePendingActions, PendingAction } from "@/hooks/usePendingActions";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function ActionRequiredWidget() {
     const { user } = useAuth();
-    const [actions, setActions] = useState<PendingAction[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: actions = [], isLoading: loading } = usePendingActions();
+    const queryClient = useQueryClient();
     const supabase = createClient();
-
-    // Function to fetch actions (reused for initial load and updates)
-    const fetchPendingActions = async () => {
-        if (!user) return;
-        try {
-            const res = await fetch(`/api/dashboard/pending-actions?user_id=${user.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setActions(data.actions || []);
-            }
-        } catch (error) {
-            console.error("Failed to fetch pending actions:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
         if (!user) return;
-
-        fetchPendingActions();
 
         // Event-Driven: Subscribe to Realtime changes
         const channel = supabase
@@ -59,7 +30,7 @@ export function ActionRequiredWidget() {
                 },
                 () => {
                     console.log('Realtime update: challenges changed');
-                    fetchPendingActions();
+                    queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] });
                 }
             )
             .on(
@@ -75,7 +46,7 @@ export function ActionRequiredWidget() {
                 },
                 () => {
                     console.log('Realtime update: matches changed (player1)');
-                    fetchPendingActions();
+                    queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] });
                 }
             )
             .on(
@@ -88,7 +59,7 @@ export function ActionRequiredWidget() {
                 },
                 () => {
                     console.log('Realtime update: matches changed (player2)');
-                    fetchPendingActions();
+                    queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] });
                 }
             )
             .subscribe();
@@ -96,7 +67,7 @@ export function ActionRequiredWidget() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user]);
+    }, [user, queryClient]);
 
     const getActionIcon = (type: string) => {
         switch (type) {
