@@ -288,9 +288,16 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     };
 
     const canEdit = match.status === "Pending" || (match.status === "ScoreSubmitted" && isOrganizer);
+
+    // Players can confirm if they didn't submit, OR organizers/admins can always confirm
+    const isPlayer = match.player1_id === currentUserId || match.player2_id === currentUserId;
     const canConfirm = match.status === "ScoreSubmitted" &&
-        (match.player1_id === currentUserId || match.player2_id === currentUserId) &&
-        currentUserId !== match.submitted_by;
+        (
+            // Player can confirm if they didn't submit it
+            (isPlayer && currentUserId !== match.submitted_by) ||
+            // Organizers can always confirm
+            isOrganizer
+        );
 
     return (
         <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-6 hover:shadow-md transition-shadow`}>
