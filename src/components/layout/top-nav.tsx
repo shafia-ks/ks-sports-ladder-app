@@ -163,11 +163,7 @@ export function TopNav() {
                   {pendingRequests}
                 </span>
               )}
-              {link.href.pathname === "/ladders" && (pendingJoins + pendingInvites) > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white">
-                  {Math.min(pendingJoins + pendingInvites, 9)}
-                </span>
-              )}
+
             </Link>
           ))}
         </nav>

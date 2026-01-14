@@ -45,7 +45,7 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
 
     const fetchMatches = async () => {
         try {
-            setLoading(true);
+            if (matches.length === 0) setLoading(true);
             const response = await fetch(`/api/matches?ladderId=${ladderId}`);
             const data = await response.json();
             setMatches(data.matches || []);

@@ -62,7 +62,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
     const fetchChallenges = async () => {
         try {
-            setLoading(true);
+            if (challenges.length === 0) setLoading(true);
             // Always fetch all challenges for the ladder to allow "All Challenges" view
             const url = `/api/challenges?ladderId=${ladderId}`;
             const res = await fetch(url);
