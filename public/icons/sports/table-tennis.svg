@@ -1,0 +1,30 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tabletennis-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="tt-ball-gradient">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Ball -->
+  <circle cx="42" cy="18" r="5" fill="url(#tt-ball-gradient)" stroke="#E5E7EB" stroke-width="1"/>
+  
+  <!-- Paddle -->
+  <circle cx="28" cy="46" r="14" fill="url(#tabletennis-gradient)"/>
+  <circle cx="28" cy="46" r="11" fill="#7F1D1D" opacity="0.3"/>
+  <line x1="28" y1="60" x2="28" y2="64" stroke="#78350F" stroke-width="3.5" stroke-linecap="round"/>
+  
+  <!-- Rubber dots pattern -->
+  <circle cx="24" cy="42" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="28" cy="42" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="32" cy="42" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="24" cy="46" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="32" cy="46" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="24" cy="50" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="28" cy="50" r="0.8" fill="#991B1B" opacity="0.5"/>
+  <circle cx="32" cy="50" r="0.8" fill="#991B1B" opacity="0.5"/>
+</svg>

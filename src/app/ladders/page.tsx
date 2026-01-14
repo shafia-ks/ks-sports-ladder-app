@@ -9,6 +9,7 @@ import { Loader2, MapPin, Plus, Shield, Clock, Trophy, LayoutDashboard, Search, 
 import { useAuth } from "@/lib/auth/auth-context";
 import { useEffect, useState, useMemo } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import { SportIcon } from "@/components/ui/sport-icon";
 
 export default function LaddersPage() {
   const { user } = useAuth();
@@ -191,9 +192,14 @@ export default function LaddersPage() {
                         {ladder.name}
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                        <span className="bg-slate-100 px-2 py-0.5 rounded-full font-medium text-slate-600">
-                          {ladder.sport_id ? ladder.sport_id.charAt(0).toUpperCase() + ladder.sport_id.slice(1) : 'General'}
-                        </span>
+                        {ladder.sport_id && (
+                          <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-full">
+                            <SportIcon sport={ladder.sport_id} size={14} />
+                            <span className="font-medium text-slate-600">
+                              {ladder.sport_id.charAt(0).toUpperCase() + ladder.sport_id.slice(1)}
+                            </span>
+                          </div>
+                        )}
                         <span>•</span>
                         <span>{ladder.membership.status === 'active' ? 'Member' : 'Request Sent'}</span>
                       </div>
@@ -256,7 +262,8 @@ export default function LaddersPage() {
                       <p className="text-sm text-slate-500 line-clamp-2">{ladder.description || "No description provided."}</p>
                       <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400 font-medium">
                         {ladder.sport_id && (
-                          <span className="flex items-center gap-1 text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                          <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                            <SportIcon sport={ladder.sport_id} size={14} />
                             {ladder.sport_id.charAt(0).toUpperCase() + ladder.sport_id.slice(1)}
                           </span>
                         )}

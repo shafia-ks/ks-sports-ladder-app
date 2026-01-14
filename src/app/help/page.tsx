@@ -748,7 +748,7 @@ We strongly recommend enabling this. It requires the losing player to confirm th
 A: Yes! The platform is free for all players and organizers.
 
 **Q: What sports are supported?**
-A: Currently: Tennis, Squash, Badminton, Pickleball, Table Tennis, and Racquetball. More coming soon!
+A: Currently: Badminton, Padel, Pickleball, Racquetball, Squash, Table Tennis, and Tennis. More coming soon!
 
 **Q: Can I join multiple ladders?**
 A: Yes! You can join as many ladders as you want.

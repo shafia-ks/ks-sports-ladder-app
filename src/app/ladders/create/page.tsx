@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { Trophy } from "lucide-react";
 import { HelpTooltip } from "@/components/ui/tooltip";
 
-const SPORTS = ["Squash", "Tennis", "Badminton", "Racquetball", "Pickleball"];
+const SPORTS = ["Badminton", "Padel", "Pickleball", "Racquetball", "Squash", "Table Tennis", "Tennis"];
 
 const RANKING_TYPES = [
   { id: "swap-positions", label: "Swap Positions", desc: "Winner moves up, loser moves down" },

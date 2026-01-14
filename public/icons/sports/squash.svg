@@ -1,0 +1,29 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="squash-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="squash-ball-gradient">
+      <stop offset="0%" style="stop-color:#1F2937;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#111827;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Black Squash Ball with double yellow dots (realistic) -->
+  <circle cx="42" cy="20" r="6.5" fill="url(#squash-ball-gradient)"/>
+  <circle cx="39" cy="19" r="2" fill="#FCD34D"/>
+  <circle cx="45" cy="19" r="2" fill="#FCD34D"/>
+  
+  <!-- Racket -->
+  <ellipse cx="28" cy="46" rx="13" ry="15" fill="none" stroke="url(#squash-gradient)" stroke-width="3.5"/>
+  <line x1="28" y1="61" x2="26" y2="64" stroke="url(#squash-gradient)" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- String pattern -->
+  <line x1="20" y1="42" x2="36" y2="42" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+  <line x1="20" y1="46" x2="36" y2="46" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+  <line x1="20" y1="50" x2="36" y2="50" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+  <line x1="22" y1="38" x2="22" y2="54" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+  <line x1="28" y1="38" x2="28" y2="54" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+  <line x1="34" y1="38" x2="34" y2="54" stroke="url(#squash-gradient)" stroke-width="0.8" opacity="0.3"/>
+</svg>

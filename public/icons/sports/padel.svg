@@ -1,0 +1,30 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="padel-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="padel-ball-gradient">
+      <stop offset="0%" style="stop-color:#FEF3C7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FCD34D;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Ball -->
+  <circle cx="42" cy="20" r="5.5" fill="url(#padel-ball-gradient)"/>
+  
+  <!-- Padel Racket (rounded, perforated) -->
+  <rect x="20" y="36" width="24" height="20" rx="12" fill="none" stroke="url(#padel-gradient)" stroke-width="3.5"/>
+  <line x1="32" y1="56" x2="32" y2="64" stroke="url(#padel-gradient)" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Perforation holes -->
+  <circle cx="26" cy="42" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="32" cy="42" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="38" cy="42" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="26" cy="46" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="32" cy="46" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="38" cy="46" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="26" cy="50" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="32" cy="50" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+  <circle cx="38" cy="50" r="1.2" fill="url(#padel-gradient)" opacity="0.4"/>
+</svg>
