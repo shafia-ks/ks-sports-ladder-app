@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/supabase/notifications";
+import { applyMatchResult } from "@/lib/ranking/ranking-engine";
 
 export async function POST(
     req: Request,
@@ -12,7 +13,7 @@ export async function POST(
 
     try {
         const body = await req.json();
-        const { user_id, action } = body; // action: 'confirm' or 'dispute'
+        const { user_id, action, reason } = body; // action: 'confirm' or 'dispute'
 
         console.log(`[POST /api/matches/[id]/confirm] Request received. Params ID: ${params.id}, User: ${user_id}, Action: ${action}`);
 
@@ -29,11 +30,8 @@ export async function POST(
         }
 
         if (!match) {
-            console.error(`[POST /api/matches/[id]/confirm] Match not found for ID ${params.id}`);
             return NextResponse.json({ error: "Match not found" }, { status: 404 });
         }
-
-        console.log(`[POST /api/matches/[id]/confirm] Match found:`, match.id, "Status:", match.status);
 
         // Verify user is one of the players
         if (match.player1_id !== user_id && match.player2_id !== user_id) {
@@ -48,24 +46,9 @@ export async function POST(
                 }, { status: 403 });
             }
 
-            // Update match status to Confirmed
-            const { error: updateError } = await supabaseAdmin
-                .from("matches")
-                .update({
-                    status: "Confirmed",
-                    confirmed_by: user_id,
-                })
-                .eq("id", params.id);
+            console.log("[POST /api/matches/:id/confirm] Starting confirmation process...");
 
-            if (updateError) {
-                console.error("[POST /api/matches/:id/confirm] Error:", updateError);
-                return NextResponse.json({ error: updateError.message }, { status: 500 });
-            }
-
-            // Trigger ranking update
-            console.log("[POST /api/matches/:id/confirm] Starting ranking update...");
-
-            // Fetch ladder ranking rules
+            // 1. Fetch Ladder Rules & Members to calculate new ranking
             const { data: ladder, error: ladderError } = await supabaseAdmin
                 .from("ladders")
                 .select("ranking_rules")
@@ -73,96 +56,70 @@ export async function POST(
                 .single();
 
             if (ladderError || !ladder) {
-                console.error("[POST /api/matches/:id/confirm] Failed to fetch ladder rules:", ladderError);
-                // Don't fail the confirmation, just log the error
-            } else {
-                // Fetch current ladder members with ranks
-                const { data: members, error: membersError } = await supabaseAdmin
-                    .from("ladder_memberships")
-                    .select("user_id, current_rank")
-                    .eq("ladder_id", match.ladder_id)
-                    .eq("status", "active")
-                    .order("current_rank", { ascending: true });
-
-                if (membersError || !members) {
-                    console.error("[POST /api/matches/:id/confirm] Failed to fetch members:", membersError);
-                } else {
-                    // Import ranking engine
-                    const { applyMatchResult } = await import("@/lib/ranking/ranking-engine");
-                    const { updateLadderRanks } = await import("@/lib/supabase/rankings");
-
-                    // Prepare ranking data
-                    const ranking = members
-                        .filter(m => m.current_rank && m.current_rank > 0)
-                        .map(m => ({
-                            userId: m.user_id,
-                            currentRank: m.current_rank!
-                        }));
-
-                    // Determine loser (the player who is NOT the winner)
-                    const loserId = match.winner_id === match.player1_id ? match.player2_id : match.player1_id;
-
-                    // Apply ranking update
-                    const result = applyMatchResult({
-                        ranking,
-                        winnerId: match.winner_id,
-                        loserId,
-                        rules: ladder.ranking_rules || { type: "default-swap-minimal-drop" }
-                    });
-
-                    console.log("[POST /api/matches/:id/confirm] Ranking update result:", result.note);
-
-                    // Update ranks in database
-                    const rankUpdate = await updateLadderRanks({
-                        ladderId: match.ladder_id,
-                        ranking: result.ranking
-                    });
-
-                    if (!rankUpdate.success) {
-                        console.error("[POST /api/matches/:id/confirm] Failed to update ranks:", rankUpdate.error);
-                    } else {
-                        console.log("[POST /api/matches/:id/confirm] Rankings updated successfully");
-
-                        // Save to ranking history
-                        await supabaseAdmin.from("ranking_history").insert({
-                            ladder_id: match.ladder_id,
-                            match_id: match.id,
-                            snapshot: result.ranking
-                        });
-                    }
-                }
+                throw new Error("Failed to fetch ladder rules: " + ladderError?.message);
             }
 
-            // Notify the other player
+            const { data: members, error: membersError } = await supabaseAdmin
+                .from("ladder_memberships")
+                .select("user_id, current_rank")
+                .eq("ladder_id", match.ladder_id)
+                .neq("status", "left") // Exclude left members
+                .order("current_rank", { ascending: true });
+
+            if (membersError || !members) {
+                throw new Error("Failed to fetch members: " + membersError?.message);
+            }
+
+            // 2. Calculate New Ranking
+            const ranking = members
+                .filter(m => m.current_rank && m.current_rank > 0)
+                .map(m => ({
+                    userId: m.user_id,
+                    currentRank: m.current_rank!
+                }));
+
+            const loserId = match.winner_id === match.player1_id ? match.player2_id : match.player1_id;
+
+            const result = applyMatchResult({
+                ranking,
+                winnerId: match.winner_id,
+                loserId,
+                rules: ladder.ranking_rules || { type: "default-swap-minimal-drop" }
+            });
+
+            console.log("[POST /api/matches/:id/confirm] New ranking calculated:", result.note);
+
+            // 3. Execute Atomic Transaction via RPC
+            const { error: rpcError } = await supabaseAdmin.rpc('confirm_match_and_update_ranks', {
+                p_match_id: params.id,
+                p_confirmed_by: user_id,
+                p_ladder_id: match.ladder_id,
+                p_challenge_id: match.challenge_id,
+                p_ranking_snapshot: result.ranking
+            });
+
+            if (rpcError) {
+                console.error("[POST /api/matches/:id/confirm] RPC Transaction Failed:", rpcError);
+                // Return 500 but detail for debugging
+                return NextResponse.json({ error: "Transaction failed: " + rpcError.message }, { status: 500 });
+            }
+
+            console.log("[POST /api/matches/:id/confirm] Transaction successful.");
+
+            // 4. Notifications (Post-Transaction)
             const otherPlayerId = match.player1_id === user_id ? match.player2_id : match.player1_id;
+
             await createNotification({
                 userId: otherPlayerId,
                 type: "match_confirmed",
-                message: "Match result has been confirmed",
+                title: "Match Confirmed",
+                message: "Match result confirmed against " + (match.winner_id === user_id ? "Winner" : "Opponent"),
                 link: `/ladders/${match.ladder_id}/matches`,
             });
-
-            // Mark the associated challenge as Completed
-            if (match.challenge_id) {
-                console.log(`[POST /api/matches/:id/confirm] Marking challenge ${match.challenge_id} as Completed`);
-                const { error: challengeUpdateError } = await supabaseAdmin
-                    .from("challenges")
-                    .update({ status: "Completed", completed_at: new Date().toISOString() })
-                    .eq("id", match.challenge_id);
-
-                if (challengeUpdateError) {
-                    console.error("[POST /api/matches/:id/confirm] Failed to update challenge:", challengeUpdateError);
-                } else {
-                    console.log("[POST /api/matches/:id/confirm] Challenge marked as Completed");
-                }
-            }
-
-            console.log("[POST /api/matches/:id/confirm] Match confirmed, rankings updated, challenge completed");
 
             return NextResponse.json({ success: true, message: "Match confirmed successfully" });
 
         } else if (action === "dispute") {
-            const { reason } = body;
 
             // Update match status to Disputed
             const { error: updateError } = await supabaseAdmin
@@ -174,7 +131,6 @@ export async function POST(
                 .eq("id", params.id);
 
             if (updateError) {
-                console.error("[POST /api/matches/:id/confirm] Error:", updateError);
                 return NextResponse.json({ error: updateError.message }, { status: 500 });
             }
 
@@ -189,6 +145,7 @@ export async function POST(
                     await createNotification({
                         userId: org.user_id,
                         type: "match_disputed",
+                        title: "Match Disputed",
                         message: `Match result disputed${reason ? `: ${reason}` : ""}`,
                         link: `/ladders/${match.ladder_id}/matches`,
                     });

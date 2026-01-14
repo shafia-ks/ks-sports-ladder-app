@@ -69,35 +69,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Enrich with user data
-  if (!supabaseAdmin) {
-    return NextResponse.json({ challenges: data ?? [] });
+  // Enrich with user data (Batch Optimized)
+  if (data && data.length > 0) {
+    const userIds = new Set<string>();
+    data.forEach((c) => {
+      if (c.challenger_id) userIds.add(c.challenger_id);
+      if (c.challenged_id) userIds.add(c.challenged_id);
+    });
+
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from("users")
+      .select("id, full_name, email, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (usersError) {
+      console.error("Failed to fetch users for challenges:", usersError);
+      // Fallback: return data without user details rather than crashing
+      return NextResponse.json({ challenges: data });
+    }
+
+    const usersMap = new Map(users?.map((u) => [u.id, u]) || []);
+
+    const challenges = data.map((challenge) => ({
+      ...challenge,
+      challenger: usersMap.get(challenge.challenger_id) || { id: challenge.challenger_id, full_name: 'Unknown', email: '' },
+      challenged: usersMap.get(challenge.challenged_id) || { id: challenge.challenged_id, full_name: 'Unknown', email: '' },
+    }));
+
+    return NextResponse.json({ challenges });
   }
 
-  const challenges = await Promise.all(
-    (data || []).map(async (challenge) => {
-      const [challenger, challenged] = await Promise.all([
-        supabaseAdmin!
-          .from("users")
-          .select("id, full_name, email")
-          .eq("id", challenge.challenger_id)
-          .single(),
-        supabaseAdmin!
-          .from("users")
-          .select("id, full_name, email")
-          .eq("id", challenge.challenged_id)
-          .single(),
-      ]);
-
-      return {
-        ...challenge,
-        challenger: challenger.data,
-        challenged: challenged.data,
-      };
-    })
-  );
-
-  return NextResponse.json({ challenges });
+  return NextResponse.json({ challenges: [] });
 }
 
 export async function POST(req: Request) {

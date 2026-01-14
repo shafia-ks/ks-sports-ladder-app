@@ -24,7 +24,7 @@ const submitSchema = z.object({
   setScores: z.array(z.string()).optional(),
   playedAt: z.string().optional(),
   ruleType: z.custom<RankingRuleType>(),
-  ranking: z.array(z.object({ userId: z.string(), currentRank: z.number().int().positive() })),
+  ranking: z.array(z.object({ userId: z.string(), currentRank: z.number().int().positive() })).optional(),
   rankingRules: rankingRulesSchema.optional(),
 });
 
@@ -37,11 +37,15 @@ export async function GET(req: Request) {
   const ladderId = searchParams.get("ladderId");
   const status = searchParams.get("status");
 
+  const page = parseInt(searchParams.get("page") ?? "1");
+  const limit = parseInt(searchParams.get("limit") ?? "50");
+  const offset = (page - 1) * limit;
+
   let query = supabaseAdmin
     .from("matches")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
 
   if (ladderId) {
     query = query.eq("ladder_id", ladderId);
@@ -59,7 +63,7 @@ export async function GET(req: Request) {
     }
   }
 
-  const { data: matches, error } = await query;
+  const { data: matches, count, error } = await query;
   if (error) {
     console.error("[GET /api/matches] Error fetching matches:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -105,11 +109,11 @@ export async function GET(req: Request) {
         };
       });
 
-      return NextResponse.json({ matches: enrichedMatches });
+      return NextResponse.json({ matches: enrichedMatches, count: count || 0, page, limit });
     }
   }
 
-  return NextResponse.json({ matches: matches ?? [] });
+  return NextResponse.json({ matches: matches ?? [], count: count || 0, page, limit });
 }
 
 export async function POST(req: Request) {
@@ -123,8 +127,58 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
   }
 
+  // Security Check: Verify User ID
+  const userId = req.headers.get("x-user-id");
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized: Missing user identity" }, { status: 401 });
+  }
+
+  // Check Permissions: Must be Player in the match OR Organizer OR Admin
+  const isPlayer = userId === parsed.data.player1Id || userId === parsed.data.player2Id;
+
+  // Check if organizer
+  const { data: organizer } = await supabaseAdmin
+    .from("ladder_leaders")
+    .select("role")
+    .eq("ladder_id", parsed.data.ladderId)
+    .eq("user_id", userId)
+    .single();
+
+  // Check if Global Admin
+  const { data: userRole } = await supabaseAdmin
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  const isOrganizer = !!organizer || userRole?.role === "admin";
+
+  if (!isPlayer && !isOrganizer) {
+    return NextResponse.json({ error: "Forbidden: You are not authorized to log matches for this ladder." }, { status: 403 });
+  }
+
+  // Fetch Current Ranking from DB (Never trust client)
+  const { data: members, error: membersError } = await supabaseAdmin
+    .from("ladder_memberships")
+    .select("user_id, current_rank")
+    .eq("ladder_id", parsed.data.ladderId)
+    .neq("status", "left") // Exclude left members
+    .order("current_rank", { ascending: true });
+
+  if (membersError || !members) {
+    return NextResponse.json({ error: "Failed to fetch ladder memberships" }, { status: 500 });
+  }
+
+  const currentRanking = members
+    .filter(m => m.current_rank !== null)
+    .map(m => ({
+      userId: m.user_id,
+      currentRank: m.current_rank!
+    }));
+
+  // Calculate Result using Server-Fetched Ranking
   const result = applyMatchResult({
-    ranking: parsed.data.ranking,
+    ranking: currentRanking,
     winnerId: parsed.data.winnerId,
     loserId: parsed.data.loserId,
     rules: deriveRules(parsed.data.ruleType, parsed.data.rankingRules),
@@ -137,7 +191,7 @@ export async function POST(req: Request) {
       .from("matches")
       .select("id")
       .eq("challenge_id", parsed.data.challengeId)
-      .eq("status", "Pending") // Only update if it's the pending match we created earlier
+      .eq("status", "Pending")
       .maybeSingle();
 
     matchIdToUpdate = existingMatch?.id;
@@ -155,11 +209,11 @@ export async function POST(req: Request) {
     status: "Confirmed",
     set_scores: parsed.data.setScores ?? null,
     played_at: parsed.data.playedAt ?? null,
-    confirmed_by: parsed.data.winnerId,
+    confirmed_by: userId,
+    submitted_by: userId,
   };
 
   if (matchIdToUpdate) {
-    // Update existing match
     const res = await supabaseAdmin
       .from("matches")
       .update(matchData)
@@ -170,7 +224,6 @@ export async function POST(req: Request) {
     matchRow = res.data;
     matchError = res.error;
   } else {
-    // Insert new match
     const res = await supabaseAdmin
       .from("matches")
       .insert(matchData)
@@ -181,7 +234,6 @@ export async function POST(req: Request) {
     matchError = res.error;
   }
 
-  // Also update the challenge status to Completed if this was part of a challenge
   if (parsed.data.challengeId && !matchError) {
     await supabaseAdmin
       .from("challenges")
@@ -203,7 +255,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: historyInsert.error.message }, { status: 500 });
   }
 
-  // Update ladder membership ranks atomically
   const rankUpdate = await updateLadderRanks({
     ladderId: parsed.data.ladderId,
     ranking: result.ranking,
@@ -213,21 +264,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: rankUpdate.error }, { status: 500 });
   }
 
-  // Audit log
   await createAuditLog({
     entityType: "match",
     entityId: matchRow?.id ?? "",
-    action: `Ranking updated due to Match #${matchRow?.id}`,
-    performedBy: parsed.data.winnerId,
+    action: `Ranking updated due to Manual Match #${matchRow?.id}`,
+    performedBy: userId,
   });
 
-  // Notify opponent
-  const opponentId = parsed.data.player1Id === parsed.data.winnerId ? parsed.data.player2Id : parsed.data.player1Id;
-  await notifyMatchSubmitted({
-    opponentId,
-    submitterId: parsed.data.winnerId,
-    matchId: matchRow?.id ?? "",
-  });
+  const opponentId = parsed.data.player1Id === userId ? parsed.data.player2Id : parsed.data.player1Id;
+
+  if (isOrganizer && userId !== parsed.data.player1Id && userId !== parsed.data.player2Id) {
+    await notifyMatchSubmitted({ opponentId: parsed.data.player1Id, submitterId: userId, matchId: matchRow?.id ?? "" });
+    await notifyMatchSubmitted({ opponentId: parsed.data.player2Id, submitterId: userId, matchId: matchRow?.id ?? "" });
+  } else {
+    await notifyMatchSubmitted({
+      opponentId,
+      submitterId: userId,
+      matchId: matchRow?.id ?? "",
+    });
+  }
 
   return NextResponse.json({ ok: true, note: result.note, ranking: result.ranking, matchId: matchRow?.id });
 }
