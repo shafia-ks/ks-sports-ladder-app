@@ -115,23 +115,12 @@ export async function PATCH(
   try {
     const body = await req.json();
     const parsed = updateMatchSchema.safeParse(body);
-    
+
     if (!parsed.success) {
       return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
     }
 
     const { winner_id, set_scores, played_at, reason, updated_by } = parsed.data;
-
-    // Verify user is organizer or admin
-    const { data: user } = await supabaseAdmin
-      .from("users")
-      .select("role")
-      .eq("id", updated_by)
-      .single();
-
-    if (!user || !["organizer", "admin"].includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
 
     // Get current match data
     const { data: match, error: matchError } = await supabaseAdmin
@@ -144,16 +133,25 @@ export async function PATCH(
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    // Verify user is organizer of this ladder
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("role")
+      .eq("id", updated_by)
+      .single();
+
+    const isAdmin = user?.role === "admin";
+
+    // Check if user is organizer of this ladder
     const { data: isOrganizer } = await supabaseAdmin
       .from("ladder_leaders")
       .select("id")
       .eq("ladder_id", match.ladder_id)
       .eq("user_id", updated_by)
-      .single();
+      .maybeSingle();
 
-    if (!isOrganizer && user.role !== "admin") {
-      return NextResponse.json({ error: "Only ladder organizers can edit matches" }, { status: 403 });
+    if (!isAdmin && !isOrganizer) {
+      return NextResponse.json({ error: "Unauthorized. Only ladder organizers and admins can edit matches." }, { status: 403 });
     }
 
     // Build update object
@@ -253,17 +251,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Reason and deleted_by required" }, { status: 400 });
     }
 
-    // Verify user is organizer or admin
-    const { data: user } = await supabaseAdmin
-      .from("users")
-      .select("role")
-      .eq("id", deleted_by)
-      .single();
-
-    if (!user || !["organizer", "admin"].includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
     // Get match data before deletion
     const { data: match, error: matchError } = await supabaseAdmin
       .from("matches")
@@ -275,16 +262,25 @@ export async function DELETE(
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    // Verify user is organizer of this ladder
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("role")
+      .eq("id", deleted_by)
+      .single();
+
+    const isAdmin = user?.role === "admin";
+
+    // Check if user is organizer of this ladder
     const { data: isOrganizer } = await supabaseAdmin
       .from("ladder_leaders")
       .select("id")
       .eq("ladder_id", match.ladder_id)
       .eq("user_id", deleted_by)
-      .single();
+      .maybeSingle();
 
-    if (!isOrganizer && user.role !== "admin") {
-      return NextResponse.json({ error: "Only ladder organizers can delete matches" }, { status: 403 });
+    if (!isAdmin && !isOrganizer) {
+      return NextResponse.json({ error: "Unauthorized. Only ladder organizers and admins can delete matches." }, { status: 403 });
     }
 
     // Log the deletion in audit logs BEFORE deleting
@@ -313,8 +309,8 @@ export async function DELETE(
     // This is a complex operation that might require replaying all matches
     // For now, organizers will need to manually adjust rankings if needed
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Match deleted successfully",
       note: "Rankings may need manual adjustment after match deletion"
     });

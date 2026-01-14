@@ -33,14 +33,37 @@ export async function POST(
             return NextResponse.json({ error: "Match not found" }, { status: 404 });
         }
 
-        // Verify user is one of the players
-        if (match.player1_id !== user_id && match.player2_id !== user_id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        // Check permissions: Player, Organizer, or Admin can confirm
+        const isPlayer = match.player1_id === user_id || match.player2_id === user_id;
+
+        // Check if user is organizer of this ladder
+        const { data: organizer } = await supabaseAdmin
+            .from("ladder_leaders")
+            .select("id")
+            .eq("ladder_id", match.ladder_id)
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+        // Check if user is admin
+        const { data: userRole } = await supabaseAdmin
+            .from("users")
+            .select("role")
+            .eq("id", user_id)
+            .single();
+
+        const isAdmin = userRole?.role === "admin";
+        const isOrganizer = !!organizer;
+
+        // Must be player, organizer, or admin
+        if (!isPlayer && !isOrganizer && !isAdmin) {
+            return NextResponse.json({
+                error: "Unauthorized. Only players, ladder organizers, or admins can confirm scores."
+            }, { status: 403 });
         }
 
         if (action === "confirm") {
-            // Check if user is trying to confirm their own submission
-            if (match.submitted_by === user_id) {
+            // Players cannot confirm their own submission, but organizers/admins can
+            if (isPlayer && match.submitted_by === user_id) {
                 return NextResponse.json({
                     error: "You cannot confirm your own submitted score. Please wait for your opponent to confirm."
                 }, { status: 403 });
