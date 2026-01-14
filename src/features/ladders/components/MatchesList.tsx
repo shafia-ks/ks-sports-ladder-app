@@ -35,9 +35,10 @@ interface MatchesListProps {
     ladderId: string;
     currentUserId: string;
     isOrganizer: boolean;
+    onDataUpdate?: () => void;
 }
 
-export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesListProps) {
+export function MatchesList({ ladderId, currentUserId, isOrganizer, onDataUpdate }: MatchesListProps) {
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterStatus>("my_matches");
@@ -187,7 +188,10 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
                             match={match}
                             currentUserId={currentUserId}
                             isOrganizer={isOrganizer}
-                            onUpdate={fetchMatches}
+                            onUpdate={() => {
+                                fetchMatches();
+                                onDataUpdate?.();
+                            }}
                         />
                     ))}
                 </div>

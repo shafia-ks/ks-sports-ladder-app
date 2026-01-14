@@ -1139,6 +1139,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 ladderId={params.id}
                 currentUserId={user?.id || ""}
                 isOrganizer={isOrganizer}
+                onDataUpdate={() => fetchLadder(true)}
               />
             </div>
           )}
