@@ -46,163 +46,99 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (parsed.data.status) {
       updateData.status = parsed.data.status;
 
-      // Set timestamps based on status
-      if (parsed.data.status === "Accepted") {
-        updateData.accepted_at = new Date().toISOString();
-
-        // Auto-create match when challenge is accepted
-        // This creates a "scheduled" match visible to all ladder members
-        // Players will later submit results to update winner and rankings
-        console.log("[PATCH /api/challenges/:id] Creating scheduled match for accepted challenge");
-
-        const matchInsertData = {
-          ladder_id: challenge.ladder_id,
-          player1_id: challenge.challenger_id,
-          player2_id: challenge.challenged_id,
-          challenge_id: params.id,
-          status: "Pending", // Changed to capital P to match DB constraint
-          winner_id: null, // Will be set when result is submitted
-          set_scores: null, // Will be set when result is submitted  
-          played_at: null, // Will be set when result is submitted
-        };
-
-        console.log("[PATCH /api/challenges/:id] Match data:", matchInsertData);
-
-        // Check if match already exists for this challenge (Idempotency Check)
-        const { data: existingMatch } = await supabaseAdmin
-          .from("matches")
-          .select("id")
-          .eq("challenge_id", params.id)
-          .maybeSingle();
-
-        if (existingMatch) {
-          console.log("[PATCH /api/challenges/:id] Match already exists:", existingMatch.id);
-          updateData.match_id = existingMatch.id;
-        } else {
-          // Create new match only if one doesn't exist
-          const { data: matchData, error: matchError } = await supabaseAdmin
-            .from("matches")
-            .insert(matchInsertData)
-            .select("id")
-            .single();
-
-          if (matchError) {
-            console.error("[PATCH /api/challenges/:id] Match creation failed:");
-            console.error("  Error message:", matchError.message);
-            console.error("  Error code:", matchError.code);
-            console.error("  Error details:", matchError.details);
-            console.error("  Error hint:", matchError.hint);
-
-            // Handle unique constraint violation (match already exists for this challenge)
-            if (matchError.code === "23505") {
-              console.log("[PATCH /api/challenges/:id] Match already exists (unique constraint), fetching it");
-
-              // Try to find existing match by challenge_id first
-              const { data: existingMatchRetry } = await supabaseAdmin
-                .from("matches")
-                .select("id")
-                .eq("challenge_id", params.id)
-                .maybeSingle();
-
-              if (existingMatchRetry) {
-                updateData.match_id = existingMatchRetry.id;
-                console.log("[PATCH /api/challenges/:id] Using existing match (by challenge_id):", existingMatchRetry.id);
-              } else {
-                // If not found by challenge_id, try finding by players
-                const { data: matchByPlayers } = await supabaseAdmin
-                  .from("matches")
-                  .select("id")
-                  .eq("ladder_id", challenge.ladder_id)
-                  .or(`and(player1_id.eq.${challenge.challenger_id},player2_id.eq.${challenge.challenged_id}),and(player1_id.eq.${challenge.challenged_id},player2_id.eq.${challenge.challenger_id})`)
-                  .eq("status", "Pending")
-                  .maybeSingle();
-
-                if (matchByPlayers) {
-                  updateData.match_id = matchByPlayers.id;
-                  console.log("[PATCH /api/challenges/:id] Using existing match (by players):", matchByPlayers.id);
-
-                  // Update the existing match to link it to this challenge
-                  await supabaseAdmin
-                    .from("matches")
-                    .update({ challenge_id: params.id })
-                    .eq("id", matchByPlayers.id);
-                } else {
-                  // This shouldn't happen, but handle gracefully
-                  console.error("[PATCH /api/challenges/:id] Match exists but couldn't be retrieved");
-                  return NextResponse.json({
-                    error: "Match already exists but couldn't be retrieved. The challenge has been accepted.",
-                    details: matchError.message
-                  }, { status: 200 }); // Return 200 since the challenge IS accepted
-                }
-              }
-            }
-            // If status constraint fails, try with capitalized "Pending"
-            else if (matchError.code === "23514" || matchError.message?.includes("status")) {
-              console.log("[PATCH /api/challenges/:id] Retrying with status 'Pending'");
-              const retryData = { ...matchInsertData, status: "Pending" };
-              const { data: retryMatch, error: retryError } = await supabaseAdmin
-                .from("matches")
-                .insert(retryData)
-                .select("id")
-                .single();
-
-              if (retryError) {
-                console.error("[PATCH /api/challenges/:id] Retry also failed:", retryError);
-                return NextResponse.json({
-                  error: "Failed to create match",
-                  details: retryError.message
-                }, { status: 500 });
-              }
-
-              updateData.match_id = retryMatch.id;
-              console.log("[PATCH /api/challenges/:id] Match created successfully (retry):", retryMatch.id);
-            } else {
-              return NextResponse.json({
-                error: "Failed to create match",
-                details: matchError.message,
-                code: matchError.code
-              }, { status: 500 });
-            }
-          } else {
-            updateData.match_id = matchData.id;
-            console.log("[PATCH /api/challenges/:id] Match created successfully:", matchData.id);
-          }
-        }
-      } else if (parsed.data.status === "Declined") {
-        updateData.declined_at = new Date().toISOString();
-      } else if (parsed.data.status === "Cancelled") {
+      // Set timestamps
+      if (parsed.data.status === "Accepted") updateData.accepted_at = new Date().toISOString();
+      else if (parsed.data.status === "Declined") updateData.declined_at = new Date().toISOString();
+      else if (parsed.data.status === "Cancelled") {
         updateData.cancelled_at = new Date().toISOString();
         updateData.cancelled_by = parsed.data.cancelled_by;
         updateData.cancellation_reason = parsed.data.cancellation_reason;
-      } else if (parsed.data.status === "Completed") {
-        updateData.completed_at = new Date().toISOString();
-      }
+      } else if (parsed.data.status === "Completed") updateData.completed_at = new Date().toISOString();
     }
 
     // Handle counter proposal fields
     if ("counter_proposal_time" in parsed.data) updateData.counter_proposal_time = parsed.data.counter_proposal_time;
     if ("counter_proposal_location" in parsed.data) updateData.counter_proposal_location = parsed.data.counter_proposal_location;
     if ("counter_proposal_notes" in parsed.data) updateData.counter_proposal_notes = parsed.data.counter_proposal_notes;
-
     if (parsed.data.scheduled_at) updateData.scheduled_at = parsed.data.scheduled_at;
     if (parsed.data.location) updateData.location = parsed.data.location;
-
-    console.log("[PATCH /api/challenges/:id] updateData:", updateData);
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
+    // ATTEMPT 1: Try to update the challenge directly
+    // This relies on the DB Trigger 'create_match_on_challenge_accept' to create the match
+    let { data, error } = await supabaseAdmin
       .from("challenges")
       .update(updateData)
       .eq("id", params.id)
-      .select("challenger_id, challenged_id, status")
+      .select("challenger_id, challenged_id, status, ladder_id")
       .single();
+
+    // If we hit the 'unique match' constraint (due to zombie match blocking the trigger), handle it
+    if (error && error.message?.includes("idx_unique_pending_match_per_players")) {
+      console.log("[PATCH] Hit zombie match constraint. Attempting self-healing...");
+
+      // 1. Find the blocking match
+      const { data: zombieMatch } = await supabaseAdmin
+        .from("matches")
+        .select("id")
+        .eq("ladder_id", challenge.ladder_id)
+        .or(`and(player1_id.eq.${challenge.challenger_id},player2_id.eq.${challenge.challenged_id}),and(player1_id.eq.${challenge.challenged_id},player2_id.eq.${challenge.challenger_id})`)
+        .eq("status", "Pending")
+        .single();
+
+      if (zombieMatch) {
+        console.log(`[PATCH] Deleting zombie match ${zombieMatch.id}`);
+        // 2. Delete the zombie match
+        const { error: delError } = await supabaseAdmin
+          .from("matches")
+          .delete()
+          .eq("id", zombieMatch.id);
+
+        if (!delError) {
+          // 3. Retry the update
+          const retry = await supabaseAdmin
+            .from("challenges")
+            .update(updateData)
+            .eq("id", params.id)
+            .select("challenger_id, challenged_id, status, ladder_id")
+            .single();
+
+          data = retry.data;
+          error = retry.error;
+        }
+      }
+    }
 
     if (error) {
       console.error("[PATCH /api/challenges/:id] DB error:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Post-processing: If Accepted, we need to link the Trigger-Created Match to this Challenge
+    // (Because the trigger doesn't know about the challenge_id)
+    if (parsed.data.status === "Accepted" && data) {
+      // Find the newly created match (created ~now)
+      const { data: newMatch } = await supabaseAdmin
+        .from("matches")
+        .select("id")
+        .eq("ladder_id", data.ladder_id)
+        .or(`and(player1_id.eq.${data.challenger_id},player2_id.eq.${data.challenged_id}),and(player1_id.eq.${data.challenged_id},player2_id.eq.${data.challenger_id})`)
+        .eq("status", "Pending")
+        .is("challenge_id", null) // Only link if not already linked
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (newMatch) {
+        console.log(`[PATCH] Linking new match ${newMatch.id} to challenge ${params.id}`);
+        await supabaseAdmin
+          .from("matches")
+          .update({ challenge_id: params.id })
+          .eq("id", newMatch.id);
+      }
     }
 
     // Create audit log and notifications (wrapped in try/catch just in case)
