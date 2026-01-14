@@ -88,7 +88,7 @@ export async function GET(
     if (canSeeMembers) {
       const { data: members, error: membersError } = await supabaseAdmin
         .from("ladder_memberships")
-        .select("id, user_id, current_rank, status, accepted_at, requested_at")
+        .select("id, user_id, current_rank, status, accepted_at, requested_at, cooling_expires_at")
         .eq("ladder_id", params.id)
         .in("status", ["active", "pending"])
         .order("status", { ascending: false })
@@ -133,11 +133,19 @@ export async function GET(
           });
 
           const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
-          membersWithUsers = members.map((member) => ({
-            ...member,
-            users: userMap.get(member.user_id) ?? null,
-            is_busy: busyUserIds.has(member.user_id)
-          }));
+          const now = new Date();
+
+          membersWithUsers = members.map((member) => {
+            // Check cooling period
+            const coolingUntil = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
+            const isCooling = coolingUntil && coolingUntil > now;
+
+            return {
+              ...member,
+              users: userMap.get(member.user_id) ?? null,
+              is_busy: busyUserIds.has(member.user_id) || isCooling
+            };
+          });
         }
       }
     }
