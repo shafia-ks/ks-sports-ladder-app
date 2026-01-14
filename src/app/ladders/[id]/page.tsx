@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
-import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare } from "lucide-react";
+import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare, Lock } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ui/toast";
@@ -1140,7 +1140,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                     : currentMember?.is_busy
                                       ? "Busy"
                                       : targetRank >= currentUserRank
-                                        ? "—"
+                                        ? <Lock className="h-4 w-4 text-slate-300" />
                                         : "Range"}
                                 </span>
                               )
