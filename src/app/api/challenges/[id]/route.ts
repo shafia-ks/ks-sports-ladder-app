@@ -96,19 +96,44 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             // Handle unique constraint violation (match already exists for this challenge)
             if (matchError.code === "23505") {
               console.log("[PATCH /api/challenges/:id] Match already exists (unique constraint), fetching it");
+
+              // Try to find existing match by challenge_id first
               const { data: existingMatchRetry } = await supabaseAdmin
                 .from("matches")
                 .select("id")
-                .eq("challenge_id", params.id);
+                .eq("challenge_id", params.id)
+                .maybeSingle();
 
-              if (existingMatchRetry && existingMatchRetry.length > 0) {
-                updateData.match_id = existingMatchRetry[0].id;
-                console.log("[PATCH /api/challenges/:id] Using existing match:", existingMatchRetry[0].id);
+              if (existingMatchRetry) {
+                updateData.match_id = existingMatchRetry.id;
+                console.log("[PATCH /api/challenges/:id] Using existing match (by challenge_id):", existingMatchRetry.id);
               } else {
-                return NextResponse.json({
-                  error: "Match already exists but couldn't be retrieved",
-                  details: matchError.message
-                }, { status: 409 });
+                // If not found by challenge_id, try finding by players
+                const { data: matchByPlayers } = await supabaseAdmin
+                  .from("matches")
+                  .select("id")
+                  .eq("ladder_id", challenge.ladder_id)
+                  .or(`and(player1_id.eq.${challenge.challenger_id},player2_id.eq.${challenge.challenged_id}),and(player1_id.eq.${challenge.challenged_id},player2_id.eq.${challenge.challenger_id})`)
+                  .eq("status", "Pending")
+                  .maybeSingle();
+
+                if (matchByPlayers) {
+                  updateData.match_id = matchByPlayers.id;
+                  console.log("[PATCH /api/challenges/:id] Using existing match (by players):", matchByPlayers.id);
+
+                  // Update the existing match to link it to this challenge
+                  await supabaseAdmin
+                    .from("matches")
+                    .update({ challenge_id: params.id })
+                    .eq("id", matchByPlayers.id);
+                } else {
+                  // This shouldn't happen, but handle gracefully
+                  console.error("[PATCH /api/challenges/:id] Match exists but couldn't be retrieved");
+                  return NextResponse.json({
+                    error: "Match already exists but couldn't be retrieved. The challenge has been accepted.",
+                    details: matchError.message
+                  }, { status: 200 }); // Return 200 since the challenge IS accepted
+                }
               }
             }
             // If status constraint fails, try with capitalized "Pending"
