@@ -42,6 +42,7 @@ interface ChallengesTabProps {
 
 export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
     const { trackEvent } = useAnalytics();
+    const { push: toast } = useToast();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState<string | null>(null);
@@ -81,12 +82,32 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: "Accepted" }),
             });
+
+            const data = await res.json();
+
             if (res.ok) {
                 trackEvent({ action: 'challenge_accepted', category: 'engagement', label: ladderId });
+                toast({
+                    title: "Challenge accepted!",
+                    description: "Match has been created. Check the Matches tab.",
+                    variant: "success",
+                });
                 fetchChallenges();
+            } else {
+                console.error("Failed to accept challenge:", data);
+                toast({
+                    title: "Failed to accept challenge",
+                    description: data.error || "Please try again",
+                    variant: "error",
+                });
             }
         } catch (err) {
             console.error("Failed to accept challenge:", err);
+            toast({
+                title: "Error",
+                description: "Failed to accept challenge",
+                variant: "error",
+            });
         }
     };
 
@@ -97,12 +118,31 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: "Declined" }),
             });
+
+            const data = await res.json();
+
             if (res.ok) {
                 trackEvent({ action: 'challenge_declined', category: 'engagement', label: ladderId });
+                toast({
+                    title: "Challenge declined",
+                    variant: "default",
+                });
                 fetchChallenges();
+            } else {
+                console.error("Failed to decline challenge:", data);
+                toast({
+                    title: "Failed to decline challenge",
+                    description: data.error || "Please try again",
+                    variant: "error",
+                });
             }
         } catch (err) {
             console.error("Failed to decline challenge:", err);
+            toast({
+                title: "Error",
+                description: "Failed to decline challenge",
+                variant: "error",
+            });
         }
     };
 
