@@ -697,7 +697,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
               {formatSport(data.ladder.sport_id)}
             </span>
           )}
-          {data.ladder.location && <span className="px-2 py-1 rounded-full bg-slate-50">ðŸ“ {data.ladder.location}</span>}
+          {data.ladder.location && <span className="px-2 py-1 rounded-full bg-slate-50 flex items-center gap-1"><MapPin className="h-3 w-3" /> {data.ladder.location}</span>}
           <span className="px-2 py-1 rounded-full bg-slate-50">Visibility: {data.ladder.visibility}</span>
           <span className="px-2 py-1 rounded-full bg-slate-50">Status: {data.ladder.status}</span>
         </div>
@@ -876,35 +876,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   />
                 )}
 
-                {/* Organizer Stats Grid */}
-                {isOrganizer && (
-                  <OrganizerStatsGrid
-                    stats={[
-                      {
-                        label: "Members",
-                        value: activeMembers.length,
-                        subtitle: "Active",
-                        icon: "users",
-                        badge: pendingMembers.length > 0 ? `${pendingMembers.length} pending` : undefined,
-                        action: () => setTab("ranking")
-                      },
-                      {
-                        label: "Matches",
-                        value: matchCounts.confirmed,
-                        subtitle: "Confirmed",
-                        icon: "target",
-                        action: () => setTab("matches")
-                      },
-                      {
-                        label: "Activity",
-                        value: dashboardStats?.organizerStats?.recentMatches || 0,
-                        subtitle: "This Month",
-                        icon: "activity",
-                        action: () => { }
-                      }
-                    ]}
-                  />
-                )}
+                {/* Organizer Stats Grid removed as per user request */}
 
                 {/* Player Hero Stats */}
                 {isMember && currentMember && (
@@ -1064,9 +1036,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-3 sm:px-4 py-2">Rank</th>
+                      <th className="px-3 sm:px-4 py-2 w-16">Rank</th>
                       <th className="px-3 sm:px-4 py-2">Player</th>
-                      <th className="px-3 sm:px-4 py-2 text-right">Action</th>
+                      <th className="px-3 sm:px-4 py-2 text-right w-24 relative sm:static">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1094,7 +1066,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
                       return (
                         <tr key={member.id} className="border-t border-slate-100">
-                          <td className="px-4 py-2 font-semibold">#{member.current_rank ?? "-"}</td>
+                          <td className="px-4 py-2 font-semibold text-center sm:text-left">{member.current_rank ?? "-"}</td>
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-3">
                               <Avatar

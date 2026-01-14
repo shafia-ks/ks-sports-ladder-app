@@ -49,6 +49,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
     const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
     const [cancelReason, setCancelReason] = useState("");
     const [showCounterProposal, setShowCounterProposal] = useState<string | null>(null);
+    const [viewFilter, setViewFilter] = useState<"my" | "all">("my");
     const [counterProposal, setCounterProposal] = useState({
         time: "",
         location: "",
@@ -62,9 +63,8 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
     const fetchChallenges = async () => {
         try {
             setLoading(true);
-            const url = userId
-                ? `/api/challenges?ladderId=${ladderId}&userId=${userId}`
-                : `/api/challenges?ladderId=${ladderId}`;
+            // Always fetch all challenges for the ladder to allow "All Challenges" view
+            const url = `/api/challenges?ladderId=${ladderId}`;
             const res = await fetch(url);
             const data = await res.json();
             setChallenges(data.challenges || []);
@@ -215,10 +215,17 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
         return `${days}d remaining`;
     };
 
+    // Filter challenges based on view
+    const filteredChallenges = challenges.filter(c => {
+        if (viewFilter === "all") return true;
+        if (!userId) return true;
+        return c.challenger_id === userId || c.challenged_id === userId;
+    });
+
     // Separate Pending challenges from Accepted (which are now matches)
-    const pendingChallenges = challenges.filter(c => c.status === "Pending");
-    const scheduledMatches = challenges.filter(c => c.status === "Accepted");
-    const pastChallenges = challenges.filter(c => c.status === "Completed" || c.status === "Declined" || c.status === "Expired" || c.status === "Cancelled").slice(0, 10);
+    const pendingChallenges = filteredChallenges.filter(c => c.status === "Pending");
+    const scheduledMatches = filteredChallenges.filter(c => c.status === "Accepted");
+    const pastChallenges = filteredChallenges.filter(c => c.status === "Completed" || c.status === "Declined" || c.status === "Expired" || c.status === "Cancelled").slice(0, 50);
 
     if (loading) {
         return (
@@ -230,7 +237,29 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
     return (
         <div className="space-y-6 relative">
-            {/* Pending Challenges (Awaiting Response) */}
+            {/* View Filter Toggles */}
+            <div className="flex gap-2 mb-6">
+                <button
+                    onClick={() => setViewFilter("my")}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${viewFilter === "my"
+                        ? "bg-brand-600 text-white shadow-md"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                >
+                    My Challenges
+                </button>
+                <button
+                    onClick={() => setViewFilter("all")}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${viewFilter === "all"
+                        ? "bg-brand-600 text-white shadow-md"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                >
+                    All Challenges
+                </button>
+            </div>
+
+            {/* Pending Challenges Section */}
             <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -312,7 +341,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {!isChallenger && challenge.status === "Pending" && (
+                                            {userId === challenge.challenged_id && challenge.status === "Pending" && (
                                                 <>
 
                                                     <button
@@ -330,7 +359,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                                 </>
                                             )}
 
-                                            {canCancel && (
+                                            {canCancel && (challenge.challenger_id === userId || challenge.challenged_id === userId) && (
                                                 <button
                                                     onClick={() => setShowCancelModal(challenge.id)}
                                                     className="btn btn-sm border border-red-300 text-red-700 hover:bg-red-50"

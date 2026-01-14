@@ -29,7 +29,7 @@ interface Match {
     submitted_by?: string | null;
 }
 
-type FilterStatus = "all" | "Pending" | "ScoreSubmitted" | "Confirmed";
+type FilterStatus = "all" | "Pending" | "ScoreSubmitted" | "Confirmed" | "my_matches";
 
 interface MatchesListProps {
     ladderId: string;
@@ -40,7 +40,7 @@ interface MatchesListProps {
 export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesListProps) {
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<FilterStatus>("all");
+    const [filter, setFilter] = useState<FilterStatus>("my_matches");
     const [searchQuery, setSearchQuery] = useState("");
 
     const fetchMatches = async () => {
@@ -60,10 +60,13 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
         fetchMatches();
     }, [ladderId]);
 
-    // Filter and search logic
     const filteredMatches = matches.filter((match) => {
         // Status filter
-        if (filter !== "all" && match.status !== filter) return false;
+        if (filter === "my_matches") {
+            if (match.player1_id !== currentUserId && match.player2_id !== currentUserId) return false;
+        } else if (filter !== "all" && match.status !== filter) {
+            return false;
+        }
 
         // Search filter
         if (searchQuery) {
@@ -79,6 +82,7 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
     // Count by status
     const counts = {
         all: matches.length,
+        my_matches: matches.filter((m) => m.player1_id === currentUserId || m.player2_id === currentUserId).length,
         Pending: matches.filter((m) => m.status === "Pending").length,
         ScoreSubmitted: matches.filter((m) => m.status === "ScoreSubmitted").length,
         Confirmed: matches.filter((m) => m.status === "Confirmed").length,
@@ -90,6 +94,15 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer }: MatchesLis
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 {/* Filter Tabs */}
                 <div className="flex gap-2 flex-wrap">
+                    <button
+                        onClick={() => setFilter("my_matches")}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "my_matches"
+                            ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                    >
+                        My Matches ({counts.my_matches})
+                    </button>
                     <button
                         onClick={() => setFilter("all")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filter === "all"
