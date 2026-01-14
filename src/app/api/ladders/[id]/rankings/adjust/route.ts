@@ -25,18 +25,20 @@ export async function POST(
       return NextResponse.json({ error: "Adjusted by user ID required" }, { status: 400 } as ResponseInit);
     }
 
-    // Verify user is organizer or admin
+    // Verify user exists
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("role")
       .eq("id", adjusted_by)
       .single();
 
-    if (!user || !["organizer", "admin"].includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 } as ResponseInit);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 } as ResponseInit);
     }
 
-    // Verify user is organizer of this ladder
+    // Check if user is admin OR organizer of this specific ladder
+    const isAdmin = user.role === "admin";
+
     const { data: isOrganizer } = await supabaseAdmin
       .from("ladder_leaders")
       .select("id")
@@ -44,8 +46,8 @@ export async function POST(
       .eq("user_id", adjusted_by)
       .single();
 
-    if (!isOrganizer && user.role !== "admin") {
-      return NextResponse.json({ error: "Only ladder organizers can adjust rankings" }, { status: 403 } as ResponseInit);
+    if (!isAdmin && !isOrganizer) {
+      return NextResponse.json({ error: "Unauthorized. Only ladder organizers and admins can adjust rankings." }, { status: 403 } as ResponseInit);
     }
 
     // Get current rankings for audit log
