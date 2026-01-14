@@ -1285,38 +1285,47 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3 mt-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="kFactor">
-                      K-Factor
-                    </label>
-                    <input
-                      type="number"
-                      id="kFactor"
-                      name="kFactor"
-                      value={settingsForms.kFactor}
-                      onChange={handleSettingsChange}
-                      min="1"
-                      disabled={!isEditingSettings}
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                    />
+                {/* K-Factor - Only for Points/ELO */}
+                {settingsForms.rankingType === "points-elo" && (
+                  <div className="grid gap-4 md:grid-cols-3 mt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700" htmlFor="kFactor">
+                        K-Factor
+                      </label>
+                      <input
+                        type="number"
+                        id="kFactor"
+                        name="kFactor"
+                        value={settingsForms.kFactor}
+                        onChange={handleSettingsChange}
+                        min="1"
+                        disabled={!isEditingSettings}
+                        className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="maxDrop">
-                      Max Drop
-                    </label>
-                    <input
-                      type="number"
-                      id="maxDrop"
-                      name="maxDrop"
-                      value={settingsForms.maxDrop}
-                      onChange={handleSettingsChange}
-                      min="0"
-                      disabled={!isEditingSettings}
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                    />
+                )}
+
+                {/* Max Drop - Only for Default Swap (Minimal Drop) */}
+                {settingsForms.rankingType === "default-swap-minimal-drop" && (
+                  <div className="grid gap-4 md:grid-cols-3 mt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700" htmlFor="maxDrop">
+                        Max Drop
+                      </label>
+                      <input
+                        type="number"
+                        id="maxDrop"
+                        name="maxDrop"
+                        value={settingsForms.maxDrop}
+                        onChange={handleSettingsChange}
+                        min="0"
+                        disabled={!isEditingSettings}
+                        className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="border-t border-slate-200 pt-4">

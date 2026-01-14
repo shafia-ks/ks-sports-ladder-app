@@ -6,7 +6,6 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Loader2, ArrowLeft, ArrowUp, ArrowDown, Save, AlertCircle } from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 
 interface RankingMember {
   id: string;
@@ -29,7 +28,7 @@ function ManualRankingsPage() {
   const { user } = useAuth();
   const params = useParams() as { id: string } | null;
   const ladderId = params?.id || "";
-  
+
   const [ladder, setLadder] = useState<Ladder | null>(null);
   const [members, setMembers] = useState<RankingMember[]>([]);
   const [originalMembers, setOriginalMembers] = useState<RankingMember[]>([]);
@@ -39,6 +38,7 @@ function ManualRankingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+  const [isOrganizer, setIsOrganizer] = useState(false);
 
   useEffect(() => {
     if (ladderId) {
@@ -63,9 +63,20 @@ function ManualRankingsPage() {
       });
 
       if (!ladderRes.ok) throw new Error("Failed to load ladder");
-      
+
       const ladderData = await ladderRes.json();
       setLadder(ladderData.ladder);
+
+      // Check if user is organizer for THIS ladder
+      const organizerIds = ladderData.organizerIds || [];
+      const userIsOrganizer = user?.role === "admin" || organizerIds.includes(user?.id);
+      setIsOrganizer(userIsOrganizer);
+
+      if (!userIsOrganizer) {
+        setError("You don't have permission to edit rankings for this ladder");
+        setLoading(false);
+        return;
+      }
 
       const activeMembers = (ladderData.members || [])
         .filter((m: RankingMember) => m.status === "active" && m.current_rank != null && m.current_rank >= 0)
@@ -177,26 +188,25 @@ function ManualRankingsPage() {
           <div className="card p-4 bg-amber-50 border-amber-200 text-amber-800 text-sm flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
-              <strong>Important:</strong> Manual ranking adjustments override match-based rankings. 
+              <strong>Important:</strong> Manual ranking adjustments override match-based rankings.
               Use this feature only to correct errors or handle special situations. All changes are logged in the audit trail.
             </div>
           </div>
 
           <div className="card space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">Current Rankings ({members.length})</h2>
-            
+
             {members.length === 0 ? (
               <p className="text-sm text-slate-600 py-4">No ranked members yet.</p>
             ) : (
               <div className="space-y-2">
                 {members.map((member, index) => (
-                  <div 
-                    key={member.id} 
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      originalMembers.find(m => m.id === member.id)?.current_rank !== member.current_rank
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-slate-50 border-slate-200'
-                    }`}
+                  <div
+                    key={member.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${originalMembers.find(m => m.id === member.id)?.current_rank !== member.current_rank
+                      ? 'bg-blue-50 border-blue-200'
+                      : 'bg-slate-50 border-slate-200'
+                      }`}
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center font-bold text-brand-700">
@@ -235,7 +245,7 @@ function ManualRankingsPage() {
           {hasChanges && (
             <div className="card space-y-4 p-6 border-2 border-brand-200">
               <h3 className="font-semibold text-slate-900">Save Changes</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Reason for Adjustment <span className="text-red-600">*</span>
@@ -287,10 +297,4 @@ function ManualRankingsPage() {
   );
 }
 
-export default function OrganizerRankingsPage() {
-  return (
-    <ProtectedRoute requiredRoles={["organizer", "admin"]}>
-      <ManualRankingsPage />
-    </ProtectedRoute>
-  );
-}
+export default ManualRankingsPage;
