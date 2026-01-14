@@ -67,69 +67,48 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
-    // ATTEMPT 1: Try to update the challenge directly
-    // This relies on the DB Trigger 'create_match_on_challenge_accept' to create the match
-    let { data, error } = await supabaseAdmin
+    // ATTEMPT: Linear and Straightforward Flow
+
+    // 1. CLEAN UP: Proactively delete any existing "Pending" match for these players
+    // This prevents the "duplicate key" error effectively clearing the path for the Trigger
+    const { data: existingZombie } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .eq("ladder_id", challenge.ladder_id)
+      .or(`and(player1_id.eq.${challenge.challenger_id},player2_id.eq.${challenge.challenged_id}),and(player1_id.eq.${challenge.challenged_id},player2_id.eq.${challenge.challenger_id})`)
+      .eq("status", "Pending")
+      .maybeSingle();
+
+    if (existingZombie) {
+      console.log(`[PATCH] Removing existing pending match ${existingZombie.id} to allow acceptance`);
+      await supabaseAdmin.from("matches").delete().eq("id", existingZombie.id);
+    }
+
+    // 2. ACCEPT: Update the challenge status
+    // The DB Trigger 'create_match_on_challenge_accept' will run and create a fresh match
+    const { data, error } = await supabaseAdmin
       .from("challenges")
       .update(updateData)
       .eq("id", params.id)
       .select("challenger_id, challenged_id, status, ladder_id")
       .single();
 
-    // If we hit the 'unique match' constraint (due to zombie match blocking the trigger), handle it
-    if (error && error.message?.includes("idx_unique_pending_match_per_players")) {
-      console.log("[PATCH] Hit zombie match constraint. Attempting self-healing...");
-
-      // 1. Find the blocking match
-      const { data: zombieMatch } = await supabaseAdmin
-        .from("matches")
-        .select("id")
-        .eq("ladder_id", challenge.ladder_id)
-        .or(`and(player1_id.eq.${challenge.challenger_id},player2_id.eq.${challenge.challenged_id}),and(player1_id.eq.${challenge.challenged_id},player2_id.eq.${challenge.challenger_id})`)
-        .eq("status", "Pending")
-        .single();
-
-      if (zombieMatch) {
-        console.log(`[PATCH] Deleting zombie match ${zombieMatch.id}`);
-        // 2. Delete the zombie match
-        const { error: delError } = await supabaseAdmin
-          .from("matches")
-          .delete()
-          .eq("id", zombieMatch.id);
-
-        if (!delError) {
-          // 3. Retry the update
-          const retry = await supabaseAdmin
-            .from("challenges")
-            .update(updateData)
-            .eq("id", params.id)
-            .select("challenger_id, challenged_id, status, ladder_id")
-            .single();
-
-          data = retry.data;
-          error = retry.error;
-        }
-      }
-    }
-
     if (error) {
       console.error("[PATCH /api/challenges/:id] DB error:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Post-processing: If Accepted, we need to link the Trigger-Created Match to this Challenge
-    // (Because the trigger doesn't know about the challenge_id)
+    // 3. LINK: Connect the Trigger-Created Match to this Challenge
     if (parsed.data.status === "Accepted" && data) {
-      // Find the newly created match (created ~now)
+      // Find the newly created match (created just now)
       const { data: newMatch } = await supabaseAdmin
         .from("matches")
         .select("id")
         .eq("ladder_id", data.ladder_id)
         .or(`and(player1_id.eq.${data.challenger_id},player2_id.eq.${data.challenged_id}),and(player1_id.eq.${data.challenged_id},player2_id.eq.${data.challenger_id})`)
         .eq("status", "Pending")
-        .is("challenge_id", null) // Only link if not already linked
+        .is("challenge_id", null)
         .order("created_at", { ascending: false })
-        .limit(1)
         .maybeSingle();
 
       if (newMatch) {
