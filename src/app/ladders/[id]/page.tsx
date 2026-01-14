@@ -639,8 +639,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
     if (isMember) {
       return (
-        <span className="rounded-full border border-success-200 bg-success-50 px-3 py-2 text-sm font-semibold text-success-700">
-          âœ“ Member
+        <span className="rounded-full border border-success-200 bg-success-50 px-3 py-2 text-sm font-semibold text-success-700 flex items-center gap-1">
+          <CheckCircle className="h-4 w-4" />
+          Member
         </span>
       );
     }
@@ -1139,7 +1140,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                     : currentMember?.is_busy
                                       ? "Busy"
                                       : targetRank >= currentUserRank
-                                        ? "â€”"
+                                        ? "—"
                                         : "Range"}
                                 </span>
                               )
