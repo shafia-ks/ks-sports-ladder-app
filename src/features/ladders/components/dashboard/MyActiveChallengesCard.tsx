@@ -134,7 +134,7 @@ export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: 
                 <div className="space-y-3">
                     {incoming.map((challenge) => (
                         <div key={challenge.id} className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold text-slate-900">
                                         {challenge.challenger.full_name || challenge.challenger.email}
@@ -145,17 +145,17 @@ export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: 
                                         {new Date(challenge.created_at).toLocaleDateString()}
                                     </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 w-full sm:w-auto">
                                     <button
                                         onClick={() => handleAccept(challenge.id)}
-                                        className="btn btn-sm bg-green-600 text-white hover:bg-green-700 flex items-center gap-1"
+                                        className="btn btn-sm bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-1 flex-1 sm:flex-initial"
                                     >
                                         <CheckCircle className="h-3 w-3" />
                                         Accept
                                     </button>
                                     <button
                                         onClick={() => handleDecline(challenge.id)}
-                                        className="btn btn-sm bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1"
+                                        className="btn btn-sm bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center justify-center gap-1 flex-1 sm:flex-initial"
                                     >
                                         <XCircle className="h-3 w-3" />
                                         Decline
@@ -205,7 +205,7 @@ export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: 
 
             {challenges.length > 0 && (
                 <Link
-                    href={`/challenges`}
+                    href={`/ladders/${ladderId}?tab=challenges`}
                     className="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium mt-4"
                 >
                     View all challenges →

@@ -939,6 +939,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     ladderId={params.id}
                     canChallenge={(targetRank) => {
                       const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
+                      // Don't allow challenging if current user is busy
+                      if (currentMember?.is_busy) {
+                        return false;
+                      }
                       return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
                     }}
                     onChallenge={handleQuickChallenge}
