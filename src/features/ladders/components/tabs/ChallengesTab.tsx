@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Loader2, Clock, Swords, Calendar, MapPin, MessageSquare, X, Activity, CheckCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
@@ -174,7 +175,9 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
         return `${days}d remaining`;
     };
 
-    const activeChallenges = challenges.filter(c => c.status === "Pending" || c.status === "Accepted");
+    // Separate Pending challenges from Accepted (which are now matches)
+    const pendingChallenges = challenges.filter(c => c.status === "Pending");
+    const scheduledMatches = challenges.filter(c => c.status === "Accepted");
     const pastChallenges = challenges.filter(c => c.status === "Completed" || c.status === "Declined" || c.status === "Expired" || c.status === "Cancelled").slice(0, 10);
 
     if (loading) {
@@ -187,21 +190,21 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
     return (
         <div className="space-y-6 relative">
-            {/* Active Challenges */}
+            {/* Pending Challenges (Awaiting Response) */}
             <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                         <Swords className="h-5 w-5 text-brand-600" />
-                        Active Challenges ({activeChallenges.length})
+                        Pending Challenges ({pendingChallenges.length})
                     </h3>
 
                 </div>
 
-                {activeChallenges.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-8">No active challenges</p>
+                {pendingChallenges.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">No pending challenges</p>
                 ) : (
                     <div className="space-y-3">
-                        {activeChallenges.map((challenge) => {
+                        {pendingChallenges.map((challenge) => {
                             const isChallenger = challenge.challenger_id === userId;
                             const opponent = isChallenger ? challenge.challenged : challenge.challenger;
                             const canCancel = isChallenger && challenge.status === "Pending";
@@ -304,6 +307,59 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                     </div>
                 )}
             </div>
+
+            {/* Scheduled Matches (Accepted Challenges) */}
+            {scheduledMatches.length > 0 && (
+                <div className="card p-6 bg-green-50 border-2 border-green-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-green-900 flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            Scheduled Matches ({scheduledMatches.length})
+                        </h3>
+                        <Link
+                            href={`/ladders/${ladderId}?tab=matches`}
+                            className="text-sm text-green-700 hover:text-green-900 font-medium"
+                        >
+                            View in Matches →
+                        </Link>
+                    </div>
+                    <div className="space-y-3">
+                        {scheduledMatches.map((challenge) => {
+                            const isChallenger = challenge.challenger_id === userId;
+                            const opponent = isChallenger ? challenge.challenged : challenge.challenger;
+
+                            return (
+                                <div key={challenge.id} className="border border-green-300 bg-white rounded-lg p-4">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <Avatar
+                                                name={opponent?.full_name || opponent?.email || "?"}
+                                                email={opponent?.email}
+                                                size="md"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-900">
+                                                    vs {opponent?.full_name || opponent?.email}
+                                                </p>
+                                                <p className="text-sm text-green-700 font-medium mt-1 flex items-center gap-1">
+                                                    <CheckCircle className="h-4 w-4" />
+                                                    Match created - ready to play
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Link
+                                            href={`/ladders/${ladderId}?tab=matches`}
+                                            className="btn btn-sm bg-green-600 text-white hover:bg-green-700"
+                                        >
+                                            Submit Score
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Past Challenges */}
             {pastChallenges.length > 0 && (

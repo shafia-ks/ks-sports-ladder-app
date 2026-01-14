@@ -25,7 +25,8 @@ export function LadderChallengesCard({ ladderId }: Props) {
 
     const fetchChallenges = async () => {
         try {
-            const res = await fetch(`/api/challenges?ladderId=${ladderId}&status=Pending,Accepted&limit=5`);
+            // Only fetch Pending challenges - Accepted challenges are now matches
+            const res = await fetch(`/api/challenges?ladderId=${ladderId}&status=Pending&limit=5`);
             const data = await res.json();
             setChallenges(data.challenges || []);
         } catch (error) {
@@ -85,8 +86,8 @@ export function LadderChallengesCard({ ladderId }: Props) {
                                             {new Date(challenge.created_at).toLocaleDateString()}
                                         </p>
                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${challenge.status === "Accepted"
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-amber-100 text-amber-700"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-amber-100 text-amber-700"
                                             }`}>
                                             {challenge.status}
                                         </span>

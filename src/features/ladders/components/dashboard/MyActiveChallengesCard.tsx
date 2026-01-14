@@ -48,7 +48,8 @@ export function MyActiveChallengesCard({ userId, ladderId, onChallengeUpdate }: 
 
     const fetchChallenges = async () => {
         try {
-            const res = await fetch(`/api/challenges?userId=${userId}&ladderId=${ladderId}&status=Pending,Accepted`);
+            // Only fetch Pending challenges - Accepted challenges are now matches
+            const res = await fetch(`/api/challenges?userId=${userId}&ladderId=${ladderId}&status=Pending`);
             const data = await res.json();
             setChallenges(data.challenges || []);
         } catch (error) {
