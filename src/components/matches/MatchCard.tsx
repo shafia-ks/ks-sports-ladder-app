@@ -377,18 +377,18 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-wrap items-center gap-2 justify-end">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 w-full sm:w-auto sm:justify-end">
                     {!isEditing && !isEditingDetails && canEdit && (
                         <>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-xs sm:text-sm"
+                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-xs sm:text-sm"
                             >
                                 {effectiveStatus === "Pending" ? "Enter Score →" : "Edit Score"}
                             </button>
                             <button
                                 onClick={() => setIsEditingDetails(true)}
-                                className="px-3 py-1.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-xs sm:text-sm"
+                                className="w-full sm:w-auto px-3 py-1.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-xs sm:text-sm"
                             >
                                 📝 Edit Details
                             </button>
@@ -401,14 +401,14 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             <button
                                 onClick={handleConfirm}
                                 disabled={loading}
-                                className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-medium text-sm disabled:opacity-50"
+                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-medium text-xs sm:text-sm disabled:opacity-50"
                             >
                                 ✓ Confirm
                             </button>
                             <button
                                 onClick={handleDispute}
                                 disabled={loading}
-                                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-medium text-sm disabled:opacity-50"
+                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-medium text-xs sm:text-sm disabled:opacity-50"
                             >
                                 ⚠ Dispute
                             </button>
