@@ -76,6 +76,9 @@ interface LadderMember {
   user_id: string;
   current_rank: number | null;
   status: string;
+  previous_rank?: number | null;
+  last_rank_change_at?: string;
+  cooling_expires_at?: string | null;
   is_busy?: boolean;
   users?: {
     id: string;

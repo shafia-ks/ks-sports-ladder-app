@@ -42,6 +42,8 @@ export interface LadderMembership {
     user_id: string;
     status: 'active' | 'pending' | 'rejected';
     current_rank: number | null;
+    previous_rank?: number | null;
+    last_rank_change_at?: string;
     elo_rating?: number;
     wins?: number;
     losses?: number;
