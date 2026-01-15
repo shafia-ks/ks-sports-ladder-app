@@ -314,117 +314,116 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         );
 
     return (
-        <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-4 sm:p-6 hover:shadow-md transition-shadow`}>
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                    {getStatusBadge()}
+        <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-3 sm:p-5 hover:shadow-md transition-shadow`}>
+            {/* Top Row: Status Badge */}
+            <div className="mb-3">
+                {getStatusBadge()}
+            </div>
 
-                    {/* Players */}
-                    <div className="flex items-center gap-3 mt-3">
-                        <div className={`flex items-center gap-2 ${winnerId === match.player1_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
-                            <Avatar
-                                name={match.player1.full_name}
-                                email={match.player1.email}
-                                src={match.player1.profile_picture_url}
-                                size="md"
-                            />
-                            <span className="text-slate-900 text-sm font-semibold truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
-                                {match.player1.full_name || match.player1.email.split("@")[0]}
-                            </span>
-                            {winnerId === match.player1_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
-                        </div>
-
-                        <span className="text-slate-400 font-medium">VS</span>
-
-                        <div className={`flex items-center gap-2 ${winnerId === match.player2_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
-                            <Avatar
-                                name={match.player2.full_name}
-                                email={match.player2.email}
-                                src={match.player2.profile_picture_url}
-                                size="md"
-                            />
-                            <span className="text-slate-900 text-sm font-semibold truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
-                                {match.player2.full_name || match.player2.email.split("@")[0]}
-                            </span>
-                            {winnerId === match.player2_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
-                        </div>
-                    </div>
-
-                    {/* Match Info (if available and not editing) */}
-                    {!isEditing && (matchDate || matchTime || location) && (
-                        <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
-                            {matchDate && (
-                                <span className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" aria-hidden="true" />
-                                    {new Date(matchDate).toLocaleDateString()}
-                                </span>
-                            )}
-                            {matchTime && (
-                                <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" aria-hidden="true" />
-                                    {matchTime}
-                                </span>
-                            )}
-                            {location && (
-                                <span className="flex items-center gap-1">
-                                    <MapPin className="h-4 w-4" aria-hidden="true" />
-                                    {location}
-                                </span>
-                            )}
-                        </div>
-                    )}
+            {/* Middle Row: Players */}
+            <div className="flex items-center gap-2 mb-3">
+                {/* Player 1 */}
+                <div className={`flex items-center gap-2 min-w-0 flex-1 ${winnerId === match.player1_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
+                    <Avatar
+                        name={match.player1.full_name}
+                        email={match.player1.email}
+                        src={match.player1.profile_picture_url}
+                        size="sm"
+                    />
+                    <span className="text-slate-900 text-xs sm:text-sm font-bold truncate uppercase tracking-tight leading-tight">
+                        {match.player1.full_name || match.player1.email.split("@")[0]}
+                    </span>
+                    {winnerId === match.player1_id && effectiveStatus === "Confirmed" && <Trophy className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 w-full sm:w-auto sm:justify-end">
-                    {!isEditing && !isEditingDetails && canEdit && (
-                        <>
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-xs sm:text-sm"
-                            >
-                                {effectiveStatus === "Pending" ? "Enter Score →" : "Edit Score"}
-                            </button>
-                            <button
-                                onClick={() => setIsEditingDetails(true)}
-                                className="w-full sm:w-auto px-3 py-1.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-xs sm:text-sm"
-                            >
-                                📝 Edit Details
-                            </button>
-                        </>
-                    )}
+                <div className="flex-shrink-0 text-slate-300 font-bold text-xs px-1">VS</div>
 
-                    {/* Confirmation/Dispute buttons for submitted matches */}
-                    {canConfirm && (
-                        <>
-                            <button
-                                onClick={handleConfirm}
-                                disabled={loading}
-                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-medium text-xs sm:text-sm disabled:opacity-50"
-                            >
-                                ✓ Confirm
-                            </button>
-                            <button
-                                onClick={handleDispute}
-                                disabled={loading}
-                                className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-medium text-xs sm:text-sm disabled:opacity-50"
-                            >
-                                ⚠ Dispute
-                            </button>
-                        </>
-                    )}
+                {/* Player 2 */}
+                <div className={`flex items-center gap-2 min-w-0 flex-1 ${winnerId === match.player2_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
+                    <Avatar
+                        name={match.player2.full_name}
+                        email={match.player2.email}
+                        src={match.player2.profile_picture_url}
+                        size="sm"
+                    />
+                    <span className="text-slate-900 text-xs sm:text-sm font-bold truncate uppercase tracking-tight leading-tight">
+                        {match.player2.full_name || match.player2.email.split("@")[0]}
+                    </span>
+                    {winnerId === match.player2_id && effectiveStatus === "Confirmed" && <Trophy className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
+                </div>
+            </div>
 
-                    {effectiveStatus === "Confirmed" && (
+            {/* Match Info */}
+            {!isEditing && (matchDate || matchTime || location) && (
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-3 ml-1">
+                    {matchDate && (
+                        <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" aria-hidden="true" />
+                            {new Date(matchDate).toLocaleDateString()}
+                        </span>
+                    )}
+                    {matchTime && (
+                        <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" aria-hidden="true" />
+                            {matchTime}
+                        </span>
+                    )}
+                    {location && (
+                        <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" aria-hidden="true" />
+                            {location}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Actions Row - Horizontally Stacked Below */}
+            <div className="flex flex-row items-center gap-2 w-full mt-1">
+                {!isEditing && !isEditingDetails && canEdit && (
+                    <>
                         <button
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                            aria-label={isExpanded ? "Collapse match details" : "Expand match details"}
+                            onClick={() => setIsEditing(true)}
+                            className="flex-1 py-2 px-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
                         >
-                            {isExpanded ? <ChevronUp className="h-5 w-5" aria-hidden="true" /> : <ChevronDown className="h-5 w-5" aria-hidden="true" />}
+                            {effectiveStatus === "Pending" ? "Enter Score" : "Edit Score"}
                         </button>
-                    )}
-                </div>
+                        <button
+                            onClick={() => setIsEditingDetails(true)}
+                            className="flex-1 py-2 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                        >
+                            Edit Details
+                        </button>
+                    </>
+                )}
+
+                {canConfirm && (
+                    <>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={loading}
+                            className="flex-1 py-2 px-1 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                        >
+                            Confirm
+                        </button>
+                        <button
+                            onClick={handleDispute}
+                            disabled={loading}
+                            className="flex-1 py-2 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                        >
+                            Dispute
+                        </button>
+                    </>
+                )}
+
+                {effectiveStatus === "Confirmed" && (
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="ml-auto p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400"
+                        aria-label={isExpanded ? "Collapse match details" : "Expand match details"}
+                    >
+                        {isExpanded ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
+                    </button>
+                )}
             </div>
 
             {/* Score Display (Completed matches) */}
