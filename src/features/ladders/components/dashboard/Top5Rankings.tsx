@@ -1,11 +1,12 @@
 import { Avatar } from "@/components/ui/avatar";
-import { Swords, Lock, Clock } from "lucide-react";
+import { Swords, Lock, Clock, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import Link from "next/link";
 
 interface Player {
     id: string;
     user_id: string;
     current_rank: number | null;
+    previous_rank?: number | null;
     users?: {
         full_name: string | null;
         first_name: string | null;
@@ -65,8 +66,23 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                             className={`flex items-center gap-3 p-3 rounded-lg ${isCurrentUser ? "bg-brand-50 border-2 border-brand-200" : "bg-slate-50"
                                 }`}
                         >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankBadge(player.current_rank || 0)}`}>
-                                {player.current_rank}
+                            <div className="flex flex-col items-center justify-center w-8">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankBadge(player.current_rank || 0)}`}>
+                                    {player.current_rank}
+                                </div>
+                                {player.previous_rank && player.current_rank && (
+                                    <div className="mt-1">
+                                        {player.previous_rank > player.current_rank && (
+                                            <ArrowUp className="w-3 h-3 text-emerald-500" strokeWidth={3} />
+                                        )}
+                                        {player.previous_rank < player.current_rank && (
+                                            <ArrowDown className="w-3 h-3 text-rose-500" strokeWidth={3} />
+                                        )}
+                                        {player.previous_rank === player.current_rank && (
+                                            <Minus className="w-3 h-3 text-slate-300" />
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">

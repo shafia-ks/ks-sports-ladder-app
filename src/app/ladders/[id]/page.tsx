@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
-import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare, Lock } from "lucide-react";
+import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare, Lock, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ui/toast";
@@ -1066,7 +1066,24 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
                       return (
                         <tr key={member.id} className="border-t border-slate-100">
-                          <td className="px-4 py-2 font-semibold text-center sm:text-left">{member.current_rank ?? "-"}</td>
+                          <td className="px-4 py-2 sm:text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{member.current_rank ?? "-"}</span>
+                              {member.previous_rank && member.current_rank && (
+                                <>
+                                  {member.previous_rank > member.current_rank && (
+                                    <ArrowUp className="w-4 h-4 text-emerald-500" />
+                                  )}
+                                  {member.previous_rank < member.current_rank && (
+                                    <ArrowDown className="w-4 h-4 text-rose-500" />
+                                  )}
+                                  {member.previous_rank === member.current_rank && (
+                                    <Minus className="w-4 h-4 text-slate-300" />
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-3">
                               <Avatar

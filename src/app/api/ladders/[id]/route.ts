@@ -88,7 +88,7 @@ export async function GET(
     if (canSeeMembers) {
       const { data: members, error: membersError } = await supabaseAdmin
         .from("ladder_memberships")
-        .select("id, user_id, current_rank, status, accepted_at, requested_at, cooling_expires_at")
+        .select("id, user_id, current_rank, previous_rank, status, accepted_at, requested_at, cooling_expires_at")
         .eq("ladder_id", params.id)
         .in("status", ["active", "pending"])
         .order("status", { ascending: false })

@@ -5,6 +5,7 @@ interface Member {
     user_id: string;
     status: string;
     current_rank: number | null;
+    previous_rank?: number | null;
     is_busy?: boolean;
     users?: any;
 }
