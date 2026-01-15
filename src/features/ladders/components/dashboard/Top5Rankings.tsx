@@ -67,7 +67,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                 }`}
                         >
                             <div className="flex flex-col items-center justify-center w-8">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankBadge(player.current_rank || 0)}`}>
+                                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-sm font-bold ${getRankBadge(player.current_rank || 0)}`}>
                                     {player.current_rank}
                                 </div>
                                 {player.previous_rank && player.current_rank && (
@@ -86,7 +86,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                             </div>
                             <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs sm:text-sm font-semibold text-slate-900 break-words leading-tight line-clamp-1">
+                                <p className="text-[10px] sm:text-sm font-semibold text-slate-900 break-words leading-tight line-clamp-1">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}
                                 </p>
                                 {isBusy && (

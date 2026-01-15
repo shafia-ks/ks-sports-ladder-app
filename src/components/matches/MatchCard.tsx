@@ -330,7 +330,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         src={match.player1.profile_picture_url}
                         size="sm"
                     />
-                    <span className="text-slate-900 text-xs sm:text-sm font-bold truncate uppercase tracking-tight leading-tight">
+                    <span className="text-slate-900 text-[10px] sm:text-sm font-semibold leading-tight">
                         {match.player1.full_name || match.player1.email.split("@")[0]}
                     </span>
                     {winnerId === match.player1_id && effectiveStatus === "Confirmed" && <Trophy className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
@@ -346,7 +346,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         src={match.player2.profile_picture_url}
                         size="sm"
                     />
-                    <span className="text-slate-900 text-xs sm:text-sm font-bold truncate uppercase tracking-tight leading-tight">
+                    <span className="text-slate-900 text-[10px] sm:text-sm font-semibold leading-tight">
                         {match.player2.full_name || match.player2.email.split("@")[0]}
                     </span>
                     {winnerId === match.player2_id && effectiveStatus === "Confirmed" && <Trophy className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
@@ -448,9 +448,9 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <div className="grid grid-cols-[auto_1fr] gap-3">
                             {/* Headers */}
                             <div></div>
-                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(45px, 1fr))` }}>
                                 {sets.map((_, idx) => (
-                                    <div key={idx} className="text-center text-sm font-medium text-slate-600">
+                                    <div key={idx} className="text-center text-[10px] sm:text-sm font-medium text-slate-600">
                                         Set {idx + 1}
                                     </div>
                                 ))}
@@ -458,10 +458,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             </div>
 
                             {/* Player 1 Row */}
-                            <div className={`text-sm font-medium ${winnerId === match.player1_id ? "text-green-600" : "text-slate-700"}`}>
+                            <div className={`text-[10px] sm:text-sm font-medium ${winnerId === match.player1_id ? "text-green-600" : "text-slate-700"}`}>
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </div>
-                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(45px, 1fr))` }}>
                                 {sets.map((set, idx) => (
                                     <input
                                         key={idx}
@@ -470,7 +470,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         max="99"
                                         value={set.player1 || ""}
                                         onChange={(e) => updateSet(idx, "player1", e.target.value)}
-                                        className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
+                                        className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
                                         aria-label={`Player 1 Set ${idx + 1} score`}
                                     />
@@ -487,10 +487,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             </div>
 
                             {/* Player 2 Row */}
-                            <div className={`text-sm font-medium ${winnerId === match.player2_id ? "text-green-600" : "text-slate-700"}`}>
+                            <div className={`text-[10px] sm:text-sm font-medium ${winnerId === match.player2_id ? "text-green-600" : "text-slate-700"}`}>
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </div>
-                            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(60px, 1fr))` }}>
+                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(45px, 1fr))` }}>
                                 {sets.map((set, idx) => (
                                     <input
                                         key={idx}
@@ -499,7 +499,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         max="99"
                                         value={set.player2 || ""}
                                         onChange={(e) => updateSet(idx, "player2", e.target.value)}
-                                        className={`w-full px-3 py-2 border rounded-lg text-center font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
+                                        className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
                                         aria-label={`Player 2 Set ${idx + 1} score`}
                                     />
@@ -511,7 +511,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         {/* Winner Indicator */}
                         {winnerId && (
                             <div className="mt-3 text-center">
-                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-[10px] sm:text-sm font-medium">
                                     ✓ {winnerId === match.player1_id ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} leads {Math.max(player1SetsWon, player2SetsWon)}-{Math.min(player1SetsWon, player2SetsWon)}
                                 </span>
                             </div>
