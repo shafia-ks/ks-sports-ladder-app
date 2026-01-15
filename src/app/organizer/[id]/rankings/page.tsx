@@ -158,7 +158,7 @@ function ManualRankingsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Link href={`/organizer/${ladderId}/members`} className="text-brand-600 hover:text-brand-700">
+        <Link href={`/ladders/${ladderId}?tab=ranking`} className="text-brand-600 hover:text-brand-700">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <PageHeader

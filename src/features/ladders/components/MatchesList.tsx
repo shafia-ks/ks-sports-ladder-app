@@ -47,7 +47,7 @@ export function MatchesList({ ladderId, currentUserId, isOrganizer, onDataUpdate
     const fetchMatches = async () => {
         try {
             if (matches.length === 0) setLoading(true);
-            const response = await fetch(`/api/matches?ladderId=${ladderId}`);
+            const response = await fetch(`/api/matches?ladderId=${ladderId}`, { cache: 'no-store' });
             const data = await response.json();
             setMatches(data.matches || []);
         } catch (error) {
