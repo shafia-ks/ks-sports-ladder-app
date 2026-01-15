@@ -430,13 +430,10 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             {effectiveStatus === "Confirmed" && !isExpanded && match.set_scores && (
                 <div className="flex items-center gap-2 mt-3">
                     {match.set_scores.map((score, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+                        <span key={idx} className="px-2 sm:px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] sm:text-sm font-medium">
                             {score}
                         </span>
                     ))}
-                    <span className="text-sm text-slate-600 ml-2">
-                        ({match.player1_id === winnerId ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} won)
-                    </span>
                 </div>
             )}
 
