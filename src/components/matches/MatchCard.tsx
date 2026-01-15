@@ -46,6 +46,15 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Optimistic UI state
+    const [optimisticStatus, setOptimisticStatus] = useState<Match["status"] | null>(null);
+    const effectiveStatus = optimisticStatus || match.status;
+
+    // Reset optimistic status when actual match status matches or changes
+    if (optimisticStatus === match.status) {
+        // We can't set state during render, but we can rely on useEffect or just let it exist
+    }
+
     // Score state
     const [sets, setSets] = useState<Array<{ player1: number; player2: number }>>(
         match.set_scores?.map((score) => {
@@ -141,6 +150,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 description: error instanceof Error ? error.message : "Failed to submit score. Please try again.",
                 variant: "error",
             });
+            setOptimisticStatus(null); // Rollback
         } finally {
             setLoading(false);
         }
@@ -155,7 +165,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 body: JSON.stringify({
                     played_at: matchDate && matchTime ? `${matchDate}T${matchTime}:00` : match.played_at,
                     location: location || null,
-                    status: match.status, // Keep current status
+                    status: effectiveStatus, // Keep current status
                 }),
             });
 
@@ -182,7 +192,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     };
 
     const getStatusBadge = () => {
-        switch (match.status) {
+        switch (effectiveStatus) {
             case "Pending":
                 return <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">⏱ Pending</span>;
             case "ScoreSubmitted":
@@ -195,7 +205,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     };
 
     const getBorderColor = () => {
-        switch (match.status) {
+        switch (effectiveStatus) {
             case "Pending":
                 return "border-l-orange-500";
             case "ScoreSubmitted":
@@ -211,6 +221,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
     const handleConfirm = async () => {
         setLoading(true);
+        setOptimisticStatus("Confirmed");
         try {
             const response = await fetch(`/api/matches/${match.id}/confirm`, {
                 method: "POST",
@@ -242,6 +253,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 description: error instanceof Error ? error.message : "Failed to confirm match. Please try again.",
                 variant: "error",
             });
+            setOptimisticStatus(null); // Rollback
         } finally {
             setLoading(false);
         }
@@ -252,6 +264,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         if (!reason) return;
 
         setLoading(true);
+        setOptimisticStatus("Disputed");
         try {
             const response = await fetch(`/api/matches/${match.id}/confirm`, {
                 method: "POST",
@@ -282,16 +295,17 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 description: error instanceof Error ? error.message : "Failed to dispute match. Please try again.",
                 variant: "error",
             });
+            setOptimisticStatus(null); // Rollback
         } finally {
             setLoading(false);
         }
     };
 
-    const canEdit = match.status === "Pending" || (match.status === "ScoreSubmitted" && isOrganizer);
+    const canEdit = effectiveStatus === "Pending" || (effectiveStatus === "ScoreSubmitted" && isOrganizer);
 
     // Players can confirm if they didn't submit, OR organizers/admins can always confirm
     const isPlayer = match.player1_id === currentUserId || match.player2_id === currentUserId;
-    const canConfirm = match.status === "ScoreSubmitted" &&
+    const canConfirm = effectiveStatus === "ScoreSubmitted" &&
         (
             // Player can confirm if they didn't submit it
             (isPlayer && currentUserId !== match.submitted_by) ||
@@ -308,7 +322,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
                     {/* Players */}
                     <div className="flex items-center gap-3 mt-3">
-                        <div className={`flex items-center gap-2 ${winnerId === match.player1_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
+                        <div className={`flex items-center gap-2 ${winnerId === match.player1_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
                             <Avatar
                                 name={match.player1.full_name}
                                 email={match.player1.email}
@@ -318,12 +332,12 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             <span className="text-slate-900">
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </span>
-                            {winnerId === match.player1_id && match.status === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
+                            {winnerId === match.player1_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
                         </div>
 
                         <span className="text-slate-400 font-medium">VS</span>
 
-                        <div className={`flex items-center gap-2 ${winnerId === match.player2_id && match.status === "Confirmed" ? "font-bold" : ""}`}>
+                        <div className={`flex items-center gap-2 ${winnerId === match.player2_id && effectiveStatus === "Confirmed" ? "font-bold" : ""}`}>
                             <Avatar
                                 name={match.player2.full_name}
                                 email={match.player2.email}
@@ -333,7 +347,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             <span className="text-slate-900">
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </span>
-                            {winnerId === match.player2_id && match.status === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
+                            {winnerId === match.player2_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
                         </div>
                     </div>
 
@@ -370,7 +384,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                 onClick={() => setIsEditing(true)}
                                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-sm"
                             >
-                                {match.status === "Pending" ? "Enter Score →" : "Edit Score"}
+                                {effectiveStatus === "Pending" ? "Enter Score →" : "Edit Score"}
                             </button>
                             <button
                                 onClick={() => setIsEditingDetails(true)}
@@ -401,7 +415,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         </>
                     )}
 
-                    {match.status === "Confirmed" && (
+                    {effectiveStatus === "Confirmed" && (
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -414,7 +428,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             </div>
 
             {/* Score Display (Completed matches) */}
-            {match.status === "Confirmed" && !isExpanded && match.set_scores && (
+            {effectiveStatus === "Confirmed" && !isExpanded && match.set_scores && (
                 <div className="flex items-center gap-2 mt-3">
                     {match.set_scores.map((score, idx) => (
                         <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
@@ -615,7 +629,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             )}
 
             {/* Expanded Details (Completed matches) */}
-            {isExpanded && match.status === "Confirmed" && (
+            {isExpanded && effectiveStatus === "Confirmed" && (
                 <div className="mt-4 pt-4 border-t border-slate-200">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
