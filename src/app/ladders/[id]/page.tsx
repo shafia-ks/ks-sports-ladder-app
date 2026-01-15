@@ -60,6 +60,17 @@ const formatSport = (sport?: string | null) => {
   return SPORT_LABELS[key] || sport;
 };
 
+const formatTimeRemaining = (expiresAt: string) => {
+  const diff = new Date(expiresAt).getTime() - new Date().getTime();
+  if (diff <= 0) return null;
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
 interface LadderMember {
   id: string;
   user_id: string;
@@ -712,54 +723,68 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             ))}
           </div>
 
-          {/* Skeleton for dashboard content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Hero stats skeleton */}
-              <div className="card p-6 animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-                <div className="grid grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-8 bg-slate-200 rounded"></div>
-                      <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Top 5 skeleton */}
-              <div className="card p-6 animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+          {/* Skeleton based on active tab */}
+          {tab === "dashboard" ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Hero stats skeleton */}
+                <div className="card p-6 animate-pulse">
+                  <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-8 bg-slate-200 rounded"></div>
+                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Sidebar skeleton */}
-            <div className="lg:col-span-1">
-              <div className="card p-6 animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                      <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                    </div>
-                  ))}
+                {/* Top 5 skeleton */}
+                <div className="card p-6 animate-pulse">
+                  <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                          <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-1">
+                <div className="card p-6 animate-pulse">
+                  <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* Single Column / Table Skeleton for other tabs */
+            <div className="card p-6 animate-pulse">
+              <div className="flex justify-between items-center mb-6">
+                <div className="h-8 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-8 bg-slate-200 rounded w-1/6"></div>
+              </div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-16 bg-slate-200 rounded-lg"></div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1099,10 +1124,27 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                 <div className="mt-1 flex items-center gap-2">
                                   {renderRolePill(getMemberRole(member))}
                                   {isBusy ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded-full">
-                                      <Swords className="h-3 w-3" />
-                                      In Challenge
-                                    </span>
+                                    (() => {
+                                      const now = new Date();
+                                      const coolingDate = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
+                                      const isCooling = coolingDate && coolingDate > now;
+                                      const timeLeft = member.cooling_expires_at ? formatTimeRemaining(member.cooling_expires_at) : null;
+
+                                      if (isCooling && timeLeft) {
+                                        return (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full">
+                                            <Clock className="h-3 w-3" />
+                                            Cooling ({timeLeft})
+                                          </span>
+                                        );
+                                      }
+                                      return (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded-full">
+                                          <Swords className="h-3 w-3" />
+                                          Playing
+                                        </span>
+                                      );
+                                    })()
                                   ) : (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-800 rounded-full">
                                       <CheckCircle className="h-3 w-3" />
@@ -1401,18 +1443,21 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             </form>
           )}
         </>
-      )}
+      )
+      }
 
 
       {/* Invitation Modal */}
-      {isInviteOpen && (
-        <InviteMembersModal
-          isOpen={isInviteOpen}
-          onClose={() => setIsInviteOpen(false)}
-          ladderId={params.id}
-          ladderName={data?.ladder?.name || "Ladder"}
-        />
-      )}
-    </div>
+      {
+        isInviteOpen && (
+          <InviteMembersModal
+            isOpen={isInviteOpen}
+            onClose={() => setIsInviteOpen(false)}
+            ladderId={params.id}
+            ladderName={data?.ladder?.name || "Ladder"}
+          />
+        )
+      }
+    </div >
   );
 }

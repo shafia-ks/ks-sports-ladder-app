@@ -6,6 +6,7 @@ interface Member {
     status: string;
     current_rank: number | null;
     previous_rank?: number | null;
+    cooling_expires_at?: string | null;
     is_busy?: boolean;
     users?: any;
 }
