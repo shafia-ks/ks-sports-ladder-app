@@ -314,7 +314,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         );
 
     return (
-        <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-6 hover:shadow-md transition-shadow`}>
+        <div className={`bg-white rounded-2xl shadow-sm border-l-4 ${getBorderColor()} p-4 sm:p-6 hover:shadow-md transition-shadow`}>
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -329,7 +329,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                 src={match.player1.profile_picture_url}
                                 size="md"
                             />
-                            <span className="text-slate-900">
+                            <span className="text-slate-900 text-sm font-semibold truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </span>
                             {winnerId === match.player1_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
@@ -344,7 +344,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                 src={match.player2.profile_picture_url}
                                 size="md"
                             />
-                            <span className="text-slate-900">
+                            <span className="text-slate-900 text-sm font-semibold truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </span>
                             {winnerId === match.player2_id && effectiveStatus === "Confirmed" && <Trophy className="h-4 w-4 text-yellow-500" />}
@@ -382,13 +382,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-sm"
+                                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium text-xs sm:text-sm"
                             >
                                 {effectiveStatus === "Pending" ? "Enter Score →" : "Edit Score"}
                             </button>
                             <button
                                 onClick={() => setIsEditingDetails(true)}
-                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-sm"
+                                className="px-3 py-1.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium text-xs sm:text-sm"
                             >
                                 📝 Edit Details
                             </button>

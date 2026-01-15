@@ -171,7 +171,7 @@ export default function LaddersPage() {
                   {/* Active Status Strip */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${ladder.membership.status === 'active' ? 'bg-brand-500' : 'bg-amber-400'}`} />
 
-                  <div className="flex items-center gap-4 pl-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 pl-3 relative">
                     <div className="relative flex-shrink-0">
                       {ladder.profile_picture_url ? (
                         <img src={ladder.profile_picture_url} className="w-14 h-14 rounded-full object-cover border border-slate-100 shadow-sm" alt={ladder.name} />
@@ -187,7 +187,7 @@ export default function LaddersPage() {
                       )}
                     </div>
 
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 w-full">
                       <h3 className="font-bold text-slate-900 truncate group-hover:text-brand-700 transition-colors">
                         {ladder.name}
                       </h3>
@@ -205,8 +205,8 @@ export default function LaddersPage() {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0">
-                      <Link href={`/ladders/${ladder.id}`} className="btn btn-sm btn-secondary">
+                    <div className="flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                      <Link href={`/ladders/${ladder.id}`} className="btn btn-sm btn-secondary w-full sm:w-auto justify-center">
                         Dashboard
                       </Link>
                     </div>

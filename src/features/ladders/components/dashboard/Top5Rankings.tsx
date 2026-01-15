@@ -86,7 +86,7 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                             </div>
                             <Avatar name={displayName} email={player.users?.email} src={player.users?.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs sm:text-sm font-semibold text-slate-900 break-words">
+                                <p className="text-xs sm:text-sm font-semibold text-slate-900 break-words leading-tight line-clamp-1">
                                     {displayName} {isCurrentUser && <span className="text-brand-600">(You)</span>}
                                 </p>
                                 {isBusy && (
@@ -102,21 +102,20 @@ export function Top5Rankings({ players, currentUserId, ladderId, canChallenge, o
                                         <button
                                             onClick={() => onChallenge(player.user_id)}
                                             disabled={isBusy}
-                                            className={`btn btn-sm flex items-center gap-1 ${isBusy ? "bg-amber-100 text-amber-700 cursor-not-allowed hover:bg-amber-100" : "btn-primary"}`}
+                                            className={`p-2 rounded-full transition-colors flex items-center justify-center ${isBusy ? "bg-amber-100 text-amber-700 cursor-not-allowed" : "bg-brand-50 text-brand-600 hover:bg-brand-100"}`}
+                                            title={isBusy ? "Player is busy" : "Challenge Player"}
                                             aria-label={isBusy ? `Cannot challenge ${displayName}, player is busy` : `Challenge ${displayName}`}
                                         >
-                                            {isBusy ? <Lock className="h-3 w-3" aria-hidden="true" /> : <Swords className="h-3 w-3" aria-hidden="true" />}
-                                            {isBusy ? "Busy" : "Challenge"}
+                                            {isBusy ? <Lock className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
                                         </button>
                                     ) : (
                                         <button
                                             disabled
-                                            className="btn btn-sm bg-slate-200 text-slate-500 cursor-not-allowed flex items-center gap-1"
-                                            title="Out of challenge range"
+                                            className="p-2 rounded-full bg-slate-100 text-slate-400 cursor-not-allowed flex items-center justify-center"
+                                            title="Rank Locked / Out of Range"
                                             aria-label={`Cannot challenge ${displayName}, out of rank range`}
                                         >
-                                            <Lock className="h-3 w-3" aria-hidden="true" />
-                                            Locked
+                                            <Lock className="h-4 w-4" />
                                         </button>
                                     )}
                                 </div>
