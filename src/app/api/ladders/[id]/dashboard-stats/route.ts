@@ -64,7 +64,7 @@ export async function GET(
         .select("*")
         .eq("ladder_id", ladderId)
         .order("created_at", { ascending: false })
-        .limit(2)
+        .limit(10)
     ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
 
     // 2b. Organizer Stats - Only if leader/admin
@@ -141,7 +141,34 @@ export async function GET(
     const myMatchesRaw = (results[3] as any).data || [];
     const ladderChallengesRaw = (results[4] as any).data || [];
     const ladderMatchesRaw = (results[5] as any).data || [];
-    const rankHistoryRaw = (results[1] as any).data || [];
+    const rankSnapshots = (results[1] as any).data || [];
+
+    // Process Rank History: Diff the snapshots to find specific user update events
+    const rankHistoryRaw: any[] = [];
+    if (rankSnapshots && rankSnapshots.length >= 2) {
+      for (let i = 0; i < rankSnapshots.length - 1; i++) {
+        const currentRef = rankSnapshots[i];
+        const prevRef = rankSnapshots[i + 1];
+        const currentParams = currentRef.snapshot;
+        const prevParams = prevRef.snapshot;
+
+        if (Array.isArray(currentParams) && Array.isArray(prevParams)) {
+          currentParams.forEach((curr: any) => {
+            const prev = prevParams.find((p: any) => p.userId === curr.userId);
+            // Check if rank changed (and valid ranks)
+            if (prev && prev.currentRank !== curr.currentRank) {
+              rankHistoryRaw.push({
+                id: `${currentRef.id}-${curr.userId}`,
+                user_id: curr.userId,
+                old_rank: prev.currentRank,
+                new_rank: curr.currentRank,
+                created_at: currentRef.created_at
+              });
+            }
+          });
+        }
+      }
+    }
 
     // Collect IDs
     const userIds = new Set<string>();
@@ -212,10 +239,12 @@ export async function GET(
       }
 
       let rankChange = null;
-      if (rankHistoryRes.data && rankHistoryRes.data.length >= 2) {
+      if (rankSnapshots && rankSnapshots.length >= 2) {
         const currentRank = membership.current_rank;
-        const previousSnapshot = rankHistoryRes.data[1].snapshot as any;
-        const previousRank = previousSnapshot.find((r: any) => r.userId === userId)?.currentRank;
+        const previousSnapshot = rankSnapshots[1].snapshot as any;
+        const previousRank = Array.isArray(previousSnapshot)
+          ? previousSnapshot.find((r: any) => r.userId === userId)?.currentRank
+          : null;
         if (currentRank && previousRank) {
           rankChange = previousRank - currentRank;
         }
