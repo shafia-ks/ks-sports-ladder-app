@@ -85,15 +85,7 @@ export async function POST(req: NextRequest) {
       user_id: created_by,
     });
 
-    // Add creator as active member
-    await supabaseAdmin.from("ladder_memberships").insert({
-      ladder_id: ladder.id,
-      user_id: created_by,
-      current_rank: 1,
-      status: "active",
-      accepted_at: new Date().toISOString(),
-      accepted_by: created_by,
-    });
+    // Creator is NOT added as a member by default (User request)
 
     // Create audit log
     await createAuditLog({

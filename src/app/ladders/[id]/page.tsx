@@ -436,6 +436,34 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  const handleToggleLadderStatus = async () => {
+    const currentStatus = data?.ladder?.status;
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const action = currentStatus === 'active' ? 'deactivate' : 'activate';
+
+    if (!window.confirm(`Are you sure you want to ${action} this ladder?`)) {
+      return;
+    }
+
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`/api/ladders/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) throw new Error(`Failed to ${action} ladder`);
+
+      toastPush({ title: `Ladder ${newStatus === 'active' ? 'activated' : 'deactivated'}`, variant: "success" });
+      await fetchLadder();
+    } catch (err) {
+      toastPush({ title: "Error", description: `Failed to ${action} ladder`, variant: "error" });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleProfilePictureUpload = async (file: File): Promise<string> => {
     if (!user?.id) throw new Error("Not authenticated");
 
@@ -1426,6 +1454,33 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Danger Zone */}
+                <div className="border-t border-slate-200 pt-6 mt-6">
+                  <h3 className="text-base font-semibold text-red-600 mb-3">Danger Zone</h3>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-red-900">
+                        {data?.ladder?.status === 'active' ? 'Deactivate Ladder' : 'Activate Ladder'}
+                      </h4>
+                      <p className="text-xs text-red-700 mt-1">
+                        {data?.ladder?.status === 'active'
+                          ? "Prevent new challenges and freeze rankings. Existing data is preserved."
+                          : "Resume ladder operations and allow new challenges."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleLadderStatus}
+                      className={`btn btn-sm ${data?.ladder?.status === 'active'
+                        ? 'bg-white border-red-300 text-red-700 hover:bg-red-50'
+                        : 'bg-white border-green-300 text-green-700 hover:bg-green-50'
+                        }`}
+                    >
+                      {data?.ladder?.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
                   </div>
                 </div>
 

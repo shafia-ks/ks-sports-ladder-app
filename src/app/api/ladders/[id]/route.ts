@@ -220,6 +220,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (visibility !== undefined) updates.visibility = visibility;
     if (ranking_rules !== undefined) updates.ranking_rules = ranking_rules;
     if (challenge_rules !== undefined) updates.challenge_rules = challenge_rules;
+    if (body.status !== undefined) updates.status = body.status;
 
     const { data, error } = await supabaseAdmin
       .from("ladders")
