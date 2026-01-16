@@ -98,14 +98,7 @@ export function PendingOrganizerRequests({ ladderId, onRequestProcessed }: Props
     };
 
     if (loading) {
-        return (
-            <div className="card p-6">
-                <div className="animate-pulse space-y-3">
-                    <div className="h-6 bg-slate-200 rounded w-1/3"></div>
-                    <div className="h-20 bg-slate-200 rounded"></div>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (requests.length === 0) return null;
