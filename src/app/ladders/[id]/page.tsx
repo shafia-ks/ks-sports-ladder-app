@@ -169,20 +169,32 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   // Use custom hooks for data fetching
   const { data, isLoading, error, refetch: fetchLadder } = useLadderData(params.id, user?.id);
 
+  const canAccessStats =
+    data?.members?.some((m: any) => m.user_id === user?.id && m.status === "active") ||
+    data?.organizerIds?.includes(user?.id || "");
+
+  const { stats: dashboardStats, isLoading: isStatsLoading, mutate: refreshDashboardStats } = useDashboardStats(
+    params.id,
+    canAccessStats && user?.id ? user.id : null
+  );
+
   // Real-time subscriptions for instant updates
   useLadderRealtime({
     ladderId: params.id,
     onChallengeChange: () => {
       console.log('[Dashboard] Challenge changed, refetching...');
-      fetchLadder(true); // Silent refetch
+      fetchLadder(true);
+      refreshDashboardStats();
     },
     onMatchChange: () => {
       console.log('[Dashboard] Match changed, refetching...');
-      fetchLadder(true); // Silent refetch
+      fetchLadder(true);
+      refreshDashboardStats();
     },
     onRankingChange: () => {
       console.log('[Dashboard] Ranking changed, refetching...');
-      fetchLadder(true); // Silent refetch
+      fetchLadder(true);
+      refreshDashboardStats();
     },
     enabled: !!data, // Only enable after initial load
   });
@@ -231,14 +243,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     const newUrl = params.toString() ? `${pathname}?${params.toString()}` : (pathname || '');
     router.push(newUrl as any, { scroll: false });
   };
-  const canAccessStats =
-    data?.members?.some((m: any) => m.user_id === user?.id && m.status === "active") ||
-    data?.organizerIds?.includes(user?.id || "");
 
-  const { stats: dashboardStats, isLoading: isStatsLoading, mutate: refreshDashboardStats } = useDashboardStats(
-    params.id,
-    canAccessStats && user?.id ? user.id : null
-  );
   const [fixingRanks, setFixingRanks] = useState(false);
   const [settingsForms, setSettingsForms] = useState({
     description: "",
@@ -1011,6 +1016,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                             variant: 'success'
                           });
                           await fetchLadder(true);
+                          refreshDashboardStats();
                         } catch (err) {
                           toastPush({
                             title: 'Error',

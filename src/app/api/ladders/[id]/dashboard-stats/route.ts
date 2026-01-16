@@ -140,6 +140,12 @@ export async function GET(
       ...globalDataPromises
     ]);
 
+    // LOGGING FOR DEBUG
+    console.log(`[DashboardStats] Ladder: ${ladderId}, User: ${userId}`);
+    console.log(`[DashboardStats] User Matches: ${(results[0] as any)?.data?.length}`);
+    console.log(`[DashboardStats] Ladder Matches: ${(results[5] as any)?.data?.length}`);
+    console.log(`[DashboardStats] Ladder Challenges: ${(results[4] as any)?.data?.length}`);
+
     // Extract results by index (order matters!)
     // Stats results
     const matchesRes = results[0] as any;
