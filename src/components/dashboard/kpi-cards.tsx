@@ -29,21 +29,18 @@ export function KPICards({ stats, loading }: KPICardsProps) {
                 value={stats?.activeLadders ?? 0}
                 icon={<Trophy className="h-5 w-5 text-brand-600" />}
                 variant="primary"
-                subtitle="Ranked 4th, 7th, 2nd..."
             />
             <StatCard
                 title="Win Rate"
                 value={`${stats?.winRate ?? 0}%`}
                 icon={<TrendingUp className="h-5 w-5 text-success-600" />}
                 variant="neutral"
-                trend={{ value: 5, isPositive: true }} // TODO: Real trend data
             />
             <StatCard
                 title="Current Streak"
                 value={`${stats?.currentStreak ?? 0} Wins`}
                 icon={<Flame className="h-5 w-5 text-orange-500" />}
                 variant="neutral"
-                subtitle="Best streak: 7"
             />
         </div>
     );
