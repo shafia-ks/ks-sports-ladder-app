@@ -8,9 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase env vars are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
 }
 
-// Singleton instance
+// Singleton instance with persistent session
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+    },
+  })
   : undefined;
 
 // Helper to match server-side pattern and ensure we get a client (or undefined)
