@@ -16,6 +16,7 @@ import { RoleRequest } from "@/components/ui/role-request";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { useAnalytics } from "@/lib/analytics/tracker";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 // Extracted components
 import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
@@ -246,6 +247,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   // Fetch dashboard stats
   useEffect(() => {
@@ -436,14 +438,12 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const handleToggleLadderStatus = async () => {
+  const handleToggleLadderStatus = () => setIsStatusModalOpen(true);
+
+  const performLadderStatusUpdate = async () => {
     const currentStatus = data?.ladder?.status;
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     const action = currentStatus === 'active' ? 'deactivate' : 'activate';
-
-    if (!window.confirm(`Are you sure you want to ${action} this ladder?`)) {
-      return;
-    }
 
     setSavingSettings(true);
     try {
@@ -457,6 +457,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
       toastPush({ title: `Ladder ${newStatus === 'active' ? 'activated' : 'deactivated'}`, variant: "success" });
       await fetchLadder();
+      setIsStatusModalOpen(false);
     } catch (err) {
       toastPush({ title: "Error", description: `Failed to ${action} ladder`, variant: "error" });
     } finally {
@@ -1530,6 +1531,21 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
             />
           )
         }
+
+        {/* Status Confirmation Modal */}
+        <ConfirmModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          onConfirm={performLadderStatusUpdate}
+          title={data?.ladder?.status === 'active' ? "Deactivate Ladder" : "Activate Ladder"}
+          message={data?.ladder?.status === 'active'
+            ? "Are you sure you want to deactivate this ladder? This will prevent new challenges and freeze rankings. Existing data will be preserved."
+            : "Are you sure you want to activate this ladder? This will allow new challenges and resume ranking updates."
+          }
+          confirmText={data?.ladder?.status === 'active' ? "Deactivate" : "Activate"}
+          variant={data?.ladder?.status === 'active' ? "danger" : "primary"}
+          loading={savingSettings}
+        />
       </div>
     </ProtectedRoute>
   );

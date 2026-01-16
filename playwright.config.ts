@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 
 const isCI = !!process.env.CI;
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";

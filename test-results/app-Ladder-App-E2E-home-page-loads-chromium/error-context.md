@@ -1,0 +1,56 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Logo KS Sports Ladder" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "Logo" [ref=e6]
+        - generic [ref=e7]: KS Sports Ladder
+      - navigation
+      - link "Sign in" [ref=e9] [cursor=pointer]:
+        - /url: /login
+        - img [ref=e10]
+        - generic [ref=e13]: Sign in
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e18]:
+        - generic [ref=e20]:
+          - paragraph [ref=e21]:
+            - img [ref=e22]
+            - text: Built for clubs and teams
+          - heading "Modern sports ladder ops with club grade controls and governance" [level=1] [ref=e24]
+          - paragraph [ref=e25]: Create ladders, control challenges, manage disputes, and keep rankings fair. Role-based views for players, organizers, and admins—ready for production.
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - img [ref=e29]
+              - paragraph [ref=e32]: Role-based access
+            - paragraph [ref=e33]: Players, organizers, and admins get the right controls—no clutter, no confusion.
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - paragraph [ref=e39]: Challenge governance
+            - paragraph [ref=e40]: Challenge limits, expiry, and busy player checks to keep ladders fair.
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - img [ref=e43]
+              - paragraph [ref=e45]: Ranking your way
+            - paragraph [ref=e46]: Swap, minimal drop, slide, or points configure per ladder.
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - img [ref=e49]
+              - paragraph [ref=e54]: Club-grade oversight
+            - paragraph [ref=e55]: Leader requests, seasons, disputes, and audit friendly notifications.
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - heading "Ready to challenge?" [level=2] [ref=e59]
+          - paragraph [ref=e60]: Join your local club ladder or start your own today.
+        - generic [ref=e61]:
+          - link "Create account" [ref=e62] [cursor=pointer]:
+            - /url: /signup
+          - link "Sign in" [ref=e63] [cursor=pointer]:
+            - /url: /login
+  - alert [ref=e64]
+```

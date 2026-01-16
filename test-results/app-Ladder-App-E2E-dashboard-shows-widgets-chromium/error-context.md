@@ -1,7 +1,7 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e1]:
+- generic [active] [ref=e1]:
   - banner [ref=e2]:
     - generic [ref=e3]:
       - link "Logo KS Sports Ladder" [ref=e4] [cursor=pointer]:
@@ -22,9 +22,8 @@
       - generic [ref=e22]:
         - generic [ref=e23]:
           - generic [ref=e24]: Email
-          - textbox "Email" [active] [ref=e25]:
+          - textbox "Email" [ref=e25]:
             - /placeholder: you@example.com
-            - text: shafiazeenath@outlook.com
         - generic [ref=e26]:
           - generic [ref=e27]: Password
           - generic [ref=e28]:
