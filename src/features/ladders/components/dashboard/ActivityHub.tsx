@@ -1,7 +1,6 @@
 "use client";
 
 import { Swords, Target, ArrowRight, Clock } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
 import Link from "next/link";
 
 interface ActivityItem {
@@ -19,6 +18,14 @@ interface ActivityItem {
     };
     status: string;
     created_at: string;
+    winner_id?: string;
+    player1_id?: string;
+    player2_id?: string;
+    set_scores?: any;
+    challenger_rank?: number;
+    challenged_rank?: number;
+    player1_rank?: number;
+    player2_rank?: number;
 }
 
 interface ActivityHubProps {
@@ -39,8 +46,12 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
                 type: 'challenge' as const,
                 player1: c.challenger,
                 player2: c.challenged,
+                player1_id: c.challenger_id,
+                player2_id: c.challenged_id,
                 status: c.status,
                 created_at: c.created_at,
+                challenger_rank: c.challenger_rank,
+                challenged_rank: c.challenged_rank,
             })),
         ...matches
             // Show: 1) Matches between other players, OR 2) Confirmed matches involving current user
@@ -53,8 +64,14 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
                 type: 'match' as const,
                 player1: m.player1,
                 player2: m.player2,
+                player1_id: m.player1_id,
+                player2_id: m.player2_id,
                 status: m.status,
                 created_at: m.scheduled_at || m.created_at,
+                winner_id: m.winner_id,
+                set_scores: m.set_scores,
+                player1_rank: m.player1_rank,
+                player2_rank: m.player2_rank,
             })),
     ]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -73,20 +90,53 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
         return `${diffDays}d ago`;
     };
 
-    const getStatusLabel = (item: ActivityItem) => {
-        if (item.type === 'challenge') {
-            return item.status === 'pending' ? 'Challenge' : 'Accepted';
-        }
-        return item.status === 'pending' ? 'Match' : item.status === 'submitted' ? 'Scoring' : 'Completed';
+    const formatScore = (setScores: any) => {
+        if (!setScores || !Array.isArray(setScores)) return null;
+        return setScores.map((set: any) => `${set.player1}-${set.player2}`).join(', ');
     };
 
-    const getStatusColor = (item: ActivityItem) => {
+    const getActivityText = (item: ActivityItem) => {
+        const player1Name = item.player1.full_name || item.player1.email.split('@')[0];
+        const player2Name = item.player2.full_name || item.player2.email.split('@')[0];
+
+        // Show ranks if available
+        const player1Rank = item.type === 'challenge' ? item.challenger_rank : item.player1_rank;
+        const player2Rank = item.type === 'challenge' ? item.challenged_rank : item.player2_rank;
+
+        const player1Display = player1Rank ? `#${player1Rank} ${player1Name}` : player1Name;
+        const player2Display = player2Rank ? `#${player2Rank} ${player2Name}` : player2Name;
+
         if (item.type === 'challenge') {
-            return item.status === 'pending' ? 'text-amber-600' : 'text-green-600';
+            return {
+                text: `${player1Display} challenged ${player2Display}`,
+                status: item.status === 'Pending' ? 'Challenge sent' : 'Challenge accepted',
+            };
         }
-        if (item.status === 'confirmed') return 'text-green-600';
-        if (item.status === 'submitted') return 'text-blue-600';
-        return 'text-slate-600';
+
+        // For matches
+        if (item.status === 'Confirmed' && item.winner_id) {
+            const winner = item.winner_id === item.player1_id ? item.player1 : item.player2;
+            const loser = item.winner_id === item.player1_id ? item.player2 : item.player1;
+            const winnerName = winner.full_name || winner.email.split('@')[0];
+            const loserName = loser.full_name || loser.email.split('@')[0];
+            const winnerRank = item.winner_id === item.player1_id ? player1Rank : player2Rank;
+            const loserRank = item.winner_id === item.player1_id ? player2Rank : player1Rank;
+
+            const winnerDisplay = winnerRank ? `#${winnerRank} ${winnerName}` : winnerName;
+            const loserDisplay = loserRank ? `#${loserRank} ${loserName}` : loserName;
+
+            const score = formatScore(item.set_scores);
+            return {
+                text: `${winnerDisplay} defeated ${loserDisplay}`,
+                status: score ? `${score}` : 'Match completed',
+                isWin: true,
+            };
+        }
+
+        return {
+            text: `${player1Display} vs ${player2Display}`,
+            status: item.status === 'Pending' ? 'Match scheduled' : 'Score submitted',
+        };
     };
 
     if (activities.length === 0) {
@@ -131,29 +181,22 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
             <div className="space-y-2">
                 {activities.map((activity) => {
                     const Icon = activity.type === 'challenge' ? Swords : Target;
-                    const player1Name = activity.player1.full_name || activity.player1.email.split('@')[0];
-                    const player2Name = activity.player2.full_name || activity.player2.email.split('@')[0];
+                    const activityInfo = getActivityText(activity);
 
                     return (
                         <div
                             key={activity.id}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+                            className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                            <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ${activity.type === 'challenge' ? 'text-amber-600' : 'text-blue-600'}`} />
+                            <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${activity.type === 'challenge' ? 'text-amber-600' : activityInfo.isWin ? 'text-green-600' : 'text-blue-600'}`} />
 
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] sm:text-xs font-semibold text-slate-900 truncate">
-                                        {player1Name}
-                                    </span>
-                                    <span className="text-[9px] sm:text-[10px] text-slate-400">vs</span>
-                                    <span className="text-[10px] sm:text-xs font-semibold text-slate-900 truncate">
-                                        {player2Name}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px]">
-                                    <span className={getStatusColor(activity)}>
-                                        {getStatusLabel(activity)}
+                                <p className="text-[10px] sm:text-xs font-semibold text-slate-900 leading-tight">
+                                    {activityInfo.text}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5 text-[9px] sm:text-[10px]">
+                                    <span className={`${activityInfo.isWin ? 'text-green-600' : 'text-slate-600'} font-medium`}>
+                                        {activityInfo.status}
                                     </span>
                                     <span className="text-slate-300">•</span>
                                     <span className="text-slate-400 flex items-center gap-0.5">
