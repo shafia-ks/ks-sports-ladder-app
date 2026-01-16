@@ -8,6 +8,7 @@ import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { KPICards } from "@/components/dashboard/kpi-cards";
 import { MyLaddersGrid } from "@/components/dashboard/my-ladders-grid";
+import { PendingInvitationsCard } from "@/components/dashboard/pending-invitations";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -23,6 +24,9 @@ export default function DashboardPage() {
             Welcome back, {user?.firstName}! Here's what's happening.
           </p>
         </div>
+
+        {/* Pending Invitations */}
+        <PendingInvitationsCard />
 
         {/* Action Required Widget - Top Priority */}
         <ActionRequiredWidget />
