@@ -15,6 +15,20 @@ export async function POST(
     const { member_id, action } = body; // action: "accept" | "decline" | "remove"
 
     if (action === "accept") {
+      // Get member info
+      const { data: memberInfo } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("user_id, users(full_name, email)")
+        .eq("id", member_id)
+        .single();
+
+      // Get ladder info
+      const { data: ladderData } = await supabaseAdmin
+        .from("ladders")
+        .select("name")
+        .eq("id", params.id)
+        .single();
+
       // Get current max rank (excluding rank 0 which is for pending members)
       const { data: ranks } = await supabaseAdmin
         .from("ladder_memberships")
@@ -42,10 +56,50 @@ export async function POST(
         .single();
 
       if (error) throw error;
+
+      // Notify all other active members about the new joiner
+      if (memberInfo && ladderData) {
+        const { createNotification } = await import("@/lib/supabase/notifications");
+
+        // Get all active members except the new one
+        const { data: activeMembers } = await supabaseAdmin
+          .from("ladder_memberships")
+          .select("user_id")
+          .eq("ladder_id", params.id)
+          .eq("status", "active")
+          .neq("user_id", memberInfo.user_id);
+
+        const memberName = (memberInfo.users as any)?.full_name || (memberInfo.users as any)?.email || "A new member";
+        if (activeMembers) {
+          for (const member of activeMembers) {
+            await createNotification({
+              userId: member.user_id,
+              type: "membership_added",
+              message: `${memberName} joined ${ladderData.name}`,
+              link: `/ladders/${params.id}`,
+            });
+          }
+        }
+      }
+
       return NextResponse.json(data);
     }
 
     if (action === "decline" || action === "remove") {
+      // Get member info before deleting
+      const { data: memberData } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("user_id, users(full_name, email)")
+        .eq("id", member_id)
+        .single();
+
+      // Get ladder info
+      const { data: ladderData } = await supabaseAdmin
+        .from("ladders")
+        .select("name")
+        .eq("id", params.id)
+        .single();
+
       // Remove/reject member
       const { error } = await supabaseAdmin
         .from("ladder_memberships")
@@ -53,6 +107,33 @@ export async function POST(
         .eq("id", member_id);
 
       if (error) throw error;
+
+      // If this was a "remove" (leave), notify all other active members
+      if (action === "remove" && memberData && ladderData) {
+        const { createNotification } = await import("@/lib/supabase/notifications");
+
+        // Get all active members except the one who left
+        const { data: activeMembers } = await supabaseAdmin
+          .from("ladder_memberships")
+          .select("user_id")
+          .eq("ladder_id", params.id)
+          .eq("status", "active")
+          .neq("user_id", memberData.user_id);
+
+        // Notify each member
+        const memberName = (memberData.users as any)?.full_name || (memberData.users as any)?.email || "A member";
+        if (activeMembers) {
+          for (const member of activeMembers) {
+            await createNotification({
+              userId: member.user_id,
+              type: "membership_removed",
+              message: `${memberName} left ${ladderData.name}`,
+              link: `/ladders/${params.id}`,
+            });
+          }
+        }
+      }
+
       return NextResponse.json({ success: true });
     }
 

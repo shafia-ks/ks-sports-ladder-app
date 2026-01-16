@@ -19,6 +19,7 @@ export interface CreateNotificationParams {
   | "role_changed"
   | "membership_approved"
   | "membership_rejected"
+  | "membership_added"
   | "membership_removed"
   | "join_request"
   | "account_disabled"
