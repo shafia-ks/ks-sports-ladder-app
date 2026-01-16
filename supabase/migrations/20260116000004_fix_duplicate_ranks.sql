@@ -16,8 +16,7 @@ BEGIN
       AND status = 'active'
     ORDER BY 
       COALESCE(current_rank, 999999) ASC,  -- Put null ranks at the end
-      accepted_at ASC NULLS LAST,           -- Earlier acceptances first
-      created_at ASC                        -- Fallback to creation time
+      accepted_at ASC NULLS LAST            -- Earlier acceptances first
   LOOP
     -- Update the rank sequentially
     UPDATE ladder_memberships
