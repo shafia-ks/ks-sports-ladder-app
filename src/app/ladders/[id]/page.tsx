@@ -465,6 +465,40 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  const handleLeaveLadder = async () => {
+    if (!currentMember?.id || !user?.id) return;
+
+    if (!window.confirm("Are you sure you want to leave this ladder? Your ranking and match history will be preserved, but you'll need to rejoin to participate again.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/ladders/${params.id}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ member_id: currentMember.id, action: "remove" }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || "Failed to leave ladder");
+      }
+
+      toastPush({ title: "Left ladder successfully", variant: "success" });
+
+      // Redirect to dashboard after leaving
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1000);
+    } catch (err) {
+      toastPush({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to leave ladder",
+        variant: "error"
+      });
+    }
+  };
+
   const handleProfilePictureUpload = async (file: File): Promise<string> => {
     if (!user?.id) throw new Error("Not authenticated");
 
@@ -680,10 +714,19 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
     if (isMember) {
       return (
-        <span className="rounded-full border border-success-200 bg-success-50 px-3 py-2 text-sm font-semibold text-success-700 flex items-center gap-1">
-          <CheckCircle className="h-4 w-4" />
-          Member
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-success-200 bg-success-50 px-3 py-2 text-sm font-semibold text-success-700 flex items-center gap-1">
+            <CheckCircle className="h-4 w-4" />
+            Member
+          </span>
+          <button
+            onClick={handleLeaveLadder}
+            className="btn btn-sm bg-white border border-red-300 text-red-700 hover:bg-red-50"
+            title="Leave this ladder"
+          >
+            Leave Ladder
+          </button>
+        </div>
       );
     }
 
