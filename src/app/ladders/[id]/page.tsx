@@ -1028,6 +1028,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     <ActivityHub
                       challenges={dashboardStats.ladderChallenges || []}
                       matches={dashboardStats.ladderMatches || []}
+                      membershipEvents={dashboardStats.membershipEvents || []}
                       currentUserId={user?.id || ''}
                       ladderId={params.id}
                     />

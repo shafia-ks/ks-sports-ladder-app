@@ -57,6 +57,17 @@ export async function POST(
 
       if (error) throw error;
 
+      // Create membership event for activity feed
+      if (memberInfo) {
+        await supabaseAdmin
+          .from("membership_events")
+          .insert({
+            ladder_id: params.id,
+            user_id: memberInfo.user_id,
+            event_type: "joined",
+          });
+      }
+
       // Notify all other active members about the new joiner
       if (memberInfo && ladderData) {
         const { createNotification } = await import("@/lib/supabase/notifications");
@@ -107,6 +118,17 @@ export async function POST(
         .eq("id", member_id);
 
       if (error) throw error;
+
+      // Create membership event for activity feed
+      if (action === "remove" && memberData) {
+        await supabaseAdmin
+          .from("membership_events")
+          .insert({
+            ladder_id: params.id,
+            user_id: memberData.user_id,
+            event_type: "left",
+          });
+      }
 
       // If this was a "remove" (leave), notify all other active members
       if (action === "remove" && memberData && ladderData) {

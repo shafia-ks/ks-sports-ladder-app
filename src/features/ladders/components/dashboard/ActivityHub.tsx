@@ -1,22 +1,27 @@
 "use client";
 
-import { Swords, Target, ArrowRight, Clock } from "lucide-react";
+import { Swords, Target, ArrowRight, Clock, UserPlus, UserMinus } from "lucide-react";
 import Link from "next/link";
 
 interface ActivityItem {
     id: string;
-    type: 'challenge' | 'match';
-    player1: {
+    type: 'challenge' | 'match' | 'membership';
+    player1?: {
         full_name: string | null;
         email: string;
         avatar_url: string | null;
     };
-    player2: {
+    player2?: {
         full_name: string | null;
         email: string;
         avatar_url: string | null;
     };
-    status: string;
+    user?: {
+        full_name: string | null;
+        email: string;
+        avatar_url: string | null;
+    };
+    status?: string;
     created_at: string;
     winner_id?: string;
     player1_id?: string;
@@ -26,16 +31,18 @@ interface ActivityItem {
     challenged_rank?: number;
     player1_rank?: number;
     player2_rank?: number;
+    event_type?: 'joined' | 'left';
 }
 
 interface ActivityHubProps {
     challenges: any[];
     matches: any[];
+    membershipEvents: any[];
     currentUserId: string;
     ladderId: string;
 }
 
-export function ActivityHub({ challenges, matches, currentUserId, ladderId }: ActivityHubProps) {
+export function ActivityHub({ challenges, matches, membershipEvents, currentUserId, ladderId }: ActivityHubProps) {
     // Combine and sort activities
     const activities: ActivityItem[] = [
         ...challenges
@@ -73,6 +80,14 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
                 player1_rank: m.player1_rank,
                 player2_rank: m.player2_rank,
             })),
+        ...membershipEvents
+            .map(e => ({
+                id: e.id,
+                type: 'membership' as const,
+                user: e.users,
+                event_type: e.event_type,
+                created_at: e.created_at,
+            })),
     ]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 10); // Show latest 10
@@ -96,6 +111,21 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
     };
 
     const getActivityText = (item: ActivityItem) => {
+        // Handle membership events
+        if (item.type === 'membership') {
+            const userName = item.user?.full_name || item.user?.email?.split('@')[0] || 'Someone';
+            return {
+                text: item.event_type === 'joined' ? `${userName} joined the ladder` : `${userName} left the ladder`,
+                status: item.event_type === 'joined' ? 'New member' : 'Member left',
+                isMembership: true,
+            };
+        }
+
+        // For challenges and matches, player1 and player2 are required
+        if (!item.player1 || !item.player2) {
+            return { text: 'Activity', status: '' };
+        }
+
         const player1Name = item.player1.full_name || item.player1.email.split('@')[0];
         const player2Name = item.player2.full_name || item.player2.email.split('@')[0];
 
@@ -114,7 +144,7 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
         }
 
         // For matches
-        if (item.status === 'Confirmed' && item.winner_id) {
+        if (item.status === 'Confirmed' && item.winner_id && item.player1 && item.player2) {
             const winner = item.winner_id === item.player1_id ? item.player1 : item.player2;
             const loser = item.winner_id === item.player1_id ? item.player2 : item.player1;
             const winnerName = winner.full_name || winner.email.split('@')[0];
@@ -180,15 +210,27 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
 
             <div className="space-y-2">
                 {activities.map((activity) => {
-                    const Icon = activity.type === 'challenge' ? Swords : Target;
+                    const Icon = activity.type === 'challenge'
+                        ? Swords
+                        : activity.type === 'membership'
+                            ? (activity.event_type === 'joined' ? UserPlus : UserMinus)
+                            : Target;
                     const activityInfo = getActivityText(activity);
+
+                    const iconColor = activity.type === 'challenge'
+                        ? 'text-amber-600'
+                        : activity.type === 'membership'
+                            ? (activity.event_type === 'joined' ? 'text-green-600' : 'text-slate-500')
+                            : activityInfo.isWin
+                                ? 'text-green-600'
+                                : 'text-blue-600';
 
                     return (
                         <div
                             key={activity.id}
                             className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                            <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${activity.type === 'challenge' ? 'text-amber-600' : activityInfo.isWin ? 'text-green-600' : 'text-blue-600'}`} />
+                            <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${iconColor}`} />
 
                             <div className="flex-1 min-w-0">
                                 <p className="text-[10px] sm:text-xs font-semibold text-slate-900 leading-tight">

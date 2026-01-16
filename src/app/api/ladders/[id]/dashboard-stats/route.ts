@@ -216,6 +216,19 @@ export async function GET(
       )
       .slice(0, 10);
 
+    // Get membership events (joins/leaves)
+    const { data: membershipEventsData } = await supabaseAdmin
+      .from("membership_events")
+      .select(`
+        *,
+        users(id, full_name, email, avatar_url)
+      `)
+      .eq("ladder_id", ladderId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    const membershipEvents = membershipEventsData || [];
+
     return NextResponse.json({
       myStats,
       organizerStats,
@@ -224,6 +237,7 @@ export async function GET(
       myMatches,
       ladderChallenges,
       ladderMatches,
+      membershipEvents,
     } as ResponseInit);
   } catch (error: any) {
     console.error("Dashboard stats error:", error);
