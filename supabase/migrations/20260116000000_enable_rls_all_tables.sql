@@ -243,8 +243,7 @@ CREATE POLICY "Audit logs are viewable by admins only" ON public.audit_logs
 -- Create RLS policies for ranking_history
 CREATE POLICY "Ranking history is viewable by ladder members" ON public.ranking_history
   FOR SELECT USING (
-    user_id = auth.uid()
-    OR EXISTS (
+    EXISTS (
       SELECT 1 FROM public.ladder_memberships
       WHERE ladder_id = ranking_history.ladder_id 
         AND user_id = auth.uid() 
