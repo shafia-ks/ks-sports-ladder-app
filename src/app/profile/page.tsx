@@ -256,8 +256,8 @@ export default function ProfilePage() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Avatar</h2>
             <AvatarPicker
-              currentUrl={user.avatarUrl}
-              userName={user.fullName || user.email}
+              currentUrl={user?.avatarUrl}
+              userName={user?.fullName || user?.email || ''}
               selectedColor={formData.avatar_color}
               onUpload={handleAvatarUpload}
               isLoading={isLoading}
