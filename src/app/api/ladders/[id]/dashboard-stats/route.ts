@@ -74,22 +74,14 @@ export async function GET(
     const userActionsPromises = membership ? [
       supabaseAdmin
         .from("challenges")
-        .select(`
-          *,
-          challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
-          challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq("ladder_id", ladderId)
         .eq("status", "pending")
         .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
         .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("matches")
-        .select(`
-          *,
-          player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
-          player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq("ladder_id", ladderId)
         .in("status", ["pending", "submitted"])
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
@@ -100,22 +92,14 @@ export async function GET(
     const globalDataPromises = [
       supabaseAdmin
         .from("challenges")
-        .select(`
-          *,
-          challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
-          challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq("ladder_id", ladderId)
         .eq("ladder_id", ladderId)
         .order("created_at", { ascending: false })
         .limit(20), // Fetch recent challenges of any status
       supabaseAdmin
         .from("matches")
-        .select(`
-          *,
-          player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
-          player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq("ladder_id", ladderId)
 
         // Fetch all matches to show full history
@@ -147,19 +131,54 @@ export async function GET(
     console.log(`[DashboardStats] Ladder Challenges: ${(results[4] as any)?.data?.length}`);
 
     // Extract results by index (order matters!)
-    // Stats results
     const matchesRes = results[0] as any;
     const rankHistoryRes = results[1] as any;
-
-    // User Actions results
-    const myChallengesRes = results[2] as any;
-    const myMatchesRes = results[3] as any;
-
-    // Global results
-    const ladderChallengesRawRes = results[4] as any;
-    const ladderMatchesRawRes = results[5] as any;
-    const recentActivity = results[6] as any;
     const membershipEventsRes = results[7] as any;
+    const recentActivity = results[6] as any;
+
+    // Manual User Enrichment logic
+    const myChallengesRaw = (results[2] as any).data || [];
+    const myMatchesRaw = (results[3] as any).data || [];
+    const ladderChallengesRaw = (results[4] as any).data || [];
+    const ladderMatchesRaw = (results[5] as any).data || [];
+
+    // Collect IDs
+    const userIds = new Set<string>();
+    const addIds = (items: any[], fields: string[]) => {
+      items.forEach(item => fields.forEach(f => item[f] && userIds.add(item[f])));
+    };
+    addIds(myChallengesRaw, ['challenger_id', 'challenged_id']);
+    addIds(myMatchesRaw, ['player1_id', 'player2_id']);
+    addIds(ladderChallengesRaw, ['challenger_id', 'challenged_id']);
+    addIds(ladderMatchesRaw, ['player1_id', 'player2_id']);
+
+    // Fetch Users
+    const userMap = new Map();
+    if (userIds.size > 0) {
+      const { data: usersData } = await supabaseAdmin
+        .from('users')
+        .select('id, full_name, email, avatar_url')
+        .in('id', Array.from(userIds));
+      if (usersData) usersData.forEach((u: any) => userMap.set(u.id, u));
+    }
+
+    // Enrich Helpers
+    const enrichChallenges = (list: any[]) => list.map(c => ({
+      ...c,
+      challenger: userMap.get(c.challenger_id),
+      challenged: userMap.get(c.challenged_id)
+    }));
+    const enrichMatches = (list: any[]) => list.map(m => ({
+      ...m,
+      player1: userMap.get(m.player1_id),
+      player2: userMap.get(m.player2_id)
+    }));
+
+    // Reconstruct Responses
+    const myChallengesRes = { data: enrichChallenges(myChallengesRaw) };
+    const myMatchesRes = { data: enrichMatches(myMatchesRaw) };
+    const ladderChallengesRawRes = { data: enrichChallenges(ladderChallengesRaw) };
+    const ladderMatchesRawRes = { data: enrichMatches(ladderMatchesRaw) };
 
     // Handle Organizer Stats separately (optional to parallelize further but logic is custom)
     let organizerStats = null;
