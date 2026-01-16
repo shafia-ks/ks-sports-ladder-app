@@ -46,8 +46,6 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
     // Combine and sort activities
     const activities: ActivityItem[] = [
         ...challenges
-            // Show challenges between other players only (not involving current user)
-            .filter(c => c.challenger_id !== currentUserId && c.challenged_id !== currentUserId)
             .map(c => ({
                 id: c.id,
                 type: 'challenge' as const,
@@ -61,11 +59,6 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
                 challenged_rank: c.challenged_rank,
             })),
         ...matches
-            // Show: 1) Matches between other players, OR 2) Confirmed matches involving current user
-            .filter(m =>
-                (m.player1_id !== currentUserId && m.player2_id !== currentUserId) ||
-                (m.status === 'Confirmed' && (m.player1_id === currentUserId || m.player2_id === currentUserId))
-            )
             .map(m => ({
                 id: m.id,
                 type: 'match' as const,

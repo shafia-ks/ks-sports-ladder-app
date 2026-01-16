@@ -41,6 +41,16 @@ export async function POST(
             .single();
 
         if (error) throw error;
+
+        // Log membership event for Activity Hub
+        if (data) {
+            await supabaseAdmin.from("membership_events").insert({
+                ladder_id: ladderId,
+                user_id: data.user_id,
+                event_type: "joined"
+            });
+        }
+
         return NextResponse.json({ success: true, data });
     } catch (error) {
         console.error(`POST /api/ladders/${params.id}/members/${params.memberId}/approve error:`, error);

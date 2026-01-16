@@ -106,9 +106,9 @@ export async function GET(
           challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
         `)
         .eq("ladder_id", ladderId)
-        .in("status", ["pending", "accepted"])
+        .eq("ladder_id", ladderId)
         .order("created_at", { ascending: false })
-        .limit(20), // Fetch more to filter later
+        .limit(20), // Fetch recent challenges of any status
       supabaseAdmin
         .from("matches")
         .select(`
@@ -117,7 +117,8 @@ export async function GET(
           player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
         `)
         .eq("ladder_id", ladderId)
-        .in("status", ["Pending", "Submitted", "Confirmed"])
+
+        // Fetch all matches to show full history
         .order("created_at", { ascending: false })
         .limit(50),
       getRecentActivity(ladderId),
@@ -204,18 +205,9 @@ export async function GET(
     }
 
     // Process Global Lists
-    // Filter ladder challenges: not involving current user
-    const ladderChallenges = (ladderChallengesRawRes.data || [])
-      .filter((c: any) => c.challenger_id !== userId && c.challenged_id !== userId)
-      .slice(0, 10);
-
-    // Filter ladder matches: Confirmed & involving user OR Pending/Submitted & not involving user
-    const ladderMatches = (ladderMatchesRawRes.data || [])
-      .filter((m: any) =>
-        (m.status === 'Confirmed' && (m.player1_id === userId || m.player2_id === userId)) ||
-        (m.status !== 'Confirmed' && m.player1_id !== userId && m.player2_id !== userId)
-      )
-      .slice(0, 10);
+    // Activity Hub should show ALL recent activity, including the user's own actions
+    const ladderChallenges = (ladderChallengesRawRes.data || []).slice(0, 10);
+    const ladderMatches = (ladderMatchesRawRes.data || []).slice(0, 10);
 
     const membershipEvents = membershipEventsRes.data || [];
 
@@ -258,29 +250,31 @@ async function getRecentActivity(ladderId: string) {
     .from("matches")
     .select(`
       *,
-      challenger:users!matches_challenger_id_fkey(full_name, first_name, last_name),
-      opponent:users!matches_opponent_id_fkey(full_name, first_name, last_name),
+      player1:users!matches_player1_id_fkey(full_name, first_name, last_name),
+      player2:users!matches_player2_id_fkey(full_name, first_name, last_name),
       winner:users!matches_winner_id_fkey(full_name, first_name, last_name)
     `)
     .eq("ladder_id", ladderId)
-    .eq("status", "completed")
+    .eq("status", "Confirmed")
     .order("played_at", { ascending: false })
     .limit(5);
 
   if (recentMatchesData) {
     for (const match of recentMatchesData) {
-      const challengerName = match.challenger?.full_name ||
-        `${match.challenger?.first_name} ${match.challenger?.last_name}`.trim() || "Player";
-      const opponentName = match.opponent?.full_name ||
-        `${match.opponent?.first_name} ${match.opponent?.last_name}`.trim() || "Player";
+      const p1Name = match.player1?.full_name ||
+        `${match.player1?.first_name || ''} ${match.player1?.last_name || ''}`.trim() || "Player";
+      const p2Name = match.player2?.full_name ||
+        `${match.player2?.first_name || ''} ${match.player2?.last_name || ''}`.trim() || "Player";
       const winnerName = match.winner?.full_name ||
-        `${match.winner?.first_name} ${match.winner?.last_name}`.trim() || "Player";
+        `${match.winner?.first_name || ''} ${match.winner?.last_name || ''}`.trim() || "Player";
+
+      const loserName = match.winner_id === match.player1_id ? p2Name : p1Name;
 
       recentActivity.push({
         type: "match",
-        description: `${winnerName} defeated ${match.winner_id === match.challenger_id ? opponentName : challengerName}`,
-        time: formatRelativeTime(new Date(match.played_at)),
-        timestamp: new Date(match.played_at).getTime(),
+        description: `${winnerName} defeated ${loserName}`,
+        time: formatRelativeTime(new Date(match.played_at || match.created_at)),
+        timestamp: new Date(match.played_at || match.created_at).getTime(),
       });
     }
   }
@@ -291,23 +285,21 @@ async function getRecentActivity(ladderId: string) {
     .select(`
       *,
       challenger:users!challenges_challenger_id_fkey(full_name, first_name, last_name),
-      opponent:users!challenges_opponent_id_fkey(full_name, first_name, last_name)
+      challenged:users!challenges_challenged_id_fkey(full_name, first_name, last_name)
     `)
     .eq("ladder_id", ladderId)
-    .in("status", ["pending", "accepted"])
-    .order("created_at", { ascending: false })
     .limit(5);
 
   if (recentChallengesData) {
     for (const challenge of recentChallengesData) {
       const challengerName = challenge.challenger?.full_name ||
-        `${challenge.challenger?.first_name} ${challenge.challenger?.last_name}`.trim() || "Player";
-      const opponentName = challenge.opponent?.full_name ||
-        `${challenge.opponent?.first_name} ${challenge.opponent?.last_name}`.trim() || "Player";
+        `${challenge.challenger?.first_name || ''} ${challenge.challenger?.last_name || ''}`.trim() || "Player";
+      const challengedName = challenge.challenged?.full_name ||
+        `${challenge.challenged?.first_name || ''} ${challenge.challenged?.last_name || ''}`.trim() || "Player";
 
       recentActivity.push({
         type: "challenge",
-        description: `${challengerName} challenged ${opponentName}`,
+        description: `${challengerName} challenged ${challengedName}`,
         time: formatRelativeTime(new Date(challenge.created_at)),
         timestamp: new Date(challenge.created_at).getTime(),
       });
