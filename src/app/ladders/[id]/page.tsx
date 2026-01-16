@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Loader2, Clock, Swords, Target, LayoutDashboard, TrendingUp, TrendingDown, Users, CheckCircle, AlertCircle, Activity, Award, Zap, X, Calendar, MapPin, MessageSquare, Lock, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useToast } from "@/components/ui/toast";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -218,27 +219,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       setTab(urlTab);
     }
   }, [searchParams]);
-
-  // Security: Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      const loginUrl = `/login?redirectTo=${encodeURIComponent(pathname)}`;
-      router.push(loginUrl);
-    }
-  }, [authLoading, user, router, pathname]);
-
-  // Don't render anything while checking auth or if not authenticated
-  if (authLoading || !user) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-600 mx-auto mb-4" />
-          <p className="text-slate-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
 
   // Update URL when tab changes
   const handleTabChange = (newTab: "dashboard" | "ranking" | "challenges" | "matches" | "settings") => {
@@ -704,677 +684,730 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
 
   return (
-    <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: "Ladders", href: "/ladders" },
-          { label: ladderName }
-        ]}
-      />
-      <PageHeader
-        title={ladderName}
-        description={data?.ladder?.description || "Ranking overview and membership."}
-        cta={
-          <div className="flex gap-2">
-            {isLoading ? (
-              <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        <Breadcrumb
+          items={[
+            { label: "Ladders", href: "/ladders" },
+            { label: ladderName }
+          ]}
+        />
+        <PageHeader
+          title={ladderName}
+          description={data?.ladder?.description || "Ranking overview and membership."}
+          cta={
+            <div className="flex gap-2">
+              {isLoading ? (
+                <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
+              ) : (
+                renderJoinButton()
+              )}
+            </div>
+          }
+        />
+
+        {data?.ladder && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            {data.ladder.sport_id && (
+              <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold uppercase tracking-wide text-[11px]">
+                {formatSport(data.ladder.sport_id)}
+              </span>
+            )}
+            {data.ladder.location && <span className="px-2 py-1 rounded-full bg-slate-50 flex items-center gap-1"><MapPin className="h-3 w-3" /> {data.ladder.location}</span>}
+            <span className="px-2 py-1 rounded-full bg-slate-50">Visibility: {data.ladder.visibility}</span>
+            <span className="px-2 py-1 rounded-full bg-slate-50">Status: {data.ladder.status}</span>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="space-y-6">
+            {/* Skeleton for tab navigation */}
+            <div className="flex gap-4 border-b border-slate-200 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 w-24 bg-slate-200 rounded-t"></div>
+              ))}
+            </div>
+
+            {/* Skeleton based on active tab */}
+            {tab === "dashboard" ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Hero stats skeleton */}
+                  <div className="card p-6 animate-pulse">
+                    <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-8 bg-slate-200 rounded"></div>
+                          <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Top 5 skeleton */}
+                  <div className="card p-6 animate-pulse">
+                    <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                            <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-1">
+                  <div className="card p-6 animate-pulse">
+                    <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                          <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              renderJoinButton()
+              /* Single Column / Table Skeleton for other tabs */
+              <div className="card p-6 animate-pulse">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="h-8 bg-slate-200 rounded w-1/4"></div>
+                  <div className="h-8 bg-slate-200 rounded w-1/6"></div>
+                </div>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="h-16 bg-slate-200 rounded-lg"></div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        }
-      />
+        )}
 
-      {data?.ladder && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-          {data.ladder.sport_id && (
-            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold uppercase tracking-wide text-[11px]">
-              {formatSport(data.ladder.sport_id)}
-            </span>
-          )}
-          {data.ladder.location && <span className="px-2 py-1 rounded-full bg-slate-50 flex items-center gap-1"><MapPin className="h-3 w-3" /> {data.ladder.location}</span>}
-          <span className="px-2 py-1 rounded-full bg-slate-50">Visibility: {data.ladder.visibility}</span>
-          <span className="px-2 py-1 rounded-full bg-slate-50">Status: {data.ladder.status}</span>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="space-y-6">
-          {/* Skeleton for tab navigation */}
-          <div className="flex gap-4 border-b border-slate-200 animate-pulse">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 w-24 bg-slate-200 rounded-t"></div>
-            ))}
+        {error && (
+          <div className="card p-6 border-l-4 border-danger-500 bg-danger-50">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-danger-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-danger-900 mb-1">
+                  Failed to load ladder
+                </h3>
+                <p className="text-sm text-danger-800">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-3 text-sm font-semibold text-danger-700 hover:text-danger-900 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Skeleton based on active tab */}
-          {tab === "dashboard" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                {/* Hero stats skeleton */}
-                <div className="card p-6 animate-pulse">
-                  <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="space-y-2">
-                        <div className="h-8 bg-slate-200 rounded"></div>
-                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Top 5 skeleton */}
-                <div className="card p-6 animate-pulse">
-                  <div className="h-6 bg-slate-200 rounded w-1/4 mb-4"></div>
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                          <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-1">
-                <div className="card p-6 animate-pulse">
-                  <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="space-y-2">
-                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Single Column / Table Skeleton for other tabs */
-            <div className="card p-6 animate-pulse">
-              <div className="flex justify-between items-center mb-6">
-                <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-                <div className="h-8 bg-slate-200 rounded w-1/6"></div>
-              </div>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-16 bg-slate-200 rounded-lg"></div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <div className="card p-6 border-l-4 border-danger-500 bg-danger-50">
-          <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-danger-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-danger-900 mb-1">
-                Failed to load ladder
-              </h3>
-              <p className="text-sm text-danger-800">{error}</p>
+        {!isLoading && !error && (
+          <>
+            {/* Tab Navigation */}
+            <div className="flex flex-nowrap gap-4 border-b border-slate-200 overflow-x-auto scrollbar-hide">
               <button
-                onClick={() => window.location.reload()}
-                className="mt-3 text-sm font-semibold text-danger-700 hover:text-danger-900 underline"
+                onClick={() => handleTabChange("dashboard")}
+                className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "dashboard"
+                  ? "border-brand-600 text-brand-700"
+                  : "border-transparent text-slate-600 hover:text-slate-900"
+                  }`}
               >
-                Try again
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isLoading && !error && (
-        <>
-          {/* Tab Navigation */}
-          <div className="flex flex-nowrap gap-4 border-b border-slate-200 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => handleTabChange("dashboard")}
-              className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "dashboard"
-                ? "border-brand-600 text-brand-700"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-                }`}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </button>
-            {canAccessMembers && (
-              <>
-                <button
-                  onClick={() => handleTabChange("ranking")}
-                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${tab === "ranking"
-                    ? "border-brand-600 text-brand-700"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
-                    }`}
-                >
-                  Ranking
-                </button>
-                <button
-                  onClick={() => handleTabChange("challenges")}
-                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "challenges"
-                    ? "border-brand-600 text-brand-700"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
-                    }`}
-                >
-                  <Swords className="h-4 w-4" />
-                  <span className="hidden sm:inline">Challenges</span>
-                  <span className="sm:hidden">Chall.</span>
-                </button>
-                <button
-                  onClick={() => handleTabChange("matches")}
-                  className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "matches"
-                    ? "border-brand-600 text-brand-700"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
-                    }`}
-                >
-                  <Target className="h-4 w-4" />
-                  Matches
-                </button>
-                {isOrganizer && (
+              {canAccessMembers && (
+                <>
                   <button
-                    onClick={() => handleTabChange("settings")}
-                    className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "settings"
+                    onClick={() => handleTabChange("ranking")}
+                    className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${tab === "ranking"
                       ? "border-brand-600 text-brand-700"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                       }`}
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="hidden sm:inline">Settings</span>
+                    Ranking
                   </button>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Dashboard Tab */}
-          {tab === "dashboard" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Content - 2/3 width */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Organizer Action Banner */}
-                {isOrganizer && pendingMembers.length > 0 && (
-                  <OrganizerActionBanner
-                    actions={[
-                      {
-                        id: "pending-approvals",
-                        label: `${pendingMembers.length} Pending Member Approvals`,
-                        count: pendingMembers.length,
-                        action: () => setTab("ranking"),
-                        buttonText: "Review"
-                      }
-                    ]}
-                  />
-                )}
-
-                {/* Pending Organizer Requests for Ladder Organizers */}
-                {isOrganizer && (
-                  <PendingOrganizerRequests
-                    ladderId={params.id}
-                    onRequestProcessed={() => fetchLadder(true)}
-                  />
-                )}
-
-                {/* Organizer Stats Grid removed as per user request */}
-
-                {/* Player Hero Stats */}
-                {isMember && currentMember && (
-                  <HeroStats
-                    rank={currentMember.current_rank}
-                    wins={dashboardStats?.myStats?.wins || 0}
-                    losses={dashboardStats?.myStats?.losses || 0}
-                    winStreak={dashboardStats?.myStats?.streak || 0}
-                  />
-                )}
-
-                {/* Personal Activity Cards */}
-                {isMember && user && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <MyActiveChallengesCard userId={user.id} ladderId={params.id} />
-                    <MyActiveMatchesCard userId={user.id} ladderId={params.id} />
-                  </div>
-                )}
-
-                {/* Ladder-Wide Activity Cards */}
-                {canAccessMembers && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <LadderChallengesCard ladderId={params.id} />
-                    <LadderMatchesCard ladderId={params.id} />
-                  </div>
-                )}
-
-                {/* Top 5 Rankings */}
-                {isMember && (
-                  <Top5Rankings
-                    players={activeMembersSorted}
-                    currentUserId={user?.id}
-                    ladderId={params.id}
-                    canChallenge={(targetRank) => {
-                      const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
-                      // Don't allow challenging if current user is busy
-                      if (currentMember?.is_busy) {
-                        return false;
-                      }
-                      return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
-                    }}
-                    onChallenge={handleQuickChallenge}
-                    onViewFullRankings={() => setTab("ranking")}
-                  />
-                )}
-
-                {/* Recent Activity */}
-                {canAccessMembers && dashboardStats?.recentActivity && (
-                  <RecentActivity
-                    activities={dashboardStats.recentActivity.map((activity: any, idx: number) => ({
-                      id: `activity-${idx}`,
-                      type: activity.type as "match" | "challenge" | "member",
-                      description: activity.description,
-                      time: activity.time
-                    }))}
-                  />
-                )}
-
-                {/* Request to Become Organizer - Only for Players */}
-                {!isOrganizer && currentMember && user?.role === "player" && (
-                  <RoleRequest
-                    currentRole="player"
-                    hasActivRequest={hasPendingOrganizerRequest}
-                    ladder_id={params.id}
-                  />
-                )}
-
-                {/* Non-member view */}
-                {!isMember && (
-                  <div className="card p-6">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                      <Users className="h-5 w-5 text-brand-600" />
-                      About this ladder
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="p-3 rounded-lg bg-slate-50">
-                        <p className="text-xs text-slate-500">Sport</p>
-                        <p className="text-sm font-semibold text-slate-900">{formatSport(data?.ladder?.sport_id)}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-slate-50">
-                        <p className="text-xs text-slate-500">Location</p>
-                        <p className="text-sm font-semibold text-slate-900">{data?.ladder?.location || "Not set"}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-slate-50">
-                        <p className="text-xs text-slate-500">Active members</p>
-                        <p className="text-lg font-semibold text-slate-900">{memberCounts.active}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-slate-50">
-                        <p className="text-xs text-slate-500">Active challenges</p>
-                        <p className="text-lg font-semibold text-slate-900">{challengeCounts.active}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600">
-                      Join to view rankings, members, and challenges. {isPending ? "Your request is awaiting approval." : ""}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Sidebar - 1/3 width */}
-              <div className="lg:col-span-1">
-                <LadderInfoSidebar
-                  sport={formatSport(data?.ladder?.sport_id)}
-                  location={data?.ladder?.location}
-                  memberCount={memberCounts.active}
-                  activeChallenges={challengeCounts.active}
-                  profilePictureUrl={data?.ladder?.profile_picture_url}
-                  organizers={data?.organizers || []}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Ranking Tab */}
-          {tab === "ranking" && canAccessMembers && (
-            <div className="space-y-6">
-              {/* Pending Approvals Section for Organizers */}
-              {isOrganizer && pendingMembers.length > 0 && (
-                <PendingApprovals
-                  members={pendingMembers}
-                  onApprove={handleApproveMember}
-                  onReject={handleRejectMember}
-                />
-              )}
-
-              <div className="card overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm font-semibold text-slate-700">Ranking</p>
-                    <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* Invitation Button - Organizers Only */}
-                    {isOrganizer && (
-                      <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
-                    )}
-
-                    {isOrganizer && hasZeroRanks && (
-                      <button
-                        onClick={handleFixRanks}
-                        disabled={fixingRanks}
-                        className="btn btn-xs border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                      >
-                        {fixingRanks ? "Fixing..." : "Fix ranks"}
-                      </button>
-                    )}
-                    {isOrganizer && (
-                      <Link
-                        href={`/organizer/${params.id}/rankings`}
-                        className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
-                      >
-                        Edit rankings
-                      </Link>
-                    )}
-                  </div>
-                </div>
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-3 sm:px-4 py-2 w-16">Rank</th>
-                      <th className="px-3 sm:px-4 py-2">Player</th>
-                      <th className="px-3 sm:px-4 py-2 text-right w-24 relative sm:static">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeMembersSorted.map((member) => {
-                      // Check if player has an active challenge (Pending or Accepted)
-                      const isBusy = member.is_busy;
-                      const isCurrentUser = member.user_id === user?.id;
-                      const currentUserRank = currentMember?.current_rank || 0;
-                      const targetRank = member.current_rank || 0;
-                      const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
-
-                      // Can only challenge if:
-                      // 1. Not yourself
-                      // 2. Target is ranked ABOVE you (lower rank number)
-                      // 3. Within maxPositionsUp limit
-                      // 4. Target is not busy (no active challenges)
-                      // 5. Current user is not busy
-                      const canChallenge = !isCurrentUser &&
-                        currentUserRank > 0 &&
-                        targetRank > 0 &&
-                        targetRank < currentUserRank &&
-                        (currentUserRank - targetRank) <= maxPositionsUp &&
-                        !isBusy &&
-                        !currentMember?.is_busy;
-
-                      return (
-                        <tr key={member.id} className="border-t border-slate-100">
-                          <td className="px-4 py-2 sm:text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{member.current_rank ?? "-"}</span>
-                              {member.previous_rank && member.current_rank && (
-                                <>
-                                  {member.previous_rank > member.current_rank && (
-                                    <ArrowUp className="w-4 h-4 text-emerald-500" />
-                                  )}
-                                  {member.previous_rank < member.current_rank && (
-                                    <ArrowDown className="w-4 h-4 text-rose-500" />
-                                  )}
-                                  {member.previous_rank === member.current_rank && (
-                                    <Minus className="w-4 h-4 text-slate-300" />
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
-                                email={member.users?.email}
-                                src={member.users?.avatar_url}
-                                size="sm"
-                              />
-                              <div>
-                                <p className="font-medium text-slate-900">
-                                  {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
-                                </p>
-                                <div className="mt-1 flex items-center gap-2">
-                                  {renderRolePill(getMemberRole(member))}
-                                  {isBusy ? (
-                                    (() => {
-                                      const now = new Date();
-                                      const coolingDate = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
-                                      const isCooling = coolingDate && coolingDate > now;
-                                      const timeLeft = member.cooling_expires_at ? formatTimeRemaining(member.cooling_expires_at) : null;
-
-                                      if (isCooling && timeLeft) {
-                                        return (
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full">
-                                            <Clock className="h-3 w-3" />
-                                            Cooling ({timeLeft})
-                                          </span>
-                                        );
-                                      }
-                                      return (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded-full">
-                                          <Swords className="h-3 w-3" />
-                                          Playing
-                                        </span>
-                                      );
-                                    })()
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-800 rounded-full">
-                                      <CheckCircle className="h-3 w-3" />
-                                      Available
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 sm:px-4 py-2 text-right">
-                            {canChallenge ? (
-                              <button
-                                onClick={() => handleQuickChallenge(member.user_id)}
-                                className="text-xs sm:text-sm font-semibold text-brand-700 hover:text-brand-900"
-                              >
-                                Challenge
-                              </button>
-                            ) : (
-                              !isCurrentUser && (
-                                <span className="text-[10px] sm:text-xs text-slate-400">
-                                  {isBusy
-                                    ? "Busy"
-                                    : currentMember?.is_busy
-                                      ? "Busy"
-                                      : targetRank >= currentUserRank
-                                        ? <Lock className="h-4 w-4 text-slate-300" />
-                                        : "Range"}
-                                </span>
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Challenges Tab */}
-          {tab === "challenges" && canAccessMembers && (
-            <ChallengesTab ladderId={params.id} userId={user?.id} />
-          )}
-
-          {/* Matches Tab */}
-          {tab === "matches" && canAccessMembers && (
-            <div className="space-y-6">
-              <MatchesList
-                ladderId={params.id}
-                currentUserId={user?.id || ""}
-                isOrganizer={isOrganizer}
-                onDataUpdate={() => fetchLadder(true)}
-              />
-            </div>
-          )}
-
-          {/* Settings Tab */}
-          {tab === "settings" && isOrganizer && (
-            <form onSubmit={handleSettingsSave} className="card space-y-6 p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Ladder Settings</h2>
-                <div className="flex gap-2 text-sm items-center">
-                  {settingsSuccess && <span className="text-green-700 font-medium">{settingsSuccess}</span>}
-                  {!isEditingSettings && !settingsSuccess && (
+                  <button
+                    onClick={() => handleTabChange("challenges")}
+                    className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "challenges"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    <Swords className="h-4 w-4" />
+                    <span className="hidden sm:inline">Challenges</span>
+                    <span className="sm:hidden">Chall.</span>
+                  </button>
+                  <button
+                    onClick={() => handleTabChange("matches")}
+                    className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "matches"
+                      ? "border-brand-600 text-brand-700"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    <Target className="h-4 w-4" />
+                    Matches
+                  </button>
+                  {isOrganizer && (
                     <button
-                      type="button"
-                      onClick={() => setIsEditingSettings(true)}
-                      className="btn btn-primary btn-sm"
+                      onClick={() => handleTabChange("settings")}
+                      className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 whitespace-nowrap ${tab === "settings"
+                        ? "border-brand-600 text-brand-700"
+                        : "border-transparent text-slate-600 hover:text-slate-900"
+                        }`}
                     >
-                      Edit
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="hidden sm:inline">Settings</span>
                     </button>
                   )}
-                  {savingSettings && (
-                    <span className="flex items-center gap-1 text-slate-600">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Saving
-                    </span>
+                </>
+              )}
+            </div>
+
+            {/* Dashboard Tab */}
+            {tab === "dashboard" && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content - 2/3 width */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Organizer Action Banner */}
+                  {isOrganizer && pendingMembers.length > 0 && (
+                    <OrganizerActionBanner
+                      actions={[
+                        {
+                          id: "pending-approvals",
+                          label: `${pendingMembers.length} Pending Member Approvals`,
+                          count: pendingMembers.length,
+                          action: () => setTab("ranking"),
+                          buttonText: "Review"
+                        }
+                      ]}
+                    />
+                  )}
+
+                  {/* Pending Organizer Requests for Ladder Organizers */}
+                  {isOrganizer && (
+                    <PendingOrganizerRequests
+                      ladderId={params.id}
+                      onRequestProcessed={() => fetchLadder(true)}
+                    />
+                  )}
+
+                  {/* Organizer Stats Grid removed as per user request */}
+
+                  {/* Player Hero Stats */}
+                  {isMember && currentMember && (
+                    <HeroStats
+                      rank={currentMember.current_rank}
+                      wins={dashboardStats?.myStats?.wins || 0}
+                      losses={dashboardStats?.myStats?.losses || 0}
+                      winStreak={dashboardStats?.myStats?.streak || 0}
+                    />
+                  )}
+
+                  {/* Personal Activity Cards */}
+                  {isMember && user && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <MyActiveChallengesCard userId={user.id} ladderId={params.id} />
+                      <MyActiveMatchesCard userId={user.id} ladderId={params.id} />
+                    </div>
+                  )}
+
+                  {/* Ladder-Wide Activity Cards */}
+                  {canAccessMembers && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <LadderChallengesCard ladderId={params.id} />
+                      <LadderMatchesCard ladderId={params.id} />
+                    </div>
+                  )}
+
+                  {/* Top 5 Rankings */}
+                  {isMember && (
+                    <Top5Rankings
+                      players={activeMembersSorted}
+                      currentUserId={user?.id}
+                      ladderId={params.id}
+                      canChallenge={(targetRank) => {
+                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
+                        // Don't allow challenging if current user is busy
+                        if (currentMember?.is_busy) {
+                          return false;
+                        }
+                        return canChallengeUtil(targetRank, currentUserRank, maxPositionsUp);
+                      }}
+                      onChallenge={handleQuickChallenge}
+                      onViewFullRankings={() => setTab("ranking")}
+                    />
+                  )}
+
+                  {/* Recent Activity */}
+                  {canAccessMembers && dashboardStats?.recentActivity && (
+                    <RecentActivity
+                      activities={dashboardStats.recentActivity.map((activity: any, idx: number) => ({
+                        id: `activity-${idx}`,
+                        type: activity.type as "match" | "challenge" | "member",
+                        description: activity.description,
+                        time: activity.time
+                      }))}
+                    />
+                  )}
+
+                  {/* Request to Become Organizer - Only for Players */}
+                  {!isOrganizer && currentMember && user?.role === "player" && (
+                    <RoleRequest
+                      currentRole="player"
+                      hasActivRequest={hasPendingOrganizerRequest}
+                      ladder_id={params.id}
+                    />
+                  )}
+
+                  {/* Non-member view */}
+                  {!isMember && (
+                    <div className="card p-6">
+                      <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-brand-600" />
+                        About this ladder
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="p-3 rounded-lg bg-slate-50">
+                          <p className="text-xs text-slate-500">Sport</p>
+                          <p className="text-sm font-semibold text-slate-900">{formatSport(data?.ladder?.sport_id)}</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-slate-50">
+                          <p className="text-xs text-slate-500">Location</p>
+                          <p className="text-sm font-semibold text-slate-900">{data?.ladder?.location || "Not set"}</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-slate-50">
+                          <p className="text-xs text-slate-500">Active members</p>
+                          <p className="text-lg font-semibold text-slate-900">{memberCounts.active}</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-slate-50">
+                          <p className="text-xs text-slate-500">Active challenges</p>
+                          <p className="text-lg font-semibold text-slate-900">{challengeCounts.active}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600">
+                        Join to view rankings, members, and challenges. {isPending ? "Your request is awaiting approval." : ""}
+                      </p>
+                    </div>
                   )}
                 </div>
+
+                {/* Sidebar - 1/3 width */}
+                <div className="lg:col-span-1">
+                  <LadderInfoSidebar
+                    sport={formatSport(data?.ladder?.sport_id)}
+                    location={data?.ladder?.location}
+                    memberCount={memberCounts.active}
+                    activeChallenges={challengeCounts.active}
+                    profilePictureUrl={data?.ladder?.profile_picture_url}
+                    organizers={data?.organizers || []}
+                  />
+                </div>
               </div>
+            )}
 
-              {settingsError && (
-                <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">{settingsError}</div>
-              )}
+            {/* Ranking Tab */}
+            {tab === "ranking" && canAccessMembers && (
+              <div className="space-y-6">
+                {/* Pending Approvals Section for Organizers */}
+                {isOrganizer && pendingMembers.length > 0 && (
+                  <PendingApprovals
+                    members={pendingMembers}
+                    onApprove={handleApproveMember}
+                    onReject={handleRejectMember}
+                  />
+                )}
 
-              {/* Ladder Profile Picture */}
-              <div className="border-b border-slate-200 pb-6">
-                <h3 className="text-base font-semibold text-slate-900 mb-4">Ladder Profile Picture</h3>
-                <ImageUpload
-                  currentImageUrl={data?.ladder?.profile_picture_url}
-                  onUpload={handleProfilePictureUpload}
-                  onRemove={handleProfilePictureRemove}
-                  label="Upload Ladder Picture"
-                  description="Click to upload a profile picture for this ladder"
-                  maxSizeMB={5}
-                  circular={true}
+                <div className="card overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-semibold text-slate-700">Ranking</p>
+                      <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Invitation Button - Organizers Only */}
+                      {isOrganizer && (
+                        <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
+                      )}
+
+                      {isOrganizer && hasZeroRanks && (
+                        <button
+                          onClick={handleFixRanks}
+                          disabled={fixingRanks}
+                          className="btn btn-xs border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                        >
+                          {fixingRanks ? "Fixing..." : "Fix ranks"}
+                        </button>
+                      )}
+                      {isOrganizer && (
+                        <Link
+                          href={`/organizer/${params.id}/rankings`}
+                          className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                        >
+                          Edit rankings
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-3 sm:px-4 py-2 w-16">Rank</th>
+                        <th className="px-3 sm:px-4 py-2">Player</th>
+                        <th className="px-3 sm:px-4 py-2 text-right w-24 relative sm:static">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeMembersSorted.map((member) => {
+                        // Check if player has an active challenge (Pending or Accepted)
+                        const isBusy = member.is_busy;
+                        const isCurrentUser = member.user_id === user?.id;
+                        const currentUserRank = currentMember?.current_rank || 0;
+                        const targetRank = member.current_rank || 0;
+                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
+
+                        // Can only challenge if:
+                        // 1. Not yourself
+                        // 2. Target is ranked ABOVE you (lower rank number)
+                        // 3. Within maxPositionsUp limit
+                        // 4. Target is not busy (no active challenges)
+                        // 5. Current user is not busy
+                        const canChallenge = !isCurrentUser &&
+                          currentUserRank > 0 &&
+                          targetRank > 0 &&
+                          targetRank < currentUserRank &&
+                          (currentUserRank - targetRank) <= maxPositionsUp &&
+                          !isBusy &&
+                          !currentMember?.is_busy;
+
+                        return (
+                          <tr key={member.id} className="border-t border-slate-100">
+                            <td className="px-4 py-2 sm:text-left">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">{member.current_rank ?? "-"}</span>
+                                {member.previous_rank && member.current_rank && (
+                                  <>
+                                    {member.previous_rank > member.current_rank && (
+                                      <ArrowUp className="w-4 h-4 text-emerald-500" />
+                                    )}
+                                    {member.previous_rank < member.current_rank && (
+                                      <ArrowDown className="w-4 h-4 text-rose-500" />
+                                    )}
+                                    {member.previous_rank === member.current_rank && (
+                                      <Minus className="w-4 h-4 text-slate-300" />
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-3">
+                                <Avatar
+                                  name={member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`}
+                                  email={member.users?.email}
+                                  src={member.users?.avatar_url}
+                                  size="sm"
+                                />
+                                <div>
+                                  <p className="font-medium text-slate-900">
+                                    {member.users?.full_name || `${member.users?.first_name ?? ""} ${member.users?.last_name ?? ""}`.trim() || "Member"}
+                                  </p>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    {renderRolePill(getMemberRole(member))}
+                                    {isBusy ? (
+                                      (() => {
+                                        const now = new Date();
+                                        const coolingDate = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
+                                        const isCooling = coolingDate && coolingDate > now;
+                                        const timeLeft = member.cooling_expires_at ? formatTimeRemaining(member.cooling_expires_at) : null;
+
+                                        if (isCooling && timeLeft) {
+                                          return (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full">
+                                              <Clock className="h-3 w-3" />
+                                              Cooling ({timeLeft})
+                                            </span>
+                                          );
+                                        }
+                                        return (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded-full">
+                                            <Swords className="h-3 w-3" />
+                                            Playing
+                                          </span>
+                                        );
+                                      })()
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-800 rounded-full">
+                                        <CheckCircle className="h-3 w-3" />
+                                        Available
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 text-right">
+                              {canChallenge ? (
+                                <button
+                                  onClick={() => handleQuickChallenge(member.user_id)}
+                                  className="text-xs sm:text-sm font-semibold text-brand-700 hover:text-brand-900"
+                                >
+                                  Challenge
+                                </button>
+                              ) : (
+                                !isCurrentUser && (
+                                  <span className="text-[10px] sm:text-xs text-slate-400">
+                                    {isBusy
+                                      ? "Busy"
+                                      : currentMember?.is_busy
+                                        ? "Busy"
+                                        : targetRank >= currentUserRank
+                                          ? <Lock className="h-4 w-4 text-slate-300" />
+                                          : "Range"}
+                                  </span>
+                                )
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Challenges Tab */}
+            {tab === "challenges" && canAccessMembers && (
+              <ChallengesTab ladderId={params.id} userId={user?.id} />
+            )}
+
+            {/* Matches Tab */}
+            {tab === "matches" && canAccessMembers && (
+              <div className="space-y-6">
+                <MatchesList
+                  ladderId={params.id}
+                  currentUserId={user?.id || ""}
+                  isOrganizer={isOrganizer}
+                  onDataUpdate={() => fetchLadder(true)}
                 />
               </div>
+            )}
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700" htmlFor="description">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={settingsForms.description}
-                    onChange={handleSettingsChange}
-                    rows={3}
-                    disabled={!isEditingSettings}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700" htmlFor="location">
-                    Location
-                  </label>
-                  <input
-                    id="location"
-                    name="location"
-                    value={settingsForms.location}
-                    onChange={handleSettingsChange}
-                    disabled={!isEditingSettings}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700" htmlFor="visibility">
-                    Visibility
-                  </label>
-                  <select
-                    id="visibility"
-                    name="visibility"
-                    value={settingsForms.visibility}
-                    onChange={handleSettingsChange}
-                    disabled={!isEditingSettings}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  >
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-base font-semibold text-slate-900 mb-3">Ranking Rules</h3>
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-700">Ranking System</label>
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {[
-                      { id: "swap-positions", label: "Swap Positions" },
-                      { id: "default-swap-minimal-drop", label: "Default Swap (Minimal Drop)" },
-                      { id: "slide-shift", label: "Slide Shift" },
-                      { id: "points-elo", label: "Points/ELO" },
-                    ].map((type) => (
-                      <label key={type.id} className={`flex items-center gap-3 rounded-lg border border-slate-200 p-3 ${isEditingSettings ? "hover:bg-slate-50 cursor-pointer" : "bg-slate-50 cursor-not-allowed"}`}>
-                        <input
-                          type="radio"
-                          name="rankingType"
-                          value={type.id}
-                          checked={settingsForms.rankingType === type.id}
-                          onChange={handleSettingsChange}
-                          disabled={!isEditingSettings}
-                        />
-                        <span className="text-sm font-medium text-slate-900">{type.label}</span>
-                      </label>
-                    ))}
+            {/* Settings Tab */}
+            {tab === "settings" && isOrganizer && (
+              <form onSubmit={handleSettingsSave} className="card space-y-6 p-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">Ladder Settings</h2>
+                  <div className="flex gap-2 text-sm items-center">
+                    {settingsSuccess && <span className="text-green-700 font-medium">{settingsSuccess}</span>}
+                    {!isEditingSettings && !settingsSuccess && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingSettings(true)}
+                        className="btn btn-primary btn-sm"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {savingSettings && (
+                      <span className="flex items-center gap-1 text-slate-600">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Saving
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* K-Factor - Only for Points/ELO */}
-                {settingsForms.rankingType === "points-elo" && (
-                  <div className="grid gap-4 md:grid-cols-3 mt-4">
+                {settingsError && (
+                  <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">{settingsError}</div>
+                )}
+
+                {/* Ladder Profile Picture */}
+                <div className="border-b border-slate-200 pb-6">
+                  <h3 className="text-base font-semibold text-slate-900 mb-4">Ladder Profile Picture</h3>
+                  <ImageUpload
+                    currentImageUrl={data?.ladder?.profile_picture_url}
+                    onUpload={handleProfilePictureUpload}
+                    onRemove={handleProfilePictureRemove}
+                    label="Upload Ladder Picture"
+                    description="Click to upload a profile picture for this ladder"
+                    maxSizeMB={5}
+                    circular={true}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="description">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={settingsForms.description}
+                      onChange={handleSettingsChange}
+                      rows={3}
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="location">
+                      Location
+                    </label>
+                    <input
+                      id="location"
+                      name="location"
+                      value={settingsForms.location}
+                      onChange={handleSettingsChange}
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700" htmlFor="visibility">
+                      Visibility
+                    </label>
+                    <select
+                      id="visibility"
+                      name="visibility"
+                      value={settingsForms.visibility}
+                      onChange={handleSettingsChange}
+                      disabled={!isEditingSettings}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    >
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4">
+                  <h3 className="text-base font-semibold text-slate-900 mb-3">Ranking Rules</h3>
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-slate-700">Ranking System</label>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {[
+                        { id: "swap-positions", label: "Swap Positions" },
+                        { id: "default-swap-minimal-drop", label: "Default Swap (Minimal Drop)" },
+                        { id: "slide-shift", label: "Slide Shift" },
+                        { id: "points-elo", label: "Points/ELO" },
+                      ].map((type) => (
+                        <label key={type.id} className={`flex items-center gap-3 rounded-lg border border-slate-200 p-3 ${isEditingSettings ? "hover:bg-slate-50 cursor-pointer" : "bg-slate-50 cursor-not-allowed"}`}>
+                          <input
+                            type="radio"
+                            name="rankingType"
+                            value={type.id}
+                            checked={settingsForms.rankingType === type.id}
+                            onChange={handleSettingsChange}
+                            disabled={!isEditingSettings}
+                          />
+                          <span className="text-sm font-medium text-slate-900">{type.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* K-Factor - Only for Points/ELO */}
+                  {settingsForms.rankingType === "points-elo" && (
+                    <div className="grid gap-4 md:grid-cols-3 mt-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="kFactor">
+                          K-Factor
+                        </label>
+                        <input
+                          type="number"
+                          id="kFactor"
+                          name="kFactor"
+                          value={settingsForms.kFactor}
+                          onChange={handleSettingsChange}
+                          min="1"
+                          disabled={!isEditingSettings}
+                          className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Max Drop - Only for Default Swap (Minimal Drop) */}
+                  {settingsForms.rankingType === "default-swap-minimal-drop" && (
+                    <div className="grid gap-4 md:grid-cols-3 mt-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="maxDrop">
+                          Max Drop
+                        </label>
+                        <input
+                          type="number"
+                          id="maxDrop"
+                          name="maxDrop"
+                          value={settingsForms.maxDrop}
+                          onChange={handleSettingsChange}
+                          min="0"
+                          disabled={!isEditingSettings}
+                          className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-200 pt-4">
+                  <h3 className="text-base font-semibold text-slate-900 mb-3">Challenge Rules</h3>
+                  <div className="grid gap-4 md:grid-cols-3">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700" htmlFor="kFactor">
-                        K-Factor
+                      <label className="text-sm font-medium text-slate-700" htmlFor="maxPositionsUp">
+                        Max Positions Up
                       </label>
                       <input
                         type="number"
-                        id="kFactor"
-                        name="kFactor"
-                        value={settingsForms.kFactor}
+                        id="maxPositionsUp"
+                        name="maxPositionsUp"
+                        value={settingsForms.maxPositionsUp}
                         onChange={handleSettingsChange}
-                        min="1"
+                        min="0"
                         disabled={!isEditingSettings}
                         className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
                     </div>
-                  </div>
-                )}
-
-                {/* Max Drop - Only for Default Swap (Minimal Drop) */}
-                {settingsForms.rankingType === "default-swap-minimal-drop" && (
-                  <div className="grid gap-4 md:grid-cols-3 mt-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700" htmlFor="maxDrop">
-                        Max Drop
+                      <label className="text-sm font-medium text-slate-700" htmlFor="expiryDays">
+                        Expiry Days
                       </label>
                       <input
                         type="number"
-                        id="maxDrop"
-                        name="maxDrop"
-                        value={settingsForms.maxDrop}
+                        id="expiryDays"
+                        name="expiryDays"
+                        value={settingsForms.expiryDays}
+                        onChange={handleSettingsChange}
+                        min="0"
+                        disabled={!isEditingSettings}
+                        className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700" htmlFor="cooldownHours">
+                        Cooldown Hours
+                      </label>
+                      <input
+                        type="number"
+                        id="cooldownHours"
+                        name="cooldownHours"
+                        value={settingsForms.cooldownHours}
                         onChange={handleSettingsChange}
                         min="0"
                         disabled={!isEditingSettings}
@@ -1382,106 +1415,55 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       />
                     </div>
                   </div>
-                )}
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-base font-semibold text-slate-900 mb-3">Challenge Rules</h3>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="maxPositionsUp">
-                      Max Positions Up
-                    </label>
-                    <input
-                      type="number"
-                      id="maxPositionsUp"
-                      name="maxPositionsUp"
-                      value={settingsForms.maxPositionsUp}
-                      onChange={handleSettingsChange}
-                      min="0"
-                      disabled={!isEditingSettings}
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="expiryDays">
-                      Expiry Days
-                    </label>
-                    <input
-                      type="number"
-                      id="expiryDays"
-                      name="expiryDays"
-                      value={settingsForms.expiryDays}
-                      onChange={handleSettingsChange}
-                      min="0"
-                      disabled={!isEditingSettings}
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="cooldownHours">
-                      Cooldown Hours
-                    </label>
-                    <input
-                      type="number"
-                      id="cooldownHours"
-                      name="cooldownHours"
-                      value={settingsForms.cooldownHours}
-                      onChange={handleSettingsChange}
-                      min="0"
-                      disabled={!isEditingSettings}
-                      className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
-                    />
-                  </div>
                 </div>
-              </div>
 
-              <div className="flex gap-3 pt-4">
-                {isEditingSettings ? (
-                  <>
-                    <button
-                      type="submit"
-                      disabled={savingSettings}
-                      className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
-                    >
-                      {savingSettings ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelSettings}
-                      disabled={savingSettings}
-                      className="btn border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </form>
-          )}
-        </>
-      )
-      }
-
-
-      {/* Invitation Modal */}
-      {
-        isInviteOpen && (
-          <InviteMembersModal
-            isOpen={isInviteOpen}
-            onClose={() => setIsInviteOpen(false)}
-            ladderId={params.id}
-            ladderName={data?.ladder?.name || "Ladder"}
-          />
+                <div className="flex gap-3 pt-4">
+                  {isEditingSettings ? (
+                    <>
+                      <button
+                        type="submit"
+                        disabled={savingSettings}
+                        className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
+                      >
+                        {savingSettings ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Changes"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelSettings}
+                        disabled={savingSettings}
+                        className="btn border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </form>
+            )}
+          </>
         )
-      }
-    </div >
+        }
+
+
+        {/* Invitation Modal */}
+        {
+          isInviteOpen && (
+            <InviteMembersModal
+              isOpen={isInviteOpen}
+              onClose={() => setIsInviteOpen(false)}
+              ladderId={params.id}
+              ladderName={data?.ladder?.name || "Ladder"}
+            />
+          )
+        }
+      </div>
+    </ProtectedRoute>
   );
 }
