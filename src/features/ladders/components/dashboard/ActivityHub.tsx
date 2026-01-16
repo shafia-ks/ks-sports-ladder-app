@@ -53,7 +53,7 @@ export function ActivityHub({ challenges, matches, currentUserId, ladderId }: Ac
             })),
     ]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5); // Show latest 5
+        .slice(0, 10); // Show latest 10
 
     const formatTimeAgo = (dateString: string) => {
         const now = new Date();
