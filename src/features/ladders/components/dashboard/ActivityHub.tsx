@@ -100,7 +100,13 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
 
     const formatScore = (setScores: any) => {
         if (!setScores || !Array.isArray(setScores)) return null;
-        return setScores.map((set: any) => `${set.player1}-${set.player2}`).join(', ');
+        return setScores.map((set: any) => {
+            if (typeof set === 'string') return set;
+            if (typeof set === 'object' && (set.player1 !== undefined || set.p1 !== undefined)) {
+                return `${set.player1 || set.p1}-${set.player2 || set.p2}`;
+            }
+            return String(set);
+        }).join(', ');
     };
 
     const getActivityText = (item: ActivityItem) => {
