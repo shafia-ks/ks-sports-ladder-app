@@ -194,8 +194,9 @@ export async function GET(
 
     const ladderChallenges = ladderChallengesData || [];
 
-    // Get ladder-wide matches (excluding user's own)
-    const { data: ladderMatchesData } = await supabaseAdmin
+    // Get ladder-wide matches
+    // Fetch all recent matches and filter in code
+    const { data: allMatchesData } = await supabaseAdmin
       .from("matches")
       .select(`
         *,
@@ -203,13 +204,17 @@ export async function GET(
         player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
       `)
       .eq("ladder_id", ladderId)
-      .in("status", ["pending", "submitted", "confirmed"])
-      .not("player1_id", "eq", userId)
-      .not("player2_id", "eq", userId)
+      .in("status", ["Pending", "Submitted", "Confirmed"])
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(50); // Fetch more, then filter
 
-    const ladderMatches = ladderMatchesData || [];
+    // Filter: Include confirmed matches with user OR non-user pending/submitted matches
+    const ladderMatches = (allMatchesData || [])
+      .filter(m =>
+        (m.status === 'Confirmed' && (m.player1_id === userId || m.player2_id === userId)) ||
+        (m.status !== 'Confirmed' && m.player1_id !== userId && m.player2_id !== userId)
+      )
+      .slice(0, 10);
 
     return NextResponse.json({
       myStats,
