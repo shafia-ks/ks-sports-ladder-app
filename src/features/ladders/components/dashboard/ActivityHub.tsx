@@ -1,7 +1,8 @@
 "use client";
 
-import { Swords, Target, ArrowRight, Clock, UserPlus, UserMinus } from "lucide-react";
+import { Swords, Target, ArrowRight, Clock, UserPlus, UserMinus, Layers } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 interface ActivityItem {
     id: string;
@@ -44,7 +45,7 @@ interface ActivityHubProps {
 
 export function ActivityHub({ challenges, matches, membershipEvents, currentUserId, ladderId }: ActivityHubProps) {
     // Combine and sort activities
-    const activities: ActivityItem[] = [
+    const rawActivities: ActivityItem[] = [
         ...challenges
             // Only show Pending challenges. Accepted/Completed ones appear as Matches.
             .filter(c => c.status === 'Pending' || c.status === 'pending')
@@ -85,7 +86,47 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
             })),
     ]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 10); // Show latest 10
+        .slice(0, 50); // Fetch more for grouping, sliced later
+
+    // Grouping Logic
+    const groupedActivities: { items: ActivityItem[], key: string }[] = [];
+
+    rawActivities.forEach(item => {
+        const lastGroup = groupedActivities[groupedActivities.length - 1];
+
+        let key = item.id;
+        // Group matches/challenges if same players involved
+        if (item.type === 'match' || item.type === 'challenge') {
+            const p1 = item.player1_id || '';
+            const p2 = item.player2_id || '';
+            const type = item.type;
+            // Sort to ensure A vs B is same as B vs A
+            const players = [p1, p2].sort().join('-');
+
+            // Key includes type, so matches group with matches, challenges with challenges
+            key = `${type}-${players}`;
+
+            if (lastGroup && lastGroup.key === key) {
+                lastGroup.items.push(item);
+                return;
+            }
+        } else if (item.type === 'membership') {
+            const userId = item.user?.email || '';
+            const type = item.event_type || '';
+            key = `membership-${type}-${userId}`;
+            // Don't usually group membership events unless spamming
+            // But let's check
+            if (lastGroup && lastGroup.key === key) {
+                lastGroup.items.push(item);
+                return;
+            }
+        }
+
+        groupedActivities.push({ items: [item], key });
+    });
+
+    const displayGroups = groupedActivities.slice(0, 10);
+
 
     const formatTimeAgo = (dateString: string) => {
         const now = new Date();
@@ -170,7 +211,7 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
         };
     };
 
-    if (activities.length === 0) {
+    if (displayGroups.length === 0) {
         return (
             <div className="card p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -200,16 +241,20 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
                     📊 Activity Hub
                 </h3>
-
             </div>
 
             <div className="space-y-2">
-                {activities.map((activity) => {
+                {displayGroups.map((group, idx) => {
+                    // Use latest item for display
+                    const activity = group.items[0];
+                    const count = group.items.length;
+
                     const Icon = activity.type === 'challenge'
                         ? Swords
                         : activity.type === 'membership'
                             ? (activity.event_type === 'joined' ? UserPlus : UserMinus)
                             : Target;
+
                     const activityInfo = getActivityText(activity);
 
                     const iconColor = activity.type === 'challenge'
@@ -222,10 +267,19 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
 
                     return (
                         <div
-                            key={activity.id}
+                            key={activity.id + "-group"}
                             className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                            <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${iconColor}`} />
+                            {count > 1 ? (
+                                <div className="relative">
+                                    <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${iconColor}`} />
+                                    <div className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[8px] w-3 h-3 flex items-center justify-center rounded-full">
+                                        {count}
+                                    </div>
+                                </div>
+                            ) : (
+                                <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5 ${iconColor}`} />
+                            )}
 
                             <div className="flex-1 min-w-0">
                                 <p className="text-[10px] sm:text-xs font-semibold text-slate-900 leading-tight">
@@ -235,6 +289,11 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
                                     <span className={`${activityInfo.isWin ? 'text-green-600' : 'text-slate-600'} font-medium`}>
                                         {activityInfo.status}
                                     </span>
+                                    {count > 1 && (
+                                        <span className="text-slate-500 italic">
+                                            (+{count - 1} more)
+                                        </span>
+                                    )}
                                     <span className="text-slate-300">•</span>
                                     <span className="text-slate-400 flex items-center gap-0.5">
                                         <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
