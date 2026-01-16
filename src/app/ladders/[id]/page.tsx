@@ -1025,6 +1025,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                           });
                         }
                       }}
+                      onMatchAction={() => {
+                        refreshDashboardStats();
+                        fetchLadder(true);
+                      }}
                     />
                   )}
 

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Swords, Target, Clock, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Swords, Target, Clock, CheckCircle, XCircle, ArrowRight, AlertCircle, PlayCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { SubmitScoreDialog } from "@/components/matches/SubmitScoreDialog";
+import { useToast } from "@/components/ui/toast";
 
 interface Challenge {
     id: string;
@@ -32,11 +34,13 @@ interface Match {
     status: string;
     scheduled_at: string | null;
     player1: {
+        id: string;
         full_name: string | null;
         email: string;
         avatar_url: string | null;
     };
     player2: {
+        id: string;
         full_name: string | null;
         email: string;
         avatar_url: string | null;
@@ -50,6 +54,7 @@ interface MyActionsCardProps {
     currentUserId: string;
     ladderId: string;
     onChallengeAction?: (challengeId: string, action: 'accept' | 'decline') => Promise<void>;
+    onMatchAction?: () => void;
 }
 
 export function MyActionsCard({
@@ -57,10 +62,13 @@ export function MyActionsCard({
     matches,
     currentUserId,
     ladderId,
-    onChallengeAction
+    onChallengeAction,
+    onMatchAction
 }: MyActionsCardProps) {
     const router = useRouter();
+    const { push: showToast } = useToast();
     const [loading, setLoading] = useState<string | null>(null);
+    const [isScoreOpen, setIsScoreOpen] = useState(false);
 
     // Find the user's active challenge (incoming or outgoing)
     const myChallenge = challenges.find(
@@ -84,9 +92,44 @@ export function MyActionsCard({
         }
     };
 
-    const handleMatchAction = () => {
+    const handleConfirmResult = async () => {
         if (!myMatch) return;
-        router.push(`/ladders/${ladderId}?tab=matches`);
+        setLoading('confirm');
+        try {
+            const res = await fetch(`/api/matches/${myMatch.id}/confirm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUserId, action: 'confirm' })
+            });
+            if (!res.ok) throw new Error('Failed to confirm');
+
+            showToast({ title: 'Confirmed!', variant: 'success' });
+            if (onMatchAction) onMatchAction();
+        } catch (e) {
+            showToast({ title: 'Error', description: 'Failed to confirm', variant: 'error' });
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    const handleDispute = async () => {
+        if (!myMatch) return;
+        setLoading('dispute');
+        try {
+            const res = await fetch(`/api/matches/${myMatch.id}/submit`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Disputed' })
+            });
+            if (!res.ok) throw new Error('Failed to dispute');
+
+            showToast({ title: 'Dispute submitted', variant: 'success' });
+            if (onMatchAction) onMatchAction();
+        } catch (e) {
+            showToast({ title: 'Error', variant: 'error' });
+        } finally {
+            setLoading(null);
+        }
     };
 
     // Determine what to show
@@ -224,14 +267,47 @@ export function MyActionsCard({
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleMatchAction}
-                        className="w-full py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2"
-                    >
-                        {needsScore ? 'Enter Score' : 'Review & Confirm'}
-                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </button>
+                    {needsScore ? (
+                        <button
+                            onClick={() => setIsScoreOpen(true)}
+                            className="w-full py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2"
+                        >
+                            <PlayCircle className="h-4 w-4" />
+                            Enter Score
+                        </button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleConfirmResult}
+                                disabled={loading !== null}
+                                className="flex-1 py-2 px-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {loading === 'confirm' ? 'Confirming...' : (
+                                    <>
+                                        <CheckCircle className="h-4 w-4" />
+                                        Confirm
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={handleDispute}
+                                disabled={loading !== null}
+                                className="flex-1 py-2 px-3 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                <AlertCircle className="h-4 w-4" />
+                                Dispute
+                            </button>
+                        </div>
+                    )}
                 </div>
+                <SubmitScoreDialog
+                    match={myMatch}
+                    open={isScoreOpen}
+                    onOpenChange={setIsScoreOpen}
+                    onSuccess={() => {
+                        if (onMatchAction) onMatchAction();
+                    }}
+                />
             </div>
         );
     }

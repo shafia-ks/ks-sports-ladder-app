@@ -46,8 +46,8 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
     // Combine and sort activities
     const activities: ActivityItem[] = [
         ...challenges
-            // Filter out 'Accepted' challenges to avoid duplicates with Matches (which represent the accepted state)
-            .filter(c => c.status !== 'Accepted' && c.status !== 'accepted')
+            // Only show Pending challenges. Accepted/Completed ones appear as Matches.
+            .filter(c => c.status === 'Pending' || c.status === 'pending')
             .map(c => ({
                 id: c.id,
                 type: 'challenge' as const,
