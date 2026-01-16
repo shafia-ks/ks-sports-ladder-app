@@ -46,6 +46,8 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
     // Combine and sort activities
     const activities: ActivityItem[] = [
         ...challenges
+            // Filter out 'Accepted' challenges to avoid duplicates with Matches (which represent the accepted state)
+            .filter(c => c.status !== 'Accepted' && c.status !== 'accepted')
             .map(c => ({
                 id: c.id,
                 type: 'challenge' as const,
@@ -198,13 +200,7 @@ export function ActivityHub({ challenges, matches, membershipEvents, currentUser
                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
                     📊 Activity Hub
                 </h3>
-                <Link
-                    href={`/ladders/${ladderId}?tab=challenges`}
-                    className="text-[9px] sm:text-[10px] text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1"
-                >
-                    View All
-                    <ArrowRight className="h-3 w-3" />
-                </Link>
+
             </div>
 
             <div className="space-y-2">
