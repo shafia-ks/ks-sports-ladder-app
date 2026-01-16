@@ -248,6 +248,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isLeaveLadderModalOpen, setIsLeaveLadderModalOpen] = useState(false);
+
 
   // Fetch dashboard stats
   useEffect(() => {
@@ -465,12 +467,14 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const handleLeaveLadder = async () => {
+  const handleLeaveLadder = () => {
+    setIsLeaveLadderModalOpen(true);
+  };
+
+  const performLeaveLadder = async () => {
     if (!currentMember?.id || !user?.id) return;
 
-    if (!window.confirm("Are you sure you want to leave this ladder? Your ranking and match history will be preserved, but you'll need to rejoin to participate again.")) {
-      return;
-    }
+    setIsLeaveLadderModalOpen(false);
 
     try {
       const res = await fetch(`/api/ladders/${params.id}/members`, {
@@ -1588,6 +1592,17 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
           confirmText={data?.ladder?.status === 'active' ? "Deactivate" : "Activate"}
           variant={data?.ladder?.status === 'active' ? "danger" : "primary"}
           loading={savingSettings}
+        />
+
+        {/* Leave Ladder Confirmation Modal */}
+        <ConfirmModal
+          isOpen={isLeaveLadderModalOpen}
+          onClose={() => setIsLeaveLadderModalOpen(false)}
+          onConfirm={performLeaveLadder}
+          title="Leave Ladder"
+          message="Are you sure you want to leave this ladder? Your ranking and match history will be preserved, but you'll need to rejoin to participate again."
+          confirmText="Leave Ladder"
+          variant="danger"
         />
       </div>
     </ProtectedRoute>
