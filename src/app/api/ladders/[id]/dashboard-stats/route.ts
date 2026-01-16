@@ -143,10 +143,82 @@ export async function GET(
     // Get recent activity (last 10 items)
     const recentActivity = await getRecentActivity(ladderId);
 
+    // Get user's active challenges
+    let myChallenges = [];
+    let myMatches = [];
+    if (membership) {
+      const { data: challengesData } = await supabaseAdmin
+        .from("challenges")
+        .select(`
+          *,
+          challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
+          challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
+        `)
+        .eq("ladder_id", ladderId)
+        .eq("status", "pending")
+        .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
+        .order("created_at", { ascending: false });
+
+      myChallenges = challengesData || [];
+
+      // Get user's active matches (pending or submitted)
+      const { data: matchesData } = await supabaseAdmin
+        .from("matches")
+        .select(`
+          *,
+          player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
+          player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
+        `)
+        .eq("ladder_id", ladderId)
+        .in("status", ["pending", "submitted"])
+        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+        .order("created_at", { ascending: false });
+
+      myMatches = matchesData || [];
+    }
+
+    // Get ladder-wide challenges (excluding user's own)
+    const { data: ladderChallengesData } = await supabaseAdmin
+      .from("challenges")
+      .select(`
+        *,
+        challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
+        challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
+      `)
+      .eq("ladder_id", ladderId)
+      .in("status", ["pending", "accepted"])
+      .not("challenger_id", "eq", userId)
+      .not("challenged_id", "eq", userId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    const ladderChallenges = ladderChallengesData || [];
+
+    // Get ladder-wide matches (excluding user's own)
+    const { data: ladderMatchesData } = await supabaseAdmin
+      .from("matches")
+      .select(`
+        *,
+        player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
+        player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
+      `)
+      .eq("ladder_id", ladderId)
+      .in("status", ["pending", "submitted", "confirmed"])
+      .not("player1_id", "eq", userId)
+      .not("player2_id", "eq", userId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    const ladderMatches = ladderMatchesData || [];
+
     return NextResponse.json({
       myStats,
       organizerStats,
       recentActivity,
+      myChallenges,
+      myMatches,
+      ladderChallenges,
+      ladderMatches,
     } as ResponseInit);
   } catch (error: any) {
     console.error("Dashboard stats error:", error);
