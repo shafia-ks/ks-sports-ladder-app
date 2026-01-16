@@ -162,6 +162,53 @@ export async function PATCH(
       if (membershipError && !membershipError.message.includes("duplicate")) {
         throw membershipError;
       }
+
+      // Create membership event for activity feed
+      await supabaseAdmin
+        .from("membership_events")
+        .insert({
+          ladder_id: invitation.ladder_id,
+          user_id,
+          event_type: "joined",
+        });
+
+      // Get user info and ladder info for notifications
+      const { data: userData } = await supabaseAdmin
+        .from("users")
+        .select("full_name, email")
+        .eq("id", user_id)
+        .single();
+
+      const { data: ladderData } = await supabaseAdmin
+        .from("ladders")
+        .select("name")
+        .eq("id", invitation.ladder_id)
+        .single();
+
+      if (userData && ladderData) {
+        const { createNotification } = await import("@/lib/supabase/notifications");
+
+        // Notify all other active members
+        const { data: activeMembers } = await supabaseAdmin
+          .from("ladder_memberships")
+          .select("user_id")
+          .eq("ladder_id", invitation.ladder_id)
+          .eq("status", "active")
+          .neq("user_id", user_id);
+
+        const memberName = userData.full_name || userData.email || "A new member";
+
+        if (activeMembers) {
+          for (const member of activeMembers) {
+            await createNotification({
+              userId: member.user_id,
+              type: "membership_added",
+              message: `${memberName} joined ${ladderData.name}`,
+              link: `/ladders/${invitation.ladder_id}`,
+            });
+          }
+        }
+      }
     }
 
     // Mark invitation as accepted

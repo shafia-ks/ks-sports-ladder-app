@@ -15,139 +15,64 @@ export async function GET(
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
-
-    if (!userId) {
-      // Return public stats only (no personal stats)
-      return await getPublicStats(params.id);
-    }
-
     const ladderId = params.id;
 
-    // Get user's membership in this ladder
-    const { data: membership } = await supabaseAdmin
-      .from("ladder_memberships")
-      .select("*")
-      .eq("ladder_id", ladderId)
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
+    if (!userId) {
+      return await getPublicStats(ladderId);
+    }
 
-    // Get user's match stats
-    let myStats = null;
-    let rankChange = null;
+    // PHASE 1: Identifiers & Permissions (Parallel)
+    const [membershipRes, isLeaderRes, userInfoRes] = await Promise.all([
+      supabaseAdmin
+        .from("ladder_memberships")
+        .select("*")
+        .eq("ladder_id", ladderId)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabaseAdmin
+        .from("ladder_leaders")
+        .select("id")
+        .eq("ladder_id", ladderId)
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("users")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle()
+    ]);
 
-    if (membership) {
-      // Get all confirmed matches for this user in this ladder
-      const { data: matches } = await supabaseAdmin
+    const membership = membershipRes.data;
+    const isLeader = isLeaderRes.data;
+    const userInfo = userInfoRes.data;
+
+    // PHASE 2: Data Gathering (Parallel)
+    // We construct an array of promises based on roles/membership
+
+    // 2a. User Stats (Matches & Rank History) - Only if member
+    const statsPromises = membership ? [
+      supabaseAdmin
         .from("matches")
         .select("id, winner_id, player1_id, player2_id, created_at, status")
         .eq("ladder_id", ladderId)
         .in("status", ["Confirmed", "completed"])
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-        .order("created_at", { ascending: false });
-
-      const totalMatches = matches?.length || 0;
-      const wins = matches?.filter((m: any) => m.winner_id === userId).length || 0;
-      const losses = totalMatches - wins;
-      const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
-
-      // Calculate current WIN streak (consecutive wins from most recent matches)
-      let streak = 0;
-      if (matches && matches.length > 0) {
-        // Check if last match was a win
-        const lastMatchWasWin = matches[0].winner_id === userId;
-
-        if (lastMatchWasWin) {
-          // Count consecutive wins from the start
-          for (const match of matches) {
-            if (match.winner_id === userId) {
-              streak++;
-            } else {
-              break; // Stop at first loss
-            }
-          }
-        }
-        // If last match was a loss, streak is 0
-      }
-
-      // Get rank change (compare to previous rank snapshot)
-      const { data: rankHistory } = await supabaseAdmin
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
         .from("ranking_history")
         .select("*")
         .eq("ladder_id", ladderId)
         .order("created_at", { ascending: false })
-        .limit(2);
+        .limit(2)
+    ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
 
-      if (rankHistory && rankHistory.length >= 2) {
-        const currentRank = membership.current_rank;
-        const previousSnapshot = rankHistory[1].snapshot as any;
-        const previousRank = previousSnapshot.find((r: any) => r.userId === userId)?.currentRank;
-        if (currentRank && previousRank) {
-          rankChange = previousRank - currentRank; // Positive means moved up
-        }
-      }
+    // 2b. Organizer Stats - Only if leader/admin
+    const shouldFetchOrganizerStats = isLeader || userInfo?.role === "admin";
 
-      myStats = {
-        rank: membership.current_rank,
-        totalMatches,
-        wins,
-        losses,
-        winRate,
-        streak,
-        rankChange,
-      };
-    }
-
-    // Check if user is organizer
-    const { data: isLeader } = await supabaseAdmin
-      .from("ladder_leaders")
-      .select("id")
-      .eq("ladder_id", ladderId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    // Get user info to check admin role
-    const { data: userInfo } = await supabaseAdmin
-      .from("users")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-
-    // Get organizer stats if applicable
-    let organizerStats = null;
-    if (isLeader || userInfo?.role === "admin") {
-      // Count active challenges
-      const { count: activeChallenges } = await supabaseAdmin
-        .from("challenges")
-        .select("*", { count: "exact", head: true })
-        .eq("ladder_id", ladderId)
-        .in("status", ["pending", "accepted"]);
-
-      // Count recent matches (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const { count: recentMatches } = await supabaseAdmin
-        .from("matches")
-        .select("*", { count: "exact", head: true })
-        .eq("ladder_id", ladderId)
-        .eq("status", "completed")
-        .gte("played_at", sevenDaysAgo.toISOString());
-
-      organizerStats = {
-        activeChallenges: activeChallenges || 0,
-        recentMatches: recentMatches || 0,
-      };
-    }
-
-    // Get recent activity (last 10 items)
-    const recentActivity = await getRecentActivity(ladderId);
-
-    // Get user's active challenges
-    let myChallenges = [];
-    let myMatches = [];
-    if (membership) {
-      const { data: challengesData } = await supabaseAdmin
+    // 2c. User Actions (Pending Challenges/Matches) - Only if member
+    const userActionsPromises = membership ? [
+      supabaseAdmin
         .from("challenges")
         .select(`
           *,
@@ -157,12 +82,8 @@ export async function GET(
         .eq("ladder_id", ladderId)
         .eq("status", "pending")
         .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
-        .order("created_at", { ascending: false });
-
-      myChallenges = challengesData || [];
-
-      // Get user's active matches (pending or submitted)
-      const { data: matchesData } = await supabaseAdmin
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
         .from("matches")
         .select(`
           *,
@@ -172,77 +93,147 @@ export async function GET(
         .eq("ladder_id", ladderId)
         .in("status", ["pending", "submitted"])
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+    ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
 
-      myMatches = matchesData || [];
+    // 2d. Global Data (Ladder Challenges, Matches, Activity, Events) - Always fetch
+    const globalDataPromises = [
+      supabaseAdmin
+        .from("challenges")
+        .select(`
+          *,
+          challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
+          challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
+        `)
+        .eq("ladder_id", ladderId)
+        .in("status", ["pending", "accepted"])
+        .order("created_at", { ascending: false })
+        .limit(20), // Fetch more to filter later
+      supabaseAdmin
+        .from("matches")
+        .select(`
+          *,
+          player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
+          player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
+        `)
+        .eq("ladder_id", ladderId)
+        .in("status", ["Pending", "Submitted", "Confirmed"])
+        .order("created_at", { ascending: false })
+        .limit(50),
+      getRecentActivity(ladderId),
+      supabaseAdmin
+        .from("membership_events")
+        .select(`
+          *,
+          users(id, full_name, email, avatar_url)
+        `)
+        .eq("ladder_id", ladderId)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ];
+
+    // Execute all data fetches in parallel
+    const results = await Promise.all([
+      ...statsPromises,
+      ...userActionsPromises,
+      ...globalDataPromises
+    ]);
+
+    // Extract results by index (order matters!)
+    // Stats results
+    const matchesRes = results[0] as any;
+    const rankHistoryRes = results[1] as any;
+
+    // User Actions results
+    const myChallengesRes = results[2] as any;
+    const myMatchesRes = results[3] as any;
+
+    // Global results
+    const ladderChallengesRawRes = results[4] as any;
+    const ladderMatchesRawRes = results[5] as any;
+    const recentActivity = results[6] as any;
+    const membershipEventsRes = results[7] as any;
+
+    // Handle Organizer Stats separately (optional to parallelize further but logic is custom)
+    let organizerStats = null;
+    if (shouldFetchOrganizerStats) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const [activeChalls, recentMatches] = await Promise.all([
+        supabaseAdmin.from("challenges").select("*", { count: "exact", head: true }).eq("ladder_id", ladderId).in("status", ["pending", "accepted"]),
+        supabaseAdmin.from("matches").select("*", { count: "exact", head: true }).eq("ladder_id", ladderId).eq("status", "completed").gte("played_at", sevenDaysAgo.toISOString())
+      ]);
+
+      organizerStats = {
+        activeChallenges: activeChalls.count || 0,
+        recentMatches: recentMatches.count || 0
+      };
     }
 
-    // Get ladder-wide challenges (excluding user's own)
-    const { data: ladderChallengesData } = await supabaseAdmin
-      .from("challenges")
-      .select(`
-        *,
-        challenger:users!challenges_challenger_id_fkey(id, full_name, email, avatar_url),
-        challenged:users!challenges_challenged_id_fkey(id, full_name, email, avatar_url)
-      `)
-      .eq("ladder_id", ladderId)
-      .in("status", ["pending", "accepted"])
-      .not("challenger_id", "eq", userId)
-      .not("challenged_id", "eq", userId)
-      .order("created_at", { ascending: false })
-      .limit(10);
+    // Process User Stats
+    let myStats = null;
+    if (membership && matchesRes.data) {
+      const matches = matchesRes.data;
+      const totalMatches = matches.length;
+      const wins = matches.filter((m: any) => m.winner_id === userId).length;
+      const losses = totalMatches - wins;
+      const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
 
-    const ladderChallenges = ladderChallengesData || [];
+      let streak = 0;
+      if (matches.length > 0) {
+        if (matches[0].winner_id === userId) {
+          for (const match of matches) {
+            if (match.winner_id === userId) streak++;
+            else break;
+          }
+        }
+      }
 
-    // Get ladder-wide matches
-    // Fetch all recent matches and filter in code
-    const { data: allMatchesData } = await supabaseAdmin
-      .from("matches")
-      .select(`
-        *,
-        player1:users!matches_player1_id_fkey(id, full_name, email, avatar_url),
-        player2:users!matches_player2_id_fkey(id, full_name, email, avatar_url)
-      `)
-      .eq("ladder_id", ladderId)
-      .in("status", ["Pending", "Submitted", "Confirmed"])
-      .order("created_at", { ascending: false })
-      .limit(50); // Fetch more, then filter
+      let rankChange = null;
+      if (rankHistoryRes.data && rankHistoryRes.data.length >= 2) {
+        const currentRank = membership.current_rank;
+        const previousSnapshot = rankHistoryRes.data[1].snapshot as any;
+        const previousRank = previousSnapshot.find((r: any) => r.userId === userId)?.currentRank;
+        if (currentRank && previousRank) {
+          rankChange = previousRank - currentRank;
+        }
+      }
 
-    // Filter: Include confirmed matches with user OR non-user pending/submitted matches
-    const ladderMatches = (allMatchesData || [])
-      .filter(m =>
+      myStats = { rank: membership.current_rank, totalMatches, wins, losses, winRate, streak, rankChange };
+    }
+
+    // Process Global Lists
+    // Filter ladder challenges: not involving current user
+    const ladderChallenges = (ladderChallengesRawRes.data || [])
+      .filter((c: any) => c.challenger_id !== userId && c.challenged_id !== userId)
+      .slice(0, 10);
+
+    // Filter ladder matches: Confirmed & involving user OR Pending/Submitted & not involving user
+    const ladderMatches = (ladderMatchesRawRes.data || [])
+      .filter((m: any) =>
         (m.status === 'Confirmed' && (m.player1_id === userId || m.player2_id === userId)) ||
         (m.status !== 'Confirmed' && m.player1_id !== userId && m.player2_id !== userId)
       )
       .slice(0, 10);
 
-    // Get membership events (joins/leaves)
-    const { data: membershipEventsData } = await supabaseAdmin
-      .from("membership_events")
-      .select(`
-        *,
-        users(id, full_name, email, avatar_url)
-      `)
-      .eq("ladder_id", ladderId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    const membershipEvents = membershipEventsData || [];
+    const membershipEvents = membershipEventsRes.data || [];
 
     return NextResponse.json({
       myStats,
       organizerStats,
       recentActivity,
-      myChallenges,
-      myMatches,
+      myChallenges: myChallengesRes.data || [],
+      myMatches: myMatchesRes.data || [],
       ladderChallenges,
       ladderMatches,
       membershipEvents,
     } as ResponseInit);
+
   } catch (error: any) {
     console.error("Dashboard stats error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch dashboard stats" },
+      { error: "Failed to fetch dashboard stats" },
       { status: 500 } as ResponseInit
     );
   }
