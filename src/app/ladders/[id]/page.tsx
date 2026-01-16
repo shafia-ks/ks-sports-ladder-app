@@ -968,12 +968,26 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
                   {/* Player Hero Stats */}
                   {isMember && currentMember && (
-                    <HeroStats
-                      rank={currentMember.current_rank}
-                      wins={dashboardStats?.myStats?.wins || 0}
-                      losses={dashboardStats?.myStats?.losses || 0}
-                      winStreak={dashboardStats?.myStats?.streak || 0}
-                    />
+                    isStatsLoading ? (
+                      <div className="card p-6 animate-pulse">
+                        <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                        <div className="grid grid-cols-3 gap-4">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="space-y-2">
+                              <div className="h-8 bg-slate-200 rounded"></div>
+                              <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <HeroStats
+                        rank={currentMember.current_rank}
+                        wins={dashboardStats?.myStats?.wins || 0}
+                        losses={dashboardStats?.myStats?.losses || 0}
+                        winStreak={dashboardStats?.myStats?.streak || 0}
+                      />
+                    )
                   )}
 
                   {/* My Actions - Single unified card for user's pending items */}
