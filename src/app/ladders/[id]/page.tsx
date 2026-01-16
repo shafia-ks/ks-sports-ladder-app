@@ -1038,6 +1038,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       challenges={dashboardStats.ladderChallenges || []}
                       matches={dashboardStats.ladderMatches || []}
                       membershipEvents={dashboardStats.membershipEvents || []}
+                      rankHistory={dashboardStats.rankHistory || []}
                       currentUserId={user?.id || ''}
                       ladderId={params.id}
                     />

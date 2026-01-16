@@ -141,6 +141,7 @@ export async function GET(
     const myMatchesRaw = (results[3] as any).data || [];
     const ladderChallengesRaw = (results[4] as any).data || [];
     const ladderMatchesRaw = (results[5] as any).data || [];
+    const rankHistoryRaw = (results[1] as any).data || [];
 
     // Collect IDs
     const userIds = new Set<string>();
@@ -151,6 +152,7 @@ export async function GET(
     addIds(myMatchesRaw, ['player1_id', 'player2_id']);
     addIds(ladderChallengesRaw, ['challenger_id', 'challenged_id']);
     addIds(ladderMatchesRaw, ['player1_id', 'player2_id']);
+    addIds(rankHistoryRaw, ['user_id']);
 
     // Fetch Users
     const userMap = new Map();
@@ -163,22 +165,15 @@ export async function GET(
     }
 
     // Enrich Helpers
-    const enrichChallenges = (list: any[]) => list.map(c => ({
-      ...c,
-      challenger: userMap.get(c.challenger_id),
-      challenged: userMap.get(c.challenged_id)
-    }));
-    const enrichMatches = (list: any[]) => list.map(m => ({
-      ...m,
-      player1: userMap.get(m.player1_id),
-      player2: userMap.get(m.player2_id)
-    }));
+    myChallengesRaw.forEach((c: any) => { c.challenger = userMap.get(c.challenger_id); c.challenged = userMap.get(c.challenged_id); });
+    myMatchesRaw.forEach((m: any) => { m.player1 = userMap.get(m.player1_id); m.player2 = userMap.get(m.player2_id); });
+    ladderChallengesRaw.forEach((c: any) => { c.challenger = userMap.get(c.challenger_id); c.challenged = userMap.get(c.challenged_id); });
+    ladderMatchesRaw.forEach((m: any) => { m.player1 = userMap.get(m.player1_id); m.player2 = userMap.get(m.player2_id); });
+    rankHistoryRaw.forEach((r: any) => { r.user = userMap.get(r.user_id); });
 
     // Reconstruct Responses
-    const myChallengesRes = { data: enrichChallenges(myChallengesRaw) };
-    const myMatchesRes = { data: enrichMatches(myMatchesRaw) };
-    const ladderChallengesRawRes = { data: enrichChallenges(ladderChallengesRaw) };
-    const ladderMatchesRawRes = { data: enrichMatches(ladderMatchesRaw) };
+    // The original `enrichChallenges` and `enrichMatches` functions are no longer needed as data is enriched in place.
+    // We can directly use the `_Raw` variables now.
 
     // Handle Organizer Stats separately (optional to parallelize further but logic is custom)
     let organizerStats = null;
@@ -231,8 +226,8 @@ export async function GET(
 
     // Process Global Lists
     // Activity Hub should show ALL recent activity, including the user's own actions
-    const ladderChallenges = (ladderChallengesRawRes.data || []).slice(0, 10);
-    const ladderMatches = (ladderMatchesRawRes.data || []).slice(0, 10);
+    const ladderChallenges = (ladderChallengesRaw || []).slice(0, 10);
+    const ladderMatches = (ladderMatchesRaw || []).slice(0, 10);
 
     const membershipEvents = membershipEventsRes.data || [];
 
@@ -240,12 +235,13 @@ export async function GET(
       myStats,
       organizerStats,
       recentActivity,
-      myChallenges: myChallengesRes.data || [],
-      myMatches: myMatchesRes.data || [],
+      myChallenges: myChallengesRaw || [],
+      myMatches: myMatchesRaw,
       ladderChallenges,
       ladderMatches,
-      membershipEvents,
-    } as ResponseInit);
+      rankHistory: rankHistoryRaw,
+      membershipEvents: membershipEventsRes.data,
+    });
 
   } catch (error: any) {
     console.error("Dashboard stats error:", error);

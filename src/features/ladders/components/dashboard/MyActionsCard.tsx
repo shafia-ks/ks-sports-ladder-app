@@ -236,32 +236,32 @@ export function MyActionsCard({
         const needsConfirmation = myMatch.status === 'submitted';
 
         return (
-            <div className="card p-4 sm:p-5 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between mb-3">
+            <div className="card p-3 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between mb-2">
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                        <Target className="h-4 w-4 text-blue-600" />
                         My Actions
                     </h3>
                     {actionCount > 0 && (
-                        <span className="bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0 rounded-full">
                             {actionCount}
                         </span>
                     )}
                 </div>
 
-                <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                         <Avatar
                             name={opponent.full_name}
                             email={opponent.email}
                             src={opponent.avatar_url}
-                            size="sm"
+                            size="xs"
                         />
                         <div className="flex-1 min-w-0">
                             <p className="text-[10px] sm:text-xs font-semibold text-slate-900 truncate">
                                 Match vs {opponent.full_name || opponent.email.split('@')[0]}
                             </p>
-                            <p className="text-[9px] sm:text-[10px] text-slate-500">
+                            <p className="text-[9px] text-slate-500">
                                 {needsScore ? 'Pending • Enter Score' : 'Submitted • Confirm Result'}
                             </p>
                         </div>
@@ -270,9 +270,9 @@ export function MyActionsCard({
                     {needsScore ? (
                         <button
                             onClick={() => setIsScoreOpen(true)}
-                            className="w-full py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2"
+                            className="w-full py-1.5 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-md hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2"
                         >
-                            <PlayCircle className="h-4 w-4" />
+                            <PlayCircle className="h-3 w-3" />
                             Enter Score
                         </button>
                     ) : (
@@ -280,11 +280,11 @@ export function MyActionsCard({
                             <button
                                 onClick={handleConfirmResult}
                                 disabled={loading !== null}
-                                className="flex-1 py-2 px-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-1.5 px-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md hover:from-green-700 hover:to-green-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {loading === 'confirm' ? 'Confirming...' : (
                                     <>
-                                        <CheckCircle className="h-4 w-4" />
+                                        <CheckCircle className="h-3 w-3" />
                                         Confirm
                                     </>
                                 )}
@@ -292,9 +292,9 @@ export function MyActionsCard({
                             <button
                                 onClick={handleDispute}
                                 disabled={loading !== null}
-                                className="flex-1 py-2 px-3 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-1.5 px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                <AlertCircle className="h-4 w-4" />
+                                <AlertCircle className="h-3 w-3" />
                                 Dispute
                             </button>
                         </div>
@@ -314,22 +314,22 @@ export function MyActionsCard({
 
     // Empty state
     return (
-        <div className="card p-4 sm:p-5 border-l-4 border-green-500">
-            <div className="flex items-center justify-between mb-3">
+        <div className="card p-3 border-l-4 border-green-500">
+            <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                    <CheckCircle className="h-4 w-4 text-green-600" />
                     My Actions
                 </h3>
             </div>
 
-            <div className="text-center py-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-50 mb-3">
-                    <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
+            <div className="text-center py-3">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 mb-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
                 </div>
-                <p className="text-[10px] sm:text-xs font-semibold text-slate-900 mb-1">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-900 mb-0.5">
                     All caught up! 🎉
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-slate-500">
+                <p className="text-[9px] text-slate-500">
                     Challenge someone from Rankings
                 </p>
             </div>
