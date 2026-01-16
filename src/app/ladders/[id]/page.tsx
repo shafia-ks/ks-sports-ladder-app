@@ -21,13 +21,10 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
 import { Top5Rankings } from "@/features/ladders/components/dashboard/Top5Rankings";
 import { LadderInfoSidebar } from "@/features/ladders/components/dashboard/LadderInfoSidebar";
-import { RecentActivity } from "@/features/ladders/components/dashboard/RecentActivity";
+import { MyActionsCard } from "@/features/ladders/components/dashboard/MyActionsCard";
+import { ActivityHub } from "@/features/ladders/components/dashboard/ActivityHub";
 import { OrganizerActionBanner } from "@/features/ladders/components/dashboard/OrganizerActionBanner";
 import { OrganizerStatsGrid } from "@/features/ladders/components/dashboard/OrganizerStatsGrid";
-import { MyActiveChallengesCard } from "@/features/ladders/components/dashboard/MyActiveChallengesCard";
-import { MyActiveMatchesCard } from "@/features/ladders/components/dashboard/MyActiveMatchesCard";
-import { LadderChallengesCard } from "@/features/ladders/components/dashboard/LadderChallengesCard";
-import { LadderMatchesCard } from "@/features/ladders/components/dashboard/LadderMatchesCard";
 import { PendingApprovals } from "@/features/ladders/components/PendingApprovals";
 import { InviteMembersButton } from "@/features/ladders/components/InviteMembersButton";
 import { InviteMembersModal } from "@/features/ladders/components/InviteMembersModal";
@@ -918,20 +915,46 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     />
                   )}
 
-                  {/* Personal Activity Cards */}
-                  {isMember && user && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <MyActiveChallengesCard userId={user.id} ladderId={params.id} />
-                      <MyActiveMatchesCard userId={user.id} ladderId={params.id} />
-                    </div>
+                  {/* My Actions - Single unified card for user's pending items */}
+                  {isMember && user && dashboardStats?.myChallenges && dashboardStats?.myMatches && (
+                    <MyActionsCard
+                      challenges={dashboardStats.myChallenges || []}
+                      matches={dashboardStats.myMatches || []}
+                      currentUserId={user.id}
+                      ladderId={params.id}
+                      onChallengeAction={async (challengeId, action) => {
+                        try {
+                          const endpoint = action === 'accept'
+                            ? `/api/ladders/${params.id}/challenges/${challengeId}/accept`
+                            : `/api/ladders/${params.id}/challenges/${challengeId}/decline`;
+
+                          const res = await fetch(endpoint, { method: 'POST' });
+                          if (!res.ok) throw new Error('Failed to process challenge');
+
+                          toastPush({
+                            title: action === 'accept' ? 'Challenge accepted!' : 'Challenge declined',
+                            variant: 'success'
+                          });
+                          await fetchLadder(true);
+                        } catch (err) {
+                          toastPush({
+                            title: 'Error',
+                            description: err instanceof Error ? err.message : 'Failed to process challenge',
+                            variant: 'error'
+                          });
+                        }
+                      }}
+                    />
                   )}
 
-                  {/* Ladder-Wide Activity Cards */}
-                  {canAccessMembers && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <LadderChallengesCard ladderId={params.id} />
-                      <LadderMatchesCard ladderId={params.id} />
-                    </div>
+                  {/* Activity Hub - Ladder-wide activity feed */}
+                  {canAccessMembers && dashboardStats?.ladderChallenges && dashboardStats?.ladderMatches && (
+                    <ActivityHub
+                      challenges={dashboardStats.ladderChallenges || []}
+                      matches={dashboardStats.ladderMatches || []}
+                      currentUserId={user?.id || ''}
+                      ladderId={params.id}
+                    />
                   )}
 
                   {/* Top 5 Rankings */}
@@ -953,17 +976,6 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     />
                   )}
 
-                  {/* Recent Activity */}
-                  {canAccessMembers && dashboardStats?.recentActivity && (
-                    <RecentActivity
-                      activities={dashboardStats.recentActivity.map((activity: any, idx: number) => ({
-                        id: `activity-${idx}`,
-                        type: activity.type as "match" | "challenge" | "member",
-                        description: activity.description,
-                        time: activity.time
-                      }))}
-                    />
-                  )}
 
                   {/* Request to Become Organizer - Only for Players */}
                   {!isOrganizer && currentMember && user?.role === "player" && (
