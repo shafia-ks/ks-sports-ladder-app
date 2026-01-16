@@ -136,12 +136,24 @@ export async function PATCH(
 
     // If ladder_id, add user to ladder membership
     if (invitation.ladder_id) {
+      // Get current max rank to assign new member to last position
+      const { data: ranks } = await supabaseAdmin
+        .from("ladder_memberships")
+        .select("current_rank")
+        .eq("ladder_id", invitation.ladder_id)
+        .eq("status", "active")
+        .order("current_rank", { ascending: false })
+        .limit(1);
+
+      const nextRank = (ranks?.[0]?.current_rank ?? 0) + 1;
+
       const { error: membershipError } = await supabaseAdmin
         .from("ladder_memberships")
         .insert({
           ladder_id: invitation.ladder_id,
           user_id,
           status: "active",
+          current_rank: nextRank,
           join_date: new Date().toISOString(),
           accepted_at: new Date().toISOString(),
           accepted_by: invitation.invited_by,
