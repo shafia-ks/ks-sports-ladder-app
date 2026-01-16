@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { MatchCard } from "@/components/matches/MatchCard";
+import { useMatches } from "@/hooks/useSWR";
 
 interface Player {
     id: string;
@@ -39,27 +40,19 @@ interface MatchesListProps {
 }
 
 export function MatchesList({ ladderId, currentUserId, isOrganizer, onDataUpdate }: MatchesListProps) {
-    const [matches, setMatches] = useState<Match[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    // Use SWR hook
+    const { matches: rawMatches, isLoading: loading, mutate: refreshMatches } = useMatches(ladderId);
+    const matches = (rawMatches || []) as Match[];
+
     const [filter, setFilter] = useState<FilterStatus>("my_matches");
     const [searchQuery, setSearchQuery] = useState("");
 
-    const fetchMatches = async () => {
-        try {
-            if (matches.length === 0) setLoading(true);
-            const response = await fetch(`/api/matches?ladderId=${ladderId}`, { cache: 'no-store' });
-            const data = await response.json();
-            setMatches(data.matches || []);
-        } catch (error) {
-            console.error("Error fetching matches:", error);
-        } finally {
-            setLoading(false);
-        }
+    const fetchMatches = () => {
+        refreshMatches();
     };
 
-    useEffect(() => {
-        fetchMatches();
-    }, [ladderId]);
+    // Effect removed as SWR handles fetching on mount
 
     const filteredMatches = matches.filter((match) => {
         // Status filter

@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAnalytics } from "@/lib/analytics/tracker";
+import { useChallenges } from "@/hooks/useSWR";
 
 interface Challenge {
     id: string;
@@ -43,8 +44,11 @@ interface ChallengesTabProps {
 export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
     const { trackEvent } = useAnalytics();
     const { push: toast } = useToast();
-    const [challenges, setChallenges] = useState<Challenge[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Use SWR hook for caching
+    const { challenges: rawChallenges, isLoading: loading, mutate: refreshChallenges } = useChallenges(ladderId);
+    const challenges = (rawChallenges || []) as Challenge[];
+
+    // Legacy state for cancel/counter logic (filtering done in render)
     const [cancelling, setCancelling] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
     const [cancelReason, setCancelReason] = useState("");
@@ -56,24 +60,8 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
         notes: "",
     });
 
-    useEffect(() => {
-        fetchChallenges();
-    }, [ladderId]);
-
-    const fetchChallenges = async () => {
-        try {
-            if (challenges.length === 0) setLoading(true);
-            // Always fetch all challenges for the ladder to allow "All Challenges" view
-            const url = `/api/challenges?ladderId=${ladderId}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            setChallenges(data.challenges || []);
-        } catch (err) {
-            console.error("Failed to load challenges:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Helper to refresh data
+    const fetchChallenges = () => refreshChallenges();
 
     const handleAccept = async (challengeId: string) => {
         try {
@@ -229,8 +217,30 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
+            <div className="space-y-6">
+                <div className="flex gap-2 mb-6">
+                    <div className="bg-slate-200 h-9 w-32 rounded-full animate-pulse"></div>
+                    <div className="bg-slate-200 h-9 w-32 rounded-full animate-pulse"></div>
+                </div>
+                <div className="card p-6">
+                    <div className="h-6 bg-slate-200 rounded w-1/4 mb-6 animate-pulse"></div>
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="border border-slate-100 rounded-lg p-4 animate-pulse">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+                                        <div className="space-y-2">
+                                            <div className="h-4 bg-slate-200 rounded w-32"></div>
+                                            <div className="h-3 bg-slate-200 rounded w-24"></div>
+                                        </div>
+                                    </div>
+                                    <div className="h-8 bg-slate-200 rounded w-20"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

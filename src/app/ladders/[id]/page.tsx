@@ -17,6 +17,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { useAnalytics } from "@/lib/analytics/tracker";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useDashboardStats, useLadder } from "@/hooks/useSWR";
 
 // Extracted components
 import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
@@ -230,7 +231,14 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     const newUrl = params.toString() ? `${pathname}?${params.toString()}` : (pathname || '');
     router.push(newUrl as any, { scroll: false });
   };
-  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const canAccessStats =
+    data?.members?.some((m: any) => m.user_id === user?.id && m.status === "active") ||
+    data?.organizerIds?.includes(user?.id || "");
+
+  const { stats: dashboardStats, isLoading: isStatsLoading, mutate: refreshDashboardStats } = useDashboardStats(
+    params.id,
+    canAccessStats && user?.id ? user.id : null
+  );
   const [fixingRanks, setFixingRanks] = useState(false);
   const [settingsForms, setSettingsForms] = useState({
     description: "",
@@ -251,30 +259,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
   const [isLeaveLadderModalOpen, setIsLeaveLadderModalOpen] = useState(false);
 
 
-  // Fetch dashboard stats
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id || !data?.ladder) return;
 
-      const canAccessStats =
-        data.members?.some((m: any) => m.user_id === user.id && m.status === "active") ||
-        data.organizerIds?.includes(user.id);
-
-      if (!canAccessStats) return;
-
-      try {
-        const res = await fetch(`/api/ladders/${params.id}/dashboard-stats?userId=${user.id}`);
-        if (res.ok) {
-          const json = await res.json();
-          setDashboardStats(json);
-        }
-      } catch (err) {
-        console.error("Failed to fetch dashboard stats:", err);
-      }
-    };
-
-    fetchStats();
-  }, [params.id, user?.id, data]);
 
   // Top-level useEffect for settingsForms initialization
   useEffect(() => {
