@@ -130,8 +130,27 @@ export async function POST(
           });
       }
 
-      // If this was a "remove" (leave), notify all other active members
+      // If this was a "remove" (leave), notify all other active members AND clean up pending items
       if (action === "remove" && memberData && ladderData) {
+        const userId = memberData.user_id;
+
+        // 1. Cancel pending challenges
+        await supabaseAdmin
+          .from("challenges")
+          .update({ status: "cancelled" })
+          .eq("ladder_id", params.id)
+          .eq("status", "pending")
+          .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`);
+
+        // 2. Cancel pending matches
+        // includes 'Pending' (scheduled/unplayed) and 'ScoreSubmitted' (waiting confirm)
+        await supabaseAdmin
+          .from("matches")
+          .update({ status: "Cancelled" })
+          .eq("ladder_id", params.id)
+          .in("status", ["Pending", "ScoreSubmitted"])
+          .or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
+
         const { createNotification } = await import("@/lib/supabase/notifications");
 
         // Get all active members except the one who left
@@ -140,7 +159,7 @@ export async function POST(
           .select("user_id")
           .eq("ladder_id", params.id)
           .eq("status", "active")
-          .neq("user_id", memberData.user_id);
+          .neq("user_id", userId);
 
         // Notify each member
         const memberName = (memberData.users as any)?.full_name || (memberData.users as any)?.email || "A member";

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { usePendingInvitations, useRespondToInvitation } from "@/features/invitations/api";
 import { Loader2, Check, X, Mail } from "lucide-react";
@@ -10,17 +11,21 @@ export function PendingInvitationsCard() {
     const { data: invitations, isLoading } = usePendingInvitations(user?.email);
     const { mutate: respond, isPending } = useRespondToInvitation();
     const { push: toast } = useToast();
+    const [respondingId, setRespondingId] = useState<string | null>(null);
 
     if (isLoading || !invitations || invitations.length === 0) return null;
 
     const handleRespond = (id: string, action: 'accept' | 'reject') => {
         if (!user?.id) return;
+        setRespondingId(id);
         respond({ id, action, userId: user.id }, {
             onSuccess: () => {
                 toast({ title: action === 'accept' ? "Invitation Accepted" : "Invitation Declined", variant: "success" });
+                setRespondingId(null);
             },
             onError: (err) => {
                 toast({ title: "Error", description: err.message, variant: "error" });
+                setRespondingId(null);
             }
         });
     };
@@ -45,15 +50,15 @@ export function PendingInvitationsCard() {
                         <div className="flex gap-2 w-full sm:w-auto">
                             <button
                                 onClick={() => handleRespond(inv.id, 'accept')}
-                                disabled={isPending}
-                                className="flex-1 sm:flex-none btn btn-sm bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-1 min-w-[100px]"
+                                disabled={respondingId === inv.id}
+                                className="flex-1 sm:flex-none btn btn-sm bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50"
                             >
-                                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4" /> Accept</>}
+                                {respondingId === inv.id && isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4" /> Accept</>}
                             </button>
                             <button
                                 onClick={() => handleRespond(inv.id, 'reject')}
-                                disabled={isPending}
-                                className="flex-1 sm:flex-none btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1 min-w-[100px]"
+                                disabled={respondingId === inv.id}
+                                className="flex-1 sm:flex-none btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50"
                             >
                                 <X className="h-4 w-4" /> Decline
                             </button>

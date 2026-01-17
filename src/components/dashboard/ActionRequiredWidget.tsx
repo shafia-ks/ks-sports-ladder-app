@@ -62,6 +62,22 @@ export function ActionRequiredWidget() {
                     queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] });
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ladder_memberships',
+                    // We listen to all changes because filtering by "ladder I organize" is hard here.
+                    // This creates a refresh whenever ANY membership changes in the system (if noisy, we'll need RLS filter or edge function)
+                    // But RLS ensures we only receive events we are allowed to see? No, realtime 'postgres_changes' usually bypasses RLS unless 'ROW LEVEL SECURITY' is enabled on publication?
+                    // Supabase Realtime respects RLS if configured. Assuming it works or we just take the hit of refreshes.
+                },
+                () => {
+                    console.log('Realtime update: membership changed');
+                    queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] });
+                }
+            )
             .subscribe();
 
         return () => {
