@@ -56,14 +56,14 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     }
 
     // Score state
-    const [sets, setSets] = useState<Array<{ player1: number; player2: number }>>(
+    const [sets, setSets] = useState<Array<{ player1: number | ""; player2: number | "" }>>(
         match.set_scores?.map((score) => {
             const [p1, p2] = score.split("-").map(Number);
             return { player1: p1, player2: p2 };
         }) || [
-            { player1: 0, player2: 0 },
-            { player1: 0, player2: 0 },
-            { player1: 0, player2: 0 },
+            { player1: "", player2: "" },
+            { player1: "", player2: "" },
+            { player1: "", player2: "" },
         ]
     );
 
@@ -76,7 +76,14 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
     const updateSet = (index: number, player: "player1" | "player2", value: string) => {
         const newSets = [...sets];
-        newSets[index][player] = parseInt(value) || 0;
+        if (value === "") {
+            newSets[index][player] = "";
+        } else {
+            const num = parseInt(value);
+            if (!isNaN(num) && num >= 0) {
+                newSets[index][player] = num;
+            }
+        }
         setSets(newSets);
     };
 
@@ -90,8 +97,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             return { winnerId: manualWinnerId, setsWon: 0 }; // Sets won irrelevant for forfeit logic
         }
 
-        const player1Wins = sets.filter((s) => s.player1 > s.player2).length;
-        const player2Wins = sets.filter((s) => s.player2 > s.player1).length;
+        const player1Wins = sets.filter((s) => (s.player1 === "" ? 0 : s.player1) > (s.player2 === "" ? 0 : s.player2)).length;
+        const player2Wins = sets.filter((s) => (s.player2 === "" ? 0 : s.player2) > (s.player1 === "" ? 0 : s.player1)).length;
 
         if (player1Wins > player2Wins) return { winnerId: match.player1_id, setsWon: player1Wins };
         if (player2Wins > player1Wins) return { winnerId: match.player2_id, setsWon: player2Wins };
@@ -99,12 +106,12 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     };
 
     const { winnerId, setsWon } = calculateWinner();
-    const player1SetsWon = sets.filter((s) => s.player1 > s.player2).length;
-    const player2SetsWon = sets.filter((s) => s.player2 > s.player1).length;
+    const player1SetsWon = sets.filter((s) => (s.player1 === "" ? 0 : s.player1) > (s.player2 === "" ? 0 : s.player2)).length;
+    const player2SetsWon = sets.filter((s) => (s.player2 === "" ? 0 : s.player2) > (s.player1 === "" ? 0 : s.player1)).length;
 
     const addSet = () => {
         if (sets.length < 5) {
-            setSets([...sets, { player1: 0, player2: 0 }]);
+            setSets([...sets, { player1: "", player2: "" }]);
         }
     };
 
@@ -130,7 +137,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
         setLoading(true);
         try {
-            const setScores = sets.map((s) => `${s.player1}-${s.player2}`);
+            const setScores = sets.map((s) => `${s.player1 === "" ? 0 : s.player1}-${s.player2 === "" ? 0 : s.player2}`);
             const playedAt = matchDate && matchTime ? `${matchDate}T${matchTime}:00` : new Date().toISOString();
 
             const response = await fetch(`/api/matches/${match.id}/submit`, {
@@ -460,92 +467,94 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             {isEditing && (
                 <div className="mt-4 space-y-4">
                     {/* Score Grid */}
-                    <div className="bg-slate-50 rounded-xl p-4">
-                        <div className="grid grid-cols-[auto_1fr] gap-3">
-                            {/* Headers */}
-                            <div></div>
-                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(36px, 1fr))` }}>
-                                {sets.map((_, idx) => (
-                                    <div key={idx} className="text-center text-[10px] sm:text-sm font-medium text-slate-600">
-                                        Set {idx + 1}
-                                    </div>
-                                ))}
-                                <div></div>
-                            </div>
+                    {/* Unified Grid Layout */}
+                    <div className="bg-slate-50 rounded-xl p-4 overflow-x-auto">
+                        <div
+                            className="grid gap-y-2 gap-x-2 sm:gap-x-4 items-center"
+                            style={{
+                                gridTemplateColumns: `minmax(100px, auto) repeat(${sets.length}, minmax(44px, 1fr)) auto`,
+                                gridTemplateRows: 'auto auto auto'
+                            }}
+                        >
+                            {/* Header Row */}
+                            <div className="h-6"></div> {/* Name Header Placeholder */}
+                            {sets.map((_, idx) => (
+                                <div key={`head-${idx}`} className="text-center text-[10px] sm:text-sm font-medium text-slate-600">
+                                    Set {idx + 1}
+                                </div>
+                            ))}
+                            <div className="h-6"></div> {/* Buttons Header Placeholder */}
 
                             {/* Player 1 Row */}
-                            <div className={`text-[10px] sm:text-sm font-medium ${winnerId === match.player1_id ? "text-green-600" : "text-slate-700"}`}>
+                            <div className={`text-[10px] sm:text-sm font-medium pr-2 truncate ${winnerId === match.player1_id ? "text-green-600" : "text-slate-700"}`}>
                                 {match.player1.full_name || match.player1.email.split("@")[0]}
                             </div>
-                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(36px, 1fr))` }}>
-                                {sets.map((set, idx) => (
-                                    <input
-                                        key={idx}
-                                        type="number"
-                                        min="0"
-                                        max="99"
-                                        value={set.player1}
-                                        onChange={(e) => updateSet(idx, "player1", e.target.value)}
-                                        onFocus={(e) => e.target.select()}
-                                        className={`w-full px-1 py-1 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
-                                            }`}
-                                        aria-label={`Player 1 Set ${idx + 1} score`}
-                                    />
-                                ))}
+                            {sets.map((set, idx) => (
+                                <input
+                                    key={`p1-${idx}`}
+                                    type="number"
+                                    min="0"
+                                    max="99"
+                                    placeholder="0"
+                                    value={set.player1}
+                                    onChange={(e) => updateSet(idx, "player1", e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                    className={`w-full h-10 px-1 border rounded-lg text-center text-sm font-medium ${(set.player1 === "" ? 0 : set.player1) > (set.player2 === "" ? 0 : set.player2)
+                                            ? "bg-green-50 border-green-300"
+                                            : "bg-white border-slate-300"
+                                        }`}
+                                    aria-label={`Player 1 Set ${idx + 1} score`}
+                                />
+                            ))}
+
+                            {/* Buttons Column (Spanning 2 Rows) */}
+                            <div
+                                className="flex flex-col gap-1 items-center justify-center pl-2 row-span-2"
+                                style={{ gridColumn: sets.length + 2, gridRow: '2 / span 2' }}
+                            >
                                 {sets.length < 5 && (
-                                    <div className="flex flex-col gap-1 items-center justify-center">
-                                        <button
-                                            onClick={addSet}
-                                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            aria-label="Add set"
-                                        >
-                                            <Plus className="h-4 w-4" aria-hidden="true" />
-                                        </button>
-                                        {sets.length > 1 && (
-                                            <button
-                                                onClick={removeSet}
-                                                className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                aria-label="Remove set"
-                                            >
-                                                <Minus className="h-4 w-4" aria-hidden="true" />
-                                            </button>
-                                        )}
-                                    </div>
+                                    <button
+                                        onClick={addSet}
+                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                                        aria-label="Add set"
+                                        title="Add Set"
+                                    >
+                                        <Plus className="h-5 w-5" aria-hidden="true" />
+                                    </button>
                                 )}
-                                {sets.length === 5 && sets.length > 1 && (
-                                    <div className="flex flex-col gap-1 items-center justify-center">
-                                        <button
-                                            onClick={removeSet}
-                                            className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            aria-label="Remove set"
-                                        >
-                                            <Minus className="h-4 w-4" aria-hidden="true" />
-                                        </button>
-                                    </div>
+                                {sets.length > 1 && (
+                                    <button
+                                        onClick={removeSet}
+                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                                        aria-label="Remove set"
+                                        title="Remove Set"
+                                    >
+                                        <Minus className="h-5 w-5" aria-hidden="true" />
+                                    </button>
                                 )}
                             </div>
 
                             {/* Player 2 Row */}
-                            <div className={`text-[10px] sm:text-sm font-medium ${winnerId === match.player2_id ? "text-green-600" : "text-slate-700"}`}>
+                            <div className={`text-[10px] sm:text-sm font-medium pr-2 truncate ${winnerId === match.player2_id ? "text-green-600" : "text-slate-700"}`}>
                                 {match.player2.full_name || match.player2.email.split("@")[0]}
                             </div>
-                            <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${sets.length + 1}, minmax(36px, 1fr))` }}>
-                                {sets.map((set, idx) => (
-                                    <input
-                                        key={idx}
-                                        type="number"
-                                        min="0"
-                                        max="99"
-                                        value={set.player2}
-                                        onChange={(e) => updateSet(idx, "player2", e.target.value)}
-                                        onFocus={(e) => e.target.select()}
-                                        className={`w-full px-1 py-1 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
-                                            }`}
-                                        aria-label={`Player 2 Set ${idx + 1} score`}
-                                    />
-                                ))}
-                                <div></div>
-                            </div>
+                            {sets.map((set, idx) => (
+                                <input
+                                    key={`p2-${idx}`}
+                                    type="number"
+                                    min="0"
+                                    max="99"
+                                    placeholder="0"
+                                    value={set.player2}
+                                    onChange={(e) => updateSet(idx, "player2", e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                    className={`w-full h-10 px-1 border rounded-lg text-center text-sm font-medium ${(set.player2 === "" ? 0 : set.player2) > (set.player1 === "" ? 0 : set.player1)
+                                            ? "bg-green-50 border-green-300"
+                                            : "bg-white border-slate-300"
+                                        }`}
+                                    aria-label={`Player 2 Set ${idx + 1} score`}
+                                />
+                            ))}
                         </div>
 
                         {/* Winner Indicator */}
