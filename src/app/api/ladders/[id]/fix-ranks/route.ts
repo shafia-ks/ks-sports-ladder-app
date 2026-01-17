@@ -15,58 +15,62 @@ export async function POST(
   try {
     const { id } = params;
 
-    // Get all active members with rank 0 or null
-    const { data: membersWithoutRank, error: fetchError } = await supabaseAdmin
+    // Get all active members to perform a full rank recalculation
+    const { data: members, error: fetchError } = await supabaseAdmin
       .from("ladder_memberships")
-      .select("id, user_id, current_rank")
+      .select("id, user_id, current_rank, accepted_at, created_at")
       .eq("ladder_id", id)
-      .eq("status", "active")
-      .or("current_rank.is.null,current_rank.eq.0")
-      .order("accepted_at", { ascending: true });
+      .eq("status", "active");
 
     if (fetchError) throw fetchError;
 
-    if (!membersWithoutRank || membersWithoutRank.length === 0) {
-      return NextResponse.json({ 
-        message: "No members need rank assignment",
-        fixed: 0 
+    if (!members || members.length === 0) {
+      return NextResponse.json({
+        message: "No active members to rank",
+        fixed: 0
       });
     }
 
-    // Get the highest current rank (excluding 0 and null)
-    const { data: rankedMembers } = await supabaseAdmin
-      .from("ladder_memberships")
-      .select("current_rank")
-      .eq("ladder_id", id)
-      .eq("status", "active")
-      .not("current_rank", "is", null)
-      .gt("current_rank", 0)
-      .order("current_rank", { ascending: false })
-      .limit(1);
-
-    let nextRank = rankedMembers && rankedMembers.length > 0 
-      ? rankedMembers[0].current_rank + 1 
-      : 1;
-
-    // Assign ranks to members without ranks
-    const updates = membersWithoutRank.map((member) => {
-      const rank = nextRank++;
-      return supabaseAdmin!
-        .from("ladder_memberships")
-        .update({ current_rank: rank })
-        .eq("id", member.id);
+    // Sort active members: By Rank (ASC), then Accepted Date
+    members.sort((a, b) => {
+      // Prioritize members who already have a rank
+      if (a.current_rank && b.current_rank) return a.current_rank - b.current_rank;
+      if (a.current_rank) return -1;
+      if (b.current_rank) return 1;
+      // Fallback to accepted_at
+      if (a.accepted_at && b.accepted_at) return new Date(a.accepted_at).getTime() - new Date(b.accepted_at).getTime();
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
-    const results = await Promise.all(updates);
-    const failed = results.find((r) => r.error);
-    
+    // Assign contiguous ranks 1..N
+    let updatesCount = 0;
+    const updatePromises = members.map((member, index) => {
+      const expectedRank = index + 1;
+
+      // Update only if different
+      if (member.current_rank !== expectedRank) {
+        updatesCount++;
+        return supabaseAdmin!
+          .from("ladder_memberships")
+          .update({ current_rank: expectedRank })
+          .eq("id", member.id);
+      }
+      return Promise.resolve({ error: null });
+    });
+
+    // Execute updates
+    const results = await Promise.all(updatePromises);
+
+    // Check for errors
+    const failed = results.find((r: any) => r.error);
     if (failed?.error) {
-      throw new Error(failed.error.message);
+      console.error("Rank update failed for a member", failed.error);
+      throw new Error("Partial failure during rank update");
     }
 
     return NextResponse.json({
-      message: `Successfully assigned ranks to ${membersWithoutRank.length} member(s)`,
-      fixed: membersWithoutRank.length
+      message: `Recalculated ranks. Updated ${updatesCount} members.`,
+      fixed: updatesCount
     });
   } catch (error) {
     console.error("POST /api/ladders/[id]/fix-ranks error:", error);

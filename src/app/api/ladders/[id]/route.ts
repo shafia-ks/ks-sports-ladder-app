@@ -71,7 +71,6 @@ export async function GET(
         .select("id, status")
         .eq("ladder_id", params.id)
         .eq("user_id", userId)
-        .eq("status", "active")
         .maybeSingle();
 
       membership = membershipRow ?? null;

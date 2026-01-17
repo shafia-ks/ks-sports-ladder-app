@@ -1516,6 +1516,25 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </div>
                 </div>
 
+                {/* Maintenance */}
+                <div className="border-t border-slate-200 pt-6 mt-6">
+                  <h3 className="text-base font-semibold text-slate-900 mb-3">Maintenance</h3>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-900">Recalculate Ranks</h4>
+                      <p className="text-xs text-slate-600 mt-1">Fix gaps in ranking (e.g. missing Rank 4) and sequential ordering.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleFixRanks}
+                      disabled={fixingRanks || !isEditingSettings}
+                      className="btn btn-sm bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
+                    >
+                      {fixingRanks ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fix Ranks"}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Danger Zone */}
                 <div className="border-t border-slate-200 pt-6 mt-6">
                   <h3 className="text-base font-semibold text-red-600 mb-3">Danger Zone</h3>
