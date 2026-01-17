@@ -350,7 +350,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start">
+                                        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:justify-start">
                                             {userId === challenge.challenged_id && challenge.status === "Pending" && (
                                                 <>
 
