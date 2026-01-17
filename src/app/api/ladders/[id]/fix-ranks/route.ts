@@ -15,25 +15,50 @@ export async function POST(
   try {
     const { id } = params;
 
-    // Get all active members from the base TABLE (not view) to ensure updates work
-    const { data: members, error: fetchError } = await supabaseAdmin
+    // 1. Fetch ALL members (active OR holding a rank) to handle zombies/collisions
+    const { data: allMembers, error: fetchError } = await supabaseAdmin
       .from("ladder_members")
-      .select("id, user_id, current_rank, created_at")
+      .select("id, user_id, current_rank, created_at, status")
       .eq("ladder_id", id)
-      .eq("status", "active");
+      .or("status.eq.active,current_rank.not.is.null");
 
     if (fetchError) throw fetchError;
 
-    if (!members || members.length === 0) {
+    if (!allMembers || allMembers.length === 0) {
       return NextResponse.json({
-        message: "No active members to rank",
+        message: "No members found",
         fixed: 0
       });
     }
 
-    // Sort active members: By Rank (ASC), then Created Date (fallback)
-    // We use created_at because accepted_at might miss in base table depending on schema
-    members.sort((a, b) => {
+    let updatesCount = 0;
+
+    // 2. Identify 'Zombie' members (Inactive but holding a rank) AND Active members
+    const activeMembers = [];
+    const zombieUpdates = [];
+
+    for (const member of allMembers) {
+      if (member.status !== 'active') {
+        // This is a zombie (left/removed/pending) holding a rank. Clear it.
+        // This frees up the rank number for active members.
+        if (member.current_rank !== null) {
+          zombieUpdates.push(
+            supabaseAdmin.from("ladder_members").update({ current_rank: null }).eq("id", member.id)
+          );
+          updatesCount++;
+        }
+      } else {
+        activeMembers.push(member);
+      }
+    }
+
+    // Execute cleanup of zombies FIRST to avoid Unique Constraint violations during re-ranking
+    if (zombieUpdates.length > 0) {
+      await Promise.all(zombieUpdates);
+    }
+
+    // 3. Sort Active members
+    activeMembers.sort((a, b) => {
       // Prioritize members who already have a rank
       if (a.current_rank && b.current_rank) return a.current_rank - b.current_rank;
       if (a.current_rank) return -1;
@@ -42,34 +67,32 @@ export async function POST(
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
-    // Assign contiguous ranks 1..N
-    let updatesCount = 0;
-    const updatePromises = members.map((member, index) => {
-      const expectedRank = index + 1;
+    // 4. Reassign contiguous ranks 1..N
+    const rankUpdates = [];
+    for (let i = 0; i < activeMembers.length; i++) {
+      const member = activeMembers[i];
+      const expectedRank = i + 1;
 
-      // Update only if different
       if (member.current_rank !== expectedRank) {
+        rankUpdates.push(
+          supabaseAdmin.from("ladder_members").update({ current_rank: expectedRank }).eq("id", member.id)
+        );
         updatesCount++;
-        return supabaseAdmin!
-          .from("ladder_members")
-          .update({ current_rank: expectedRank })
-          .eq("id", member.id);
       }
-      return Promise.resolve({ error: null });
-    });
+    }
 
-    // Execute updates
-    const results = await Promise.all(updatePromises);
-
-    // Check for errors
-    const failed = results.find((r: any) => r.error);
-    if (failed?.error) {
-      console.error("Rank update failed for a member", failed.error);
-      throw new Error("Partial failure during rank update");
+    // Execute rank updates
+    if (rankUpdates.length > 0) {
+      const results = await Promise.all(rankUpdates);
+      const failed = results.find((r: any) => r.error);
+      if (failed?.error) {
+        console.error("Rank update failed", failed.error);
+        throw new Error("Partial failure during rank update: " + failed.error.message);
+      }
     }
 
     return NextResponse.json({
-      message: `Recalculated ranks. Updated ${updatesCount} members.`,
+      message: `Recalculated ranks. Updates: ${updatesCount} (including ${zombieUpdates.length} cleanups).`,
       fixed: updatesCount
     });
   } catch (error) {
