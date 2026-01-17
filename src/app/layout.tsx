@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { Footer } from "@/components/layout/Footer";
 
 const fontSans = Space_Grotesk({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -47,13 +48,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900">
+      <body className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
         <ErrorBoundary>
           <QueryProvider>
             <AuthProvider>
               <ToastProvider>
                 <TopNav />
-                <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-12 pt-6">{children}</main>
+                <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-12 pt-6 flex-1 w-full">{children}</main>
+                <Footer />
               </ToastProvider>
             </AuthProvider>
           </QueryProvider>
