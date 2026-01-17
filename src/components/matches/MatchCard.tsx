@@ -74,8 +74,22 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     );
     const [location, setLocation] = useState(match.location || "");
 
-    // Calculate winner
+    const updateSet = (index: number, player: "player1" | "player2", value: string) => {
+        const newSets = [...sets];
+        newSets[index][player] = parseInt(value) || 0;
+        setSets(newSets);
+    };
+
+    // Forfeit / Manual Winner Logic
+    const [isForfeit, setIsForfeit] = useState(false);
+    const [manualWinnerId, setManualWinnerId] = useState<string | null>(null);
+
+    // Calculate winner (incorporating manual override)
     const calculateWinner = () => {
+        if (isForfeit && manualWinnerId) {
+            return { winnerId: manualWinnerId, setsWon: 0 }; // Sets won irrelevant for forfeit logic
+        }
+
         const player1Wins = sets.filter((s) => s.player1 > s.player2).length;
         const player2Wins = sets.filter((s) => s.player2 > s.player1).length;
 
@@ -94,11 +108,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         }
     };
 
-    const updateSet = (index: number, player: "player1" | "player2", value: string) => {
-        const newSets = [...sets];
-        newSets[index][player] = parseInt(value) || 0;
-        setSets(newSets);
-    };
+
 
     const handleSubmit = async () => {
         if (!winnerId) {
@@ -509,9 +519,46 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         {/* Winner Indicator */}
                         {winnerId && (
                             <div className="mt-3 text-center">
-                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-[10px] sm:text-sm font-medium">
-                                    ✓ {winnerId === match.player1_id ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]} leads {Math.max(player1SetsWon, player2SetsWon)}-{Math.min(player1SetsWon, player2SetsWon)}
+                                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] sm:text-sm font-medium ${isForfeit ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-700"}`}>
+                                    {isForfeit ? "⚠ Forfeit Victory: " : "✓ "}
+                                    {winnerId === match.player1_id ? match.player1.full_name || match.player1.email.split("@")[0] : match.player2.full_name || match.player2.email.split("@")[0]}
+                                    {!isForfeit && ` leads ${Math.max(player1SetsWon, player2SetsWon)}-${Math.min(player1SetsWon, player2SetsWon)}`}
                                 </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Forfeit / Retirement Option */}
+                    <div className="bg-slate-50 rounded-xl p-4">
+                        <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isForfeit}
+                                onChange={(e) => {
+                                    setIsForfeit(e.target.checked);
+                                    if (!e.target.checked) setManualWinnerId(null);
+                                }}
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-slate-700">
+                                Match ended by Retirement / Forfeit
+                            </span>
+                        </label>
+
+                        {isForfeit && (
+                            <div className="pl-6">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Select Winner (who advanced?)
+                                </label>
+                                <select
+                                    value={manualWinnerId || ""}
+                                    onChange={(e) => setManualWinnerId(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">-- Select Winner --</option>
+                                    <option value={match.player1_id}>{match.player1.full_name || match.player1.email}</option>
+                                    <option value={match.player2_id}>{match.player2.full_name || match.player2.email}</option>
+                                </select>
                             </div>
                         )}
                     </div>
