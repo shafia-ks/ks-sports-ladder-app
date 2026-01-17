@@ -101,7 +101,6 @@ export async function GET(
         .from("matches")
         .select('*')
         .eq("ladder_id", ladderId)
-
         // Fetch all matches to show full history
         .order("created_at", { ascending: false })
         .limit(50),
@@ -110,7 +109,7 @@ export async function GET(
         .from("membership_events")
         .select(`
           *,
-          users(id, full_name, email, avatar_url)
+          user:users(id, full_name, email, avatar_url)
         `)
         .eq("ladder_id", ladderId)
         .order("created_at", { ascending: false })

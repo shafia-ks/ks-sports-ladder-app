@@ -19,7 +19,7 @@ export async function POST(
     // Note: Table name is 'ladder_memberships' (verified in schema), not 'ladder_members'
     const { data: allMembers, error: fetchError } = await supabaseAdmin
       .from("ladder_memberships")
-      .select("id, user_id, current_rank, created_at, status")
+      .select("id, user_id, current_rank, accepted_at, status")
       .eq("ladder_id", id)
       .or("status.eq.active,current_rank.not.is.null");
 
@@ -59,9 +59,9 @@ export async function POST(
           // User said "Rank 4 is stale". Implies the duplicate has Rank 4.
           // If Benni has Rank 5 (New) and Rank 4 (Old Stale).
           // We want to keep Rank 5.
-          // So if created_at of 'member' > 'existing', 'member' is newer.
+          // So if accepted_at of 'member' > 'existing', 'member' is newer.
           // Let's keep the NEWER membership.
-          if (new Date(member.created_at) > new Date(existing.created_at)) {
+          if (new Date(member.accepted_at) > new Date(existing.accepted_at)) {
             toKeep = member;
             toArchive = existing;
           } else {
@@ -94,8 +94,8 @@ export async function POST(
       if (a.current_rank && b.current_rank) return a.current_rank - b.current_rank;
       if (a.current_rank) return -1;
       if (b.current_rank) return 1;
-      // Fallback to created_at
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      // Fallback to accepted_at
+      return new Date(a.accepted_at).getTime() - new Date(b.accepted_at).getTime();
     });
 
     // 4. Reassign contiguous ranks 1..N

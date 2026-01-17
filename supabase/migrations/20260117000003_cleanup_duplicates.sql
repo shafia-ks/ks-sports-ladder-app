@@ -2,7 +2,7 @@
 DELETE FROM ladder_memberships
 WHERE id IN (
   SELECT id FROM (
-    SELECT id, ROW_NUMBER() OVER (partition BY user_id, ladder_id ORDER BY created_at DESC) as rnum
+    SELECT id, ROW_NUMBER() OVER (partition BY user_id, ladder_id ORDER BY accepted_at DESC) as rnum
     FROM ladder_memberships
   ) t
   WHERE t.rnum > 1
@@ -17,7 +17,7 @@ BEGIN
     FOR r IN 
         SELECT id FROM ladder_memberships 
         WHERE status = 'active'
-        ORDER BY current_rank ASC NULLS LAST, created_at ASC 
+        ORDER BY current_rank ASC NULLS LAST, accepted_at ASC 
     LOOP
         i := i + 1;
         UPDATE ladder_memberships 
