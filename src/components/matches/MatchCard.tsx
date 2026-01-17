@@ -166,6 +166,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     played_at: matchDate && matchTime ? `${matchDate}T${matchTime}:00` : match.played_at,
                     location: location || null,
                     status: effectiveStatus, // Keep current status
+                    user_id: currentUserId,
                 }),
             });
 
@@ -465,7 +466,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         type="number"
                                         min="0"
                                         max="99"
-                                        value={set.player1 || ""}
+                                        value={set.player1}
                                         onChange={(e) => updateSet(idx, "player1", e.target.value)}
                                         className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
@@ -494,7 +495,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         type="number"
                                         min="0"
                                         max="99"
-                                        value={set.player2 || ""}
+                                        value={set.player2}
                                         onChange={(e) => updateSet(idx, "player2", e.target.value)}
                                         className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}

@@ -290,7 +290,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
                             return (
                                 <div key={challenge.id} className="border border-slate-200 rounded-lg p-4 hover:border-brand-300 transition">
-                                    <div className="flex items-start justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div className="flex items-start gap-3 flex-1">
                                             <Avatar
                                                 name={opponent?.full_name || opponent?.email || "?"}
@@ -350,7 +350,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start">
                                             {userId === challenge.challenged_id && challenge.status === "Pending" && (
                                                 <>
 

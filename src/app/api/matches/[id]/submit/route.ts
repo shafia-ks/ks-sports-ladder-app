@@ -11,7 +11,8 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { set_scores, winner_id, played_at, location, user_id } = body;
+        const { set_scores, winner_id, played_at, location, user_id, status } = body;
+        const newStatus = status || "ScoreSubmitted";
 
         console.log("[PATCH /api/matches/:id/submit] Updating match:", params.id, body);
 
@@ -44,7 +45,7 @@ export async function PATCH(
                 winner_id,
                 played_at: played_at || new Date().toISOString(),
                 location,
-                status: "ScoreSubmitted",
+                status: newStatus,
                 submitted_by: user_id,
             })
             .eq("id", params.id)

@@ -16,8 +16,9 @@ export async function POST(
     const { id } = params;
 
     // 1. Fetch ALL members (active OR holding a rank) to handle zombies/collisions
+    // Note: Table name is 'ladder_memberships' (verified in schema), not 'ladder_members'
     const { data: allMembers, error: fetchError } = await supabaseAdmin
-      .from("ladder_members")
+      .from("ladder_memberships")
       .select("id, user_id, current_rank, created_at, status")
       .eq("ladder_id", id)
       .or("status.eq.active,current_rank.not.is.null");
@@ -43,7 +44,7 @@ export async function POST(
         // This frees up the rank number for active members.
         if (member.current_rank !== null) {
           zombieUpdates.push(
-            supabaseAdmin.from("ladder_members").update({ current_rank: null }).eq("id", member.id)
+            supabaseAdmin.from("ladder_memberships").update({ current_rank: null }).eq("id", member.id)
           );
           updatesCount++;
         }
@@ -52,7 +53,7 @@ export async function POST(
       }
     }
 
-    // Execute cleanup of zombies FIRST to avoid Unique Constraint violations during re-ranking
+    // Execute cleanup of zombies FIRST to avoid collisions or stale data
     if (zombieUpdates.length > 0) {
       await Promise.all(zombieUpdates);
     }
@@ -75,7 +76,7 @@ export async function POST(
 
       if (member.current_rank !== expectedRank) {
         rankUpdates.push(
-          supabaseAdmin.from("ladder_members").update({ current_rank: expectedRank }).eq("id", member.id)
+          supabaseAdmin.from("ladder_memberships").update({ current_rank: expectedRank }).eq("id", member.id)
         );
         updatesCount++;
       }
