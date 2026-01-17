@@ -15,10 +15,10 @@ export async function POST(
   try {
     const { id } = params;
 
-    // Get all active members to perform a full rank recalculation
+    // Get all active members from the base TABLE (not view) to ensure updates work
     const { data: members, error: fetchError } = await supabaseAdmin
-      .from("ladder_memberships")
-      .select("id, user_id, current_rank, accepted_at, created_at")
+      .from("ladder_members")
+      .select("id, user_id, current_rank, created_at")
       .eq("ladder_id", id)
       .eq("status", "active");
 
@@ -31,14 +31,14 @@ export async function POST(
       });
     }
 
-    // Sort active members: By Rank (ASC), then Accepted Date
+    // Sort active members: By Rank (ASC), then Created Date (fallback)
+    // We use created_at because accepted_at might miss in base table depending on schema
     members.sort((a, b) => {
       // Prioritize members who already have a rank
       if (a.current_rank && b.current_rank) return a.current_rank - b.current_rank;
       if (a.current_rank) return -1;
       if (b.current_rank) return 1;
-      // Fallback to accepted_at
-      if (a.accepted_at && b.accepted_at) return new Date(a.accepted_at).getTime() - new Date(b.accepted_at).getTime();
+      // Fallback to created_at
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
@@ -51,7 +51,7 @@ export async function POST(
       if (member.current_rank !== expectedRank) {
         updatesCount++;
         return supabaseAdmin!
-          .from("ladder_memberships")
+          .from("ladder_members")
           .update({ current_rank: expectedRank })
           .eq("id", member.id);
       }
