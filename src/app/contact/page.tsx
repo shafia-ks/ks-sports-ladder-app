@@ -23,10 +23,10 @@ export default function ContactPage() {
                 </p>
 
                 <a
-                    href="mailto:support@ks-sports-ladder.com"
+                    href="mailto:khaderwiz@outlook.com"
                     className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 transition-colors"
                 >
-                    support@ks-sports-ladder.com
+                    khaderwiz@outlook.com
                 </a>
             </div>
 

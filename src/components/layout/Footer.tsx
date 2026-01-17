@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Twitter, Instagram, Linkedin, Facebook, Mountain } from 'lucide-react';
+import Image from 'next/image';
+import { Twitter, Instagram, Linkedin, Facebook } from 'lucide-react';
 
 export function Footer() {
     const currentYear = new Date().getFullYear();
@@ -11,10 +12,18 @@ export function Footer() {
 
                     {/* Brand Column */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-white">
-                            <Mountain className="h-6 w-6 text-brand-500" />
-                            <span className="text-lg font-bold tracking-tight">KS Sports Ladder</span>
-                        </div>
+                        <Link href="/" className="flex items-center gap-2 text-white group">
+                            <div className="relative h-8 w-8 overflow-hidden rounded-lg bg-white/10 p-1">
+                                <Image
+                                    src="/app-icon-base.png"
+                                    alt="KS Sports Ladder Logo"
+                                    width={32}
+                                    height={32}
+                                    className="object-cover"
+                                />
+                            </div>
+                            <span className="text-lg font-bold tracking-tight group-hover:text-brand-400 transition-colors">KS Sports Ladder</span>
+                        </Link>
                         <p className="text-sm text-slate-500">
                             Compete. Climb. Conquer. <br />
                             The modern platform for sports ladders & leagues.

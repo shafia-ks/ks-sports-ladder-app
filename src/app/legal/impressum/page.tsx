@@ -25,8 +25,8 @@ export default function ImpressumPage() {
                 <div className="space-y-2 text-slate-600">
                     <p>
                         <span className="font-medium text-slate-900 w-20 inline-block">E-Mail:</span>
-                        <a href="mailto:support@ks-sports-ladder.com" className="text-brand-600 hover:underline">
-                            support@ks-sports-ladder.com (or your email)
+                        <a href="mailto:khaderwiz@outlook.com" className="text-brand-600 hover:underline">
+                            khaderwiz@outlook.com
                         </a>
                     </p>
                     <p>
