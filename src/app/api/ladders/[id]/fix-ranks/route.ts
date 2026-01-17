@@ -34,29 +34,59 @@ export async function POST(
 
     let updatesCount = 0;
 
-    // 2. Identify 'Zombie' members (Inactive but holding a rank) AND Active members
-    const activeMembers = [];
-    const zombieUpdates = [];
+    // 3. Identify Active members and handle Zombies/Duplicates
+    const activeMembersMap = new Map(); // user_id -> member
+    const updates = [];
 
     for (const member of allMembers) {
       if (member.status !== 'active') {
-        // This is a zombie (left/removed/pending) holding a rank. Clear it.
-        // This frees up the rank number for active members.
+        // Zombie cleanup (inactive with rank)
         if (member.current_rank !== null) {
-          zombieUpdates.push(
+          updates.push(
             supabaseAdmin.from("ladder_memberships").update({ current_rank: null }).eq("id", member.id)
           );
-          updatesCount++;
         }
       } else {
-        activeMembers.push(member);
+        // Check for duplicates
+        if (activeMembersMap.has(member.user_id)) {
+          // Duplicate found. Keep the RECENT one (or the one with better rank?)
+          // Usually keeping the one with valid rank is better.
+          const existing = activeMembersMap.get(member.user_id);
+          let toArchive;
+          let toKeep;
+
+          // Heuristic: Keep the one with a Rank, or if both have rank, keep newer?
+          // User said "Rank 4 is stale". Implies the duplicate has Rank 4.
+          // If Benni has Rank 5 (New) and Rank 4 (Old Stale).
+          // We want to keep Rank 5.
+          // So if created_at of 'member' > 'existing', 'member' is newer.
+          // Let's keep the NEWER membership.
+          if (new Date(member.created_at) > new Date(existing.created_at)) {
+            toKeep = member;
+            toArchive = existing;
+          } else {
+            toKeep = existing;
+            toArchive = member;
+          }
+
+          // Archive the stale one
+          updates.push(
+            supabaseAdmin.from("ladder_memberships").update({ status: 'archived', current_rank: null }).eq("id", toArchive.id)
+          );
+          activeMembersMap.set(member.user_id, toKeep); // Update map
+        } else {
+          activeMembersMap.set(member.user_id, member);
+        }
       }
     }
 
-    // Execute cleanup of zombies FIRST to avoid collisions or stale data
-    if (zombieUpdates.length > 0) {
-      await Promise.all(zombieUpdates);
+    // Execute cleanups/archiving
+    if (updates.length > 0) {
+      await Promise.all(updates);
     }
+
+    // Extract unique active members for sorting
+    const activeMembers = Array.from(activeMembersMap.values());
 
     // 3. Sort Active members
     activeMembers.sort((a, b) => {
@@ -93,7 +123,7 @@ export async function POST(
     }
 
     return NextResponse.json({
-      message: `Recalculated ranks. Updates: ${updatesCount} (including ${zombieUpdates.length} cleanups).`,
+      message: `Recalculated ranks. Updates needed: ${updatesCount}. Cleanups performed: ${updates.length}.`,
       fixed: updatesCount
     });
   } catch (error) {

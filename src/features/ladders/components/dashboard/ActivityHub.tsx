@@ -273,7 +273,7 @@ export function ActivityHub({ challenges, matches, membershipEvents, rankHistory
                 {renderHeader("Membership", membershipEvents.length, 'membership', <UserPlus className="h-4 w-4 text-green-500" />)}
                 {expanded.membership && (
                     <div className="divide-y divide-slate-100">
-                        {membershipEvents.slice(0, 3).map(e => {
+                        {membershipEvents.slice(0, 10).map(e => {
                             const user = e.user;
                             if (!user) return null;
                             const isJoined = e.event_type === 'joined';
