@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus, Search } from "lucide-react";
+import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus, Minus, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { useAnalytics } from "@/lib/analytics/tracker";
@@ -107,6 +107,14 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             setSets([...sets, { player1: 0, player2: 0 }]);
         }
     };
+
+    const removeSet = () => {
+        if (sets.length > 1) {
+            setSets(sets.slice(0, -1));
+        }
+    };
+
+
 
 
 
@@ -394,13 +402,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     <>
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex-1 py-2 px-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
                         >
                             {effectiveStatus === "Pending" ? "Enter Score" : "Edit Score"}
                         </button>
                         <button
                             onClick={() => setIsEditingDetails(true)}
-                            className="flex-1 py-2 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
                         >
                             Edit Details
                         </button>
@@ -412,14 +420,14 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <button
                             onClick={handleConfirm}
                             disabled={loading}
-                            className="flex-1 py-2 px-1 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
                         >
                             Confirm
                         </button>
                         <button
                             onClick={handleDispute}
                             disabled={loading}
-                            className="flex-1 py-2 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
                         >
                             Dispute
                         </button>
@@ -478,19 +486,42 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         max="99"
                                         value={set.player1}
                                         onChange={(e) => updateSet(idx, "player1", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
                                         className={`w-full px-1 py-1 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player1 > set.player2 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
                                         aria-label={`Player 1 Set ${idx + 1} score`}
                                     />
                                 ))}
                                 {sets.length < 5 && (
-                                    <button
-                                        onClick={addSet}
-                                        className="flex items-center justify-center gap-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                                        aria-label="Add another set"
-                                    >
-                                        <Plus className="h-4 w-4" aria-hidden="true" />
-                                    </button>
+                                    <div className="flex flex-col gap-1 items-center justify-center">
+                                        <button
+                                            onClick={addSet}
+                                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            aria-label="Add set"
+                                        >
+                                            <Plus className="h-4 w-4" aria-hidden="true" />
+                                        </button>
+                                        {sets.length > 1 && (
+                                            <button
+                                                onClick={removeSet}
+                                                className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                aria-label="Remove set"
+                                            >
+                                                <Minus className="h-4 w-4" aria-hidden="true" />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                                {sets.length === 5 && sets.length > 1 && (
+                                    <div className="flex flex-col gap-1 items-center justify-center">
+                                        <button
+                                            onClick={removeSet}
+                                            className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            aria-label="Remove set"
+                                        >
+                                            <Minus className="h-4 w-4" aria-hidden="true" />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 
@@ -507,6 +538,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                         max="99"
                                         value={set.player2}
                                         onChange={(e) => updateSet(idx, "player2", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
                                         className={`w-full px-1 py-1 sm:px-3 sm:py-2 border rounded-lg text-center text-sm font-medium ${set.player2 > set.player1 ? "bg-green-50 border-green-300" : "bg-white border-slate-300"
                                             }`}
                                         aria-label={`Player 2 Set ${idx + 1} score`}

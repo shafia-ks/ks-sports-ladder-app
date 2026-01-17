@@ -88,9 +88,7 @@ export function Footer() {
                                 <Linkedin className="h-5 w-5" />
                             </Link>
                         </div>
-                        <p className="text-xs text-slate-600 mt-4">
-                            Made with ❤️ in Germany
-                        </p>
+
                     </div>
                 </div>
 
