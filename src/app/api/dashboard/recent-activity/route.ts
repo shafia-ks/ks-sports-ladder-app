@@ -29,7 +29,7 @@ export async function GET(req: Request) {
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
             .eq("status", "Confirmed")
             .order("created_at", { ascending: false })
-            .limit(10);
+            .limit(5);
 
         if (error) {
             console.error("[GET /api/dashboard/recent-activity] Error:", error);

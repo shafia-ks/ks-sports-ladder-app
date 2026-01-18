@@ -76,14 +76,14 @@ export async function GET(
         .from("challenges")
         .select('*')
         .eq("ladder_id", ladderId)
-        .eq("status", "pending")
+        .eq("status", "Pending")
         .or(`challenger_id.eq.${userId},challenged_id.eq.${userId}`)
         .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("matches")
         .select('*')
         .eq("ladder_id", ladderId)
-        .in("status", ["pending", "submitted"])
+        .in("status", ["Pending", "ScoreSubmitted"])
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
         .order("created_at", { ascending: false })
     ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
@@ -306,7 +306,7 @@ async function getRecentActivity(ladderId: string) {
     .eq("ladder_id", ladderId)
     .eq("status", "Confirmed")
     .order("played_at", { ascending: false })
-    .limit(5);
+    .limit(3);
 
   if (recentMatchesData) {
     for (const match of recentMatchesData) {
@@ -337,7 +337,7 @@ async function getRecentActivity(ladderId: string) {
       challenged:users!challenges_challenged_id_fkey(full_name, first_name, last_name)
     `)
     .eq("ladder_id", ladderId)
-    .limit(5);
+    .limit(3);
 
   if (recentChallengesData) {
     for (const challenge of recentChallengesData) {
