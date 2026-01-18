@@ -1,4 +1,5 @@
 -- Run this SQL in your Supabase Dashboard SQL Editor to fix the "Function not found" error.
+-- UPDATED: Includes correct match statuses to avoid constraint errors.
 
 -- 1. Create the Cancel Match Function
 CREATE OR REPLACE FUNCTION cancel_match_no_winner(
@@ -27,7 +28,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Allow 'Cancelled' status in matches table
+-- 2. Update Constraint to allow 'Cancelled' status
+-- We include all valid statuses: Pending, ScoreSubmitted, Confirmed, Disputed, Cancelled
 ALTER TABLE public.matches DROP CONSTRAINT IF EXISTS matches_status_check;
 ALTER TABLE public.matches ADD CONSTRAINT matches_status_check 
-    CHECK (status IN ('Submitted', 'Confirmed', 'Disputed', 'Cancelled'));
+    CHECK (status IN ('Pending', 'ScoreSubmitted', 'Confirmed', 'Disputed', 'Cancelled'));
