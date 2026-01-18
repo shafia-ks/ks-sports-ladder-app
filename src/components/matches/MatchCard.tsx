@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useAnalytics } from "@/lib/analytics/tracker";
+import { useCancelMatch } from "@/features/matches/api";
 
 interface Player {
     id: string;
@@ -127,6 +128,11 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
 
     const handleSubmit = async () => {
+        if (isForfeit && manualWinnerId === 'cancel') {
+            handleCancelConfirm();
+            return;
+        }
+
         if (!winnerId) {
             showToast({
                 title: "No winner detected",
@@ -250,6 +256,9 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
     const [disputeReason, setDisputeReason] = useState("");
 
+    const { mutate: cancelMatch, isPending: isCancelling } = useCancelMatch();
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
     const handleConfirm = async () => {
         setLoading(true);
         setOptimisticStatus("Confirmed");
@@ -345,6 +354,19 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         setIsDisputeModalOpen(true);
     };
 
+    const handleCancelConfirm = () => {
+        cancelMatch({
+            matchId: match.id,
+            challengeId: match.challenge_id || undefined,
+            reason: "Mutual Cancellation (No Winner)"
+        }, {
+            onSuccess: () => {
+                setIsCancelModalOpen(false);
+                onUpdate();
+            }
+        });
+    }
+
     const canEdit = effectiveStatus === "Pending" || (effectiveStatus === "ScoreSubmitted" && isOrganizer);
 
     // Players can confirm if they didn't submit, OR organizers/admins can always confirm
@@ -398,7 +420,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             </div>
 
             {/* Match Info */}
-            {!isEditing && (matchDate || matchTime || location) && (
+            {!isEditing && !isEditingDetails && (matchDate || matchTime || location) && (
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-3 ml-1">
                     {matchDate && (
                         <span className="flex items-center gap-1">
@@ -437,6 +459,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         >
                             Edit Details
                         </button>
+                        <button
+                            onClick={() => setIsCancelModalOpen(true)}
+                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            title="Void/Cancel Match (No Winner)"
+                        >
+                            Void
+                        </button>
                     </>
                 )}
 
@@ -455,6 +484,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                             className="flex-1 py-1 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
                         >
                             Dispute
+                        </button>
+                        <button
+                            onClick={() => setIsCancelModalOpen(true)}
+                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            title="Void/Cancel Match (No Winner)"
+                        >
+                            Void
                         </button>
                     </>
                 )}
@@ -617,6 +653,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                     <option value="">-- Select Winner --</option>
                                     <option value={match.player1_id}>{match.player1.full_name || match.player1.email}</option>
                                     <option value={match.player2_id}>{match.player2.full_name || match.player2.email}</option>
+                                    <option value="cancel">No Winner / Mutual Cancellation</option>
                                 </select>
                             </div>
                         )}
@@ -665,10 +702,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         </button>
                         <button
                             onClick={handleSubmit}
-                            disabled={loading || !winnerId}
-                            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={loading || (!winnerId && !(isForfeit && manualWinnerId === 'cancel'))}
+                            className={`px-6 py-2 bg-gradient-to-r text-white rounded-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed ${isForfeit && manualWinnerId === 'cancel'
+                                ? "from-red-600 to-red-500 hover:from-red-700 hover:to-red-600"
+                                : "from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                                }`}
                         >
-                            {loading ? "Submitting..." : "Submit Score"}
+                            {loading ? "Processing..." : (isForfeit && manualWinnerId === 'cancel' ? "Void Match" : "Submit Score")}
                         </button>
                     </div>
                 </div>
@@ -771,6 +811,18 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 variant="danger"
                 loading={loading}
             />
+
+            <ConfirmModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                onConfirm={handleCancelConfirm}
+                title="Void Match?"
+                message="Are you sure you want to cancel this match with NO WINNER? This is usually done for mutual forfeits or invalid games. This action cannot be undone."
+                confirmText={isCancelling ? "Voiding..." : "Yes, Void Match"}
+                loading={isCancelling}
+                variant="danger"
+            />
+
         </div>
     );
 }
