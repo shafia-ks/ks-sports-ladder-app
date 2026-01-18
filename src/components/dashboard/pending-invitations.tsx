@@ -50,15 +50,15 @@ export function PendingInvitationsCard() {
                         <div className="flex gap-2 w-full sm:w-auto">
                             <button
                                 onClick={() => handleRespond(inv.id, 'accept')}
-                                disabled={respondingId === inv.id}
-                                className="flex-1 sm:flex-none btn btn-sm bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50"
+                                disabled={respondingId !== null}
+                                className="flex-1 sm:flex-none btn btn-sm bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {respondingId === inv.id && isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4" /> Accept</>}
                             </button>
                             <button
                                 onClick={() => handleRespond(inv.id, 'reject')}
-                                disabled={respondingId === inv.id}
-                                className="flex-1 sm:flex-none btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50"
+                                disabled={respondingId !== null}
+                                className="flex-1 sm:flex-none btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1 min-w-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <X className="h-4 w-4" /> Decline
                             </button>
