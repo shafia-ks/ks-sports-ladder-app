@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Trophy, Plus, Minus, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useAnalytics } from "@/lib/analytics/tracker";
 
 interface Player {
@@ -246,6 +247,9 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         }
     };
 
+    const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+    const [disputeReason, setDisputeReason] = useState("");
+
     const handleConfirm = async () => {
         setLoading(true);
         setOptimisticStatus("Confirmed");
@@ -286,11 +290,18 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         }
     };
 
-    const handleDispute = async () => {
-        const reason = prompt("Please provide a reason for disputing this match:");
-        if (!reason) return;
+    const submitDispute = async () => {
+        if (!disputeReason.trim()) {
+            showToast({
+                title: "Reason required",
+                description: "Please provide a reason for the dispute.",
+                variant: "error",
+            });
+            return;
+        }
 
         setLoading(true);
+        setIsDisputeModalOpen(false);
         setOptimisticStatus("Disputed");
         try {
             const response = await fetch(`/api/matches/${match.id}/confirm`, {
@@ -299,7 +310,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 body: JSON.stringify({
                     user_id: currentUserId,
                     action: "dispute",
-                    reason,
+                    reason: disputeReason,
                 }),
             });
 
@@ -315,6 +326,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             });
 
             onUpdate();
+            setDisputeReason(""); // Reset
         } catch (error) {
             console.error("Error disputing match:", error);
             showToast({
@@ -326,6 +338,11 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDispute = () => {
+        setDisputeReason("");
+        setIsDisputeModalOpen(true);
     };
 
     const canEdit = effectiveStatus === "Pending" || (effectiveStatus === "ScoreSubmitted" && isOrganizer);
@@ -729,6 +746,31 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                     </div>
                 </div>
             )}
+
+
+            <ConfirmModal
+                isOpen={isDisputeModalOpen}
+                onClose={() => setIsDisputeModalOpen(false)}
+                onConfirm={submitDispute}
+                title="Dispute Match"
+                message={
+                    <div className="space-y-3">
+                        <p className="text-sm text-slate-600">
+                            Please provide a reason for disputing this match. This will notify the organizers for review.
+                        </p>
+                        <textarea
+                            className="w-full h-24 p-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                            placeholder="Enter dispute reason..."
+                            value={disputeReason}
+                            onChange={(e) => setDisputeReason(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                }
+                confirmText="Submit Dispute"
+                variant="danger"
+                loading={loading}
+            />
         </div>
     );
 }
