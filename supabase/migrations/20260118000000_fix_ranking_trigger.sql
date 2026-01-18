@@ -15,7 +15,7 @@ BEGIN
                     COALESCE(current_rank, 1000000) ASC, 
                     -- Tie-breaker: Join date (earlier join = better rank if ranks are same?? usually opposite or arbitrary)
                     -- In tennis ladder, usually join date matters if unranked.
-                    created_at ASC 
+                    accepted_at ASC 
             ) as new_rank
         FROM ladder_memberships
         WHERE ladder_id = target_ladder_id
