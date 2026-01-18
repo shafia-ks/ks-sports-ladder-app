@@ -453,8 +453,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 )}
             </div>
 
-            {/* Score Display (Completed matches) */}
-            {effectiveStatus === "Confirmed" && !isExpanded && match.set_scores && (
+            {/* Score Display (Completed, Submitted, or Disputed matches) */}
+            {(effectiveStatus === "Confirmed" || effectiveStatus === "ScoreSubmitted" || effectiveStatus === "Disputed") && !isExpanded && match.set_scores && (
                 <div className="flex items-center gap-2 mt-3">
                     {match.set_scores.map((score, idx) => (
                         <span key={idx} className="px-2 sm:px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] sm:text-sm font-medium">
