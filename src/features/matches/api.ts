@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LadderRankingEntry } from "@/lib/ranking/ranking-engine";
+import { supabase } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/toast";
 import { RankingRuleType } from "@/types/domain";
 
 async function fetchMatches(userId?: string) {
@@ -53,6 +55,44 @@ export function useSubmitMatch() {
     mutationFn: submitMatch,
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["matches"] });
+    },
+  });
+}
+
+// Hook to cancel a match (mutual forfeit/void)
+export function useCancelMatch() {
+  const queryClient = useQueryClient();
+  const { push: toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ matchId, challengeId, reason }: { matchId: string; challengeId?: string; reason?: string }) => {
+      if (!supabase) throw new Error("Supabase client not initialized");
+      const { error } = await supabase.rpc('cancel_match_no_winner', {
+        p_match_id: matchId,
+        p_cancelled_by: (await supabase.auth.getUser()).data.user?.id,
+        p_challenge_id: challengeId,
+        p_reason: reason || 'Mutual Forfeit'
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Match Cancelled",
+        description: "The match has been voided and players are unlocked.",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-matches"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-actions"] });
+    },
+    onError: (error) => {
+      console.error("Error cancelling match:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel match. Please try again.",
+        variant: "error",
+      });
     },
   });
 }

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { usePendingActions, PendingAction } from "@/hooks/usePendingActions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRespondToChallenge } from "@/features/challenges/api";
-import { useConfirmMatch, useSubmitScore } from "@/features/matches/api";
+import { useConfirmMatch, useSubmitScore, useCancelMatch } from "@/features/matches/api";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ScoreSubmitModal } from "@/components/matches/ScoreSubmitModal";
@@ -24,10 +24,12 @@ export function ActionRequiredWidget() {
     const { mutate: respondToChallenge, isPending: isResponding } = useRespondToChallenge();
     const { mutate: confirmMatch, isPending: isConfirming } = useConfirmMatch();
     const { mutate: submitScore, isPending: isSubmitting } = useSubmitScore();
+    const { mutate: cancelMatch, isPending: isCancelling } = useCancelMatch();
 
     // State for interactive modals
     const [disputeModalOpen, setDisputeModalOpen] = useState(false);
     const [scoreModalOpen, setScoreModalOpen] = useState(false);
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [selectedAction, setSelectedAction] = useState<PendingAction | null>(null);
     const [disputeReason, setDisputeReason] = useState("");
 
@@ -54,6 +56,22 @@ export function ActionRequiredWidget() {
             supabase.removeChannel(channel);
         };
     }, [user, queryClient]);
+
+    const handleConfirmCancel = () => {
+        if (!selectedAction?.match_id) return;
+
+        cancelMatch({ matchId: selectedAction.match_id, reason: "Mutual Cancellation (No Winner)" }, {
+            onSuccess: () => {
+                setCancelModalOpen(false);
+                setSelectedAction(null);
+            }
+        });
+    }
+
+    const openCancelModal = (action: PendingAction) => {
+        setSelectedAction(action);
+        setCancelModalOpen(true);
+    }
 
     const handleChallengeResponse = (id: string, status: "Accepted" | "Declined") => {
         setProcessingId(id);
@@ -251,6 +269,14 @@ export function ActionRequiredWidget() {
                                             >
                                                 Dispute
                                             </button>
+                                            <button
+                                                onClick={() => openCancelModal(action)}
+                                                disabled={!!processingId}
+                                                title="Void/Cancel Match (No Winner)"
+                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-red-50 text-red-600 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                            >
+                                                Void
+                                            </button>
                                         </>
                                     )}
 
@@ -302,6 +328,17 @@ export function ActionRequiredWidget() {
                 confirmText={isConfirming ? "Submitting..." : "Submit Dispute"}
                 confirmDisabled={!disputeReason.trim() || isConfirming}
                 loading={isConfirming}
+                variant="danger"
+            />
+
+            <ConfirmModal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                onConfirm={handleConfirmCancel}
+                title="Void Match?"
+                message="Are you sure you want to cancel this match with NO WINNER? This is usually done for mutual forfeits or invalid games. This action cannot be undone."
+                confirmText={isCancelling ? "Voiding..." : "Yes, Void Match"}
+                loading={isCancelling}
                 variant="danger"
             />
 
