@@ -22,7 +22,7 @@ interface Match {
     player1_id: string;
     player2_id: string;
     winner_id: string | null;
-    status: "Pending" | "ScoreSubmitted" | "Confirmed" | "Disputed";
+    status: "Pending" | "ScoreSubmitted" | "Confirmed" | "Disputed" | "Cancelled";
     set_scores: string[] | null;
     played_at: string | null;
     created_at: string;
@@ -59,10 +59,13 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
 
     // Score state
     const [sets, setSets] = useState<Array<{ player1: number | ""; player2: number | "" }>>(
-        match.set_scores?.map((score) => {
-            const [p1, p2] = score.split("-").map(Number);
+        (Array.isArray(match.set_scores) ? match.set_scores.map((score) => {
+            if (typeof score !== 'string') return { player1: "", player2: "" };
+            const parts = score.split("-");
+            if (parts.length !== 2) return { player1: "", player2: "" };
+            const [p1, p2] = parts.map(Number);
             return { player1: p1, player2: p2 };
-        }) || [
+        }) : []) || [
             { player1: "", player2: "" },
             { player1: "", player2: "" },
             { player1: "", player2: "" },
@@ -235,6 +238,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Completed</span>;
             case "Disputed":
                 return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">⚠ Disputed</span>;
+            case "Cancelled":
+                return <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-medium">⊘ Void</span>;
         }
     };
 
@@ -245,6 +250,11 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             case "ScoreSubmitted":
                 return "border-l-blue-500";
             case "Confirmed":
+                return "border-l-green-500";
+            case "Disputed":
+                return "border-l-red-500";
+            case "Cancelled":
+                return "border-l-slate-400";
                 return "border-l-green-500";
             case "Disputed":
                 return "border-l-red-500";
