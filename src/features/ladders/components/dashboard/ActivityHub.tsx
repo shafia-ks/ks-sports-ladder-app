@@ -61,7 +61,6 @@ export function ActivityHub({ challenges, matches, membershipEvents, rankHistory
     const [expanded, setExpanded] = useState({
         matches: true,
         challenges: true,
-        ranks: true,
         membership: true
     });
 
@@ -228,45 +227,7 @@ export function ActivityHub({ challenges, matches, membershipEvents, rankHistory
                 )}
             </div>
 
-            {/* Rank Updates Section */}
-            <div className="border-t border-slate-100">
-                {renderHeader("Rank Updates", rankHistory.length, 'ranks', <Trophy className="h-4 w-4 text-purple-500" />)}
-                {expanded.ranks && (
-                    <div className="divide-y divide-slate-100">
-                        {rankHistory.length === 0 ? (
-                            <p className="p-4 text-xs text-slate-400 text-center italic">No recent rank updates</p>
-                        ) : (
-                            rankHistory.slice(0, 5).map(r => {
-                                const user = r.user;
-                                if (!user) return null;
-                                const isImprovement = r.new_rank < r.old_rank; // Lower number is better
-                                return (
-                                    <div key={r.id} className="p-3 hover:bg-slate-50 transition-colors flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative">
-                                                <Avatar name={user.full_name} src={user.avatar_url} size="xs" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-medium text-slate-800">
-                                                    {user.full_name || user.email?.split('@')[0]}
-                                                </p>
-                                                <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                                                    {isImprovement ? 'Rose to' : 'Dropped to'} <span className="font-bold">#{r.new_rank}</span>
-                                                    <span className="text-slate-300">•</span>
-                                                    {formatTimeAgo(r.created_at)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className={`text-xs font-bold ${isImprovement ? 'text-green-600' : 'text-red-600'}`}>
-                                            {isImprovement ? '↑' : '↓'} {Math.abs(r.old_rank - r.new_rank)}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                )}
-            </div>
+
 
             {/* Membership Section */}
             <div className="border-t border-slate-100">
