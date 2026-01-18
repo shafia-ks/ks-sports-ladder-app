@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("user_id");
@@ -25,7 +27,7 @@ export async function GET(req: Request) {
                 ladders (name, image_url)
             `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-            .eq("status", "Confirmed")
+            .eq("status", "Pending")
             .gte("played_at", new Date().toISOString())
             .order("played_at", { ascending: true })
             .limit(5);

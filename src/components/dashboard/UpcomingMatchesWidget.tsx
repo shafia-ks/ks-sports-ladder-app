@@ -26,7 +26,7 @@ export function UpcomingMatchesWidget() {
     const fetchUpcomingMatches = async () => {
         if (!user) return;
         try {
-            const res = await fetch(`/api/dashboard/upcoming-matches?user_id=${user.id}`);
+            const res = await fetch(`/api/dashboard/upcoming-matches?user_id=${user.id}`, { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
                 setMatches(data.matches || []);
