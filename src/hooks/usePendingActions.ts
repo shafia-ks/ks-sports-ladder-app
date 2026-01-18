@@ -7,6 +7,7 @@ export interface PendingAction {
     ladder_id: string;
     ladder_name: string;
     opponent_name?: string;
+    opponent_id?: string;
     requester_name?: string;
     expires_at?: string;
     requested_at?: string;

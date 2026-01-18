@@ -37,3 +37,26 @@ export function useCreateChallenge() {
     },
   });
 }
+
+export function useRespondToChallenge() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "Accepted" | "Declined" }) => {
+      const res = await fetch(`/api/challenges/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to update challenge");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["challenges"] });
+      client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["matches"] });
+    },
+  });
+}

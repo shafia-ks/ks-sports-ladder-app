@@ -157,6 +157,7 @@ export async function GET(req: Request) {
                         ladder_id: challenge.ladder_id,
                         ladder_name: (challenge.ladders as any)?.name || "Unknown Ladder",
                         opponent_name: challenger?.full_name || challenger?.email || "Unknown",
+                        opponent_id: challenge.challenger_id,
                         expires_at: challenge.expires_at,
                         status: challenge.status,
                     });
@@ -178,6 +179,7 @@ export async function GET(req: Request) {
                         ladder_id: match.ladder_id,
                         ladder_name: (match.ladders as any)?.name || "Unknown Ladder",
                         opponent_name: opponent?.full_name || "Unknown",
+                        opponent_id: opponent?.id,
                         status: match.status,
                         match_id: match.id,
                     });
@@ -198,6 +200,7 @@ export async function GET(req: Request) {
                     ladder_id: match.ladder_id,
                     ladder_name: (match.ladders as any)?.name || "Unknown Ladder",
                     opponent_name: opponent?.full_name || "Unknown",
+                    opponent_id: opponent?.id,
                     status: match.status,
                     match_id: match.id,
                 });

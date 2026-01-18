@@ -56,3 +56,53 @@ export function useSubmitMatch() {
     },
   });
 }
+
+export function useConfirmMatch() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, userId, action, reason }: { id: string; userId: string; action: "confirm" | "dispute"; reason?: string }) => {
+      const res = await fetch(`/api/matches/${id}/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, action, reason }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to confirm match");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["pendingActions"] });
+    },
+  });
+}
+
+export function useSubmitScore() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, userId, setScores, winnerId, playedAt }: { id: string; userId: string; setScores: string[]; winnerId: string; playedAt: string }) => {
+      const res = await fetch(`/api/matches/${id}/submit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          set_scores: setScores,
+          winner_id: winnerId,
+          played_at: playedAt,
+          status: "ScoreSubmitted",
+          user_id: userId,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to submit score");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["pendingActions"] });
+    },
+  });
+}
