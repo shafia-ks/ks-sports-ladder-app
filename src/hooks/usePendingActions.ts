@@ -15,7 +15,7 @@ export interface PendingAction {
 }
 
 async function fetchPendingActions(userId: string): Promise<PendingAction[]> {
-    const res = await fetch(`/api/dashboard/pending-actions?user_id=${userId}`);
+    const res = await fetch(`/api/dashboard/pending-actions?user_id=${userId}`, { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch pending actions");
     const data = await res.json();
     return data.actions || [];
