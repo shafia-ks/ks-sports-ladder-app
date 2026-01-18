@@ -32,11 +32,25 @@ const adminConsoleLink = { href: { pathname: "/admin" }, label: "Admin Console",
 
 export function TopNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [pendingJoins, setPendingJoins] = useState(0);
   const [pendingInvites, setPendingInvites] = useState(0);
   const { user, isSignedIn, isLoading, signOut } = useAuth();
   const router = useRouter();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const closeMenu = () => setUserMenuOpen(false);
+    if (userMenuOpen) {
+      window.addEventListener('click', closeMenu);
+    }
+    return () => window.removeEventListener('click', closeMenu);
+  }, [userMenuOpen]);
+
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  }
 
   // Fetch pending organizer requests count for admins
   useEffect(() => {
@@ -57,7 +71,6 @@ export function TopNav() {
           }
         } catch (error) {
           retryCount++;
-          // Only log errors for the first few attempts to avoid console spam
           if (retryCount <= maxRetries) {
             console.warn("Unable to fetch pending requests (will retry)");
           }
@@ -112,8 +125,8 @@ export function TopNav() {
 
   const handleSignOut = async () => {
     setMobileOpen(false);
+    setUserMenuOpen(false);
     await signOut();
-    // signOut now handles navigation via window.location
   };
 
   // Get links based on user role
@@ -149,6 +162,7 @@ export function TopNav() {
           <span className="hidden sm:inline text-base md:text-xl font-bold text-slate-900 tracking-tight">KS Sports Ladder</span>
         </Link>
 
+        {/* Desktop Navigation */}
         <nav className="hidden gap-1 md:flex">
           {visibleLinks.map((link) => (
             <Link
@@ -170,7 +184,7 @@ export function TopNav() {
 
         <div className="flex items-center gap-2">
           {isLoading ? (
-            /* Loading Skeleton to prevent flicker */
+            /* Loading Skeleton */
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 bg-slate-100 rounded-full animate-pulse" />
               <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
@@ -191,31 +205,80 @@ export function TopNav() {
                 </>
               )}
 
+              {/* Desktop User Menu */}
               {isSignedIn && user ? (
-                <div className="hidden items-center gap-3 md:flex">
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-100 transition"
-                    title="Profile settings"
+                <div className="relative hidden md:block z-50">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); }}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   >
                     <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} size="sm" />
-                  </Link>
-                  <div className="hidden xl:flex flex-col items-start">
-                    <p className="text-xs font-medium text-slate-800 max-w-[120px] truncate">
-                      {user.fullName || user.email}
-                    </p>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                      {user.role}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-danger-50 hover:text-danger-700"
-                    title="Sign out"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden xl:inline">Sign out</span>
+                    <div className="hidden xl:flex flex-col items-start text-left">
+                      <p className="text-xs font-medium text-slate-800 max-w-[120px] truncate">
+                        {user.fullName || user.email}
+                      </p>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                        {user.role}
+                      </span>
+                    </div>
                   </button>
+
+                  {/* Dropdown Menu */}
+                  {userMenuOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 py-1 animate-in fade-in zoom-in-95 duration-100"
+                      onClick={handleMenuClick}
+                    >
+                      <div className="px-4 py-2 border-b border-slate-100 xl:hidden">
+                        <p className="text-sm font-medium text-slate-900 truncate">{user.fullName}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      </div>
+
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-700"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <User className="h-4 w-4" /> Profile Settings
+                      </Link>
+                      <Link
+                        href="/help"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-700"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <HelpCircle className="h-4 w-4" /> Help Center
+                      </Link>
+
+                      <div className="my-1 border-t border-slate-100"></div>
+
+                      <div className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        Legal
+                      </div>
+                      <Link
+                        href="/legal/impressum"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-700"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <FileText className="h-4 w-4" /> Impressum
+                      </Link>
+                      <Link
+                        href="/legal/privacy"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-700"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <FileText className="h-4 w-4" /> Privacy Policy
+                      </Link>
+
+                      <div className="my-1 border-t border-slate-100"></div>
+
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" /> Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Link
@@ -249,6 +312,7 @@ export function TopNav() {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {mobileOpen && (
         <div className="border-t border-slate-200 bg-white p-4 md:hidden">
           <nav className="space-y-1">
@@ -263,6 +327,24 @@ export function TopNav() {
                 {link.label}
               </Link>
             ))}
+            {/* Mobile Legal Links */}
+            <div className="pt-2 mt-2 border-t border-slate-100">
+              <p className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase">Legal</p>
+              <Link
+                href="/legal/impressum"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-brand-700"
+              >
+                <FileText className="h-4 w-4" /> Impressum
+              </Link>
+              <Link
+                href="/legal/privacy"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-brand-700"
+              >
+                <FileText className="h-4 w-4" /> Privacy Policy
+              </Link>
+            </div>
           </nav>
           {!isLoading && (
             <>
