@@ -176,6 +176,7 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                 variant: "error",
             });
             setOptimisticStatus(null); // Rollback
+            onUpdate();
         } finally {
             setLoading(false);
         }
@@ -500,8 +501,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                     onChange={(e) => updateSet(idx, "player1", e.target.value)}
                                     onFocus={(e) => e.target.select()}
                                     className={`w-full h-10 px-1 border rounded-lg text-center text-sm font-medium ${(set.player1 === "" ? 0 : set.player1) > (set.player2 === "" ? 0 : set.player2)
-                                            ? "bg-green-50 border-green-300"
-                                            : "bg-white border-slate-300"
+                                        ? "bg-green-50 border-green-300"
+                                        : "bg-white border-slate-300"
                                         }`}
                                     aria-label={`Player 1 Set ${idx + 1} score`}
                                 />
@@ -549,8 +550,8 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                                     onChange={(e) => updateSet(idx, "player2", e.target.value)}
                                     onFocus={(e) => e.target.select()}
                                     className={`w-full h-10 px-1 border rounded-lg text-center text-sm font-medium ${(set.player2 === "" ? 0 : set.player2) > (set.player1 === "" ? 0 : set.player1)
-                                            ? "bg-green-50 border-green-300"
-                                            : "bg-white border-slate-300"
+                                        ? "bg-green-50 border-green-300"
+                                        : "bg-white border-slate-300"
                                         }`}
                                     aria-label={`Player 2 Set ${idx + 1} score`}
                                 />

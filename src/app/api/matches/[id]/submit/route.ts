@@ -56,8 +56,11 @@ export async function PATCH(
             console.error("[PATCH /api/matches/:id/submit] Error:", error);
             // Check if it's a state transition error from our trigger
             if (error.message.includes("Invalid match status transition")) {
+                // Extract the useful part of the message
+                const match = error.message.match(/Invalid match status transition from \w+ to \w+/);
+                const msg = match ? match[0] : error.message;
                 return NextResponse.json({
-                    error: "Cannot submit score: Match is not in a valid state for submission"
+                    error: `Cannot submit score: ${msg}`
                 }, { status: 400 });
             }
             return NextResponse.json({ error: error.message }, { status: 500 });
