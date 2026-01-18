@@ -281,13 +281,23 @@ export function ActionRequiredWidget() {
                                     )}
 
                                     {action.type === "submit_score" && (
-                                        <button
-                                            onClick={() => openScoreModal(action)}
-                                            disabled={!!processingId}
-                                            className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 w-full sm:w-auto justify-center disabled:opacity-50"
-                                        >
-                                            Enter Score
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => openScoreModal(action)}
+                                                disabled={!!processingId}
+                                                className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 w-full sm:w-auto justify-center disabled:opacity-50"
+                                            >
+                                                Enter Score
+                                            </button>
+                                            <button
+                                                onClick={() => openCancelModal(action)}
+                                                disabled={!!processingId}
+                                                title="Void/Cancel Match (No Winner)"
+                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-red-50 text-red-600 w-full sm:w-auto justify-center disabled:opacity-50"
+                                            >
+                                                Void
+                                            </button>
+                                        </>
                                     )}
 
                                     {/* Fallback for other types (Organizer approvals) -> Link */}

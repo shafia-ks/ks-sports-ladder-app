@@ -70,7 +70,7 @@ export function useCancelMatch() {
       const { error } = await supabase.rpc('cancel_match_no_winner', {
         p_match_id: matchId,
         p_cancelled_by: (await supabase.auth.getUser()).data.user?.id,
-        p_challenge_id: challengeId,
+        p_challenge_id: challengeId || null,
         p_reason: reason || 'Mutual Forfeit'
       });
 
