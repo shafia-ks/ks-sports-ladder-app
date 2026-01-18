@@ -14,7 +14,7 @@ export type ChallengeStatus =
   | "Expired"
   | "Cancelled";
 
-export type MatchStatus = "Submitted" | "Confirmed" | "Disputed";
+export type MatchStatus = "Pending" | "ScoreSubmitted" | "Confirmed" | "Disputed" | "Cancelled";
 
 export interface User {
   id: string;

@@ -17,9 +17,11 @@ const challengeStatusConfig: Record<ChallengeStatus, { variant: string; icon: Lu
 };
 
 const matchStatusConfig: Record<MatchStatus, { variant: string; icon: LucideIcon }> = {
-  Submitted: { variant: "warning", icon: Clock },
+  Pending: { variant: "warning", icon: Clock },
+  ScoreSubmitted: { variant: "info", icon: Check },
   Confirmed: { variant: "success", icon: Check },
   Disputed: { variant: "danger", icon: AlertCircle },
+  Cancelled: { variant: "neutral", icon: X },
 };
 
 export function StatusBadge({ status, type = "generic" }: StatusBadgeProps) {
