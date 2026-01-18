@@ -11,7 +11,7 @@ interface ConfirmModalProps {
     message: string | ReactNode;
     confirmText?: string;
     cancelText?: string;
-    variant?: "danger" | "warning" | "info" | "success";
+    variant?: "danger" | "warning" | "info" | "success" | "primary";
     loading?: boolean;
     confirmDisabled?: boolean;
 }
