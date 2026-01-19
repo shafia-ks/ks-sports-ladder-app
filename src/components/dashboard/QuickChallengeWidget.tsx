@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useToast } from "@/components/ui/toast";
 import { Zap, ArrowUpCircle, Swords } from "lucide-react";
-import Link from "next/link";
 
-interface SmartTarget {
+export interface SmartTarget {
     opponent_id: string;
     opponent_name: string;
     opponent_avatar_url: string | null;
@@ -19,28 +20,108 @@ interface SmartTarget {
 
 export function QuickChallengeWidget() {
     const { user } = useAuth();
+    const { push: toast } = useToast();
     const [targets, setTargets] = useState<SmartTarget[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedTarget, setSelectedTarget] = useState<SmartTarget | null>(null);
+    const [isConfirming, setIsConfirming] = useState(false);
     const supabase = createClient();
 
-    useEffect(() => {
+    const fetchTargets = async () => {
         if (!user) return;
-        async function fetchTargets() {
-            try {
-                const { data, error } = await (supabase.rpc as any)("get_smart_targets", { p_user_id: user!.id });
-                if (error) {
-                    console.error("Error fetching smart targets:", error);
-                } else if (data) {
-                    setTargets(data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch smart targets", err);
-            } finally {
-                setLoading(false);
+        setLoading(true);
+        try {
+            const { data, error } = await (supabase.rpc as any)("get_smart_targets", { p_user_id: user!.id });
+            if (error) {
+                console.error("Error fetching smart targets:", error);
+            } else if (data) {
+                setTargets(data);
             }
+        } catch (err) {
+            console.error("Failed to fetch smart targets", err);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
         fetchTargets();
     }, [user]);
+
+    const handleChallengeChange = async () => {
+        if (!user || !selectedTarget) return;
+        setIsConfirming(true);
+
+        try {
+            // 1. Fetch ladder rules
+            const ladderRes = await fetch(`/api/ladders/${selectedTarget.ladder_id}`);
+            if (!ladderRes.ok) throw new Error("Failed to load ladder details");
+            const ladderData = await ladderRes.json();
+            const ladderDetails = ladderData.ladder;
+
+            // 2. Prepare payload
+            // Assuming rank_diff = rank(me) - rank(op)  => rank(me) = rank(op) + rank_diff
+            const myRank = selectedTarget.opponent_rank + selectedTarget.rank_diff;
+
+            const payload = {
+                ladderId: selectedTarget.ladder_id,
+                challengerId: user.id,
+                challengedId: selectedTarget.opponent_id,
+                challengerRank: myRank,
+                challengedRank: selectedTarget.opponent_rank,
+                challengerActiveChallenges: 0,
+                challengedActiveChallenges: 0,
+                challengerBusy: false,
+                challengedBusy: false,
+                rules: {
+                    maxPositionsUp: ladderDetails.challenge_rules?.max_positions_up || 3,
+                    preventChallengingBusyPlayers: true,
+                    maxActiveChallengesPerPlayer: ladderDetails.challenge_rules?.max_active_challenges_per_player || 3,
+                    expiryDays: ladderDetails.challenge_rules?.expiry_days || 7,
+                    cooldownHours: ladderDetails.challenge_rules?.cooldown_hours || 0,
+                },
+            };
+
+            // 3. Send Challenge
+            const res = await fetch("/api/challenges", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok) {
+                throw new Error(json.error || json.errors?.[0]?.message || "Failed to create challenge");
+            }
+
+            toast({
+                title: "Challenge Sent!",
+                description: `You have challenged ${selectedTarget.opponent_name}.`,
+                variant: "success",
+            });
+
+            setSelectedTarget(null);
+            fetchTargets(); // Refresh list
+        } catch (err: any) {
+            console.error(err);
+            toast({
+                title: "Failed to send challenge",
+                description: err.message || "Unknown error occurred.",
+                variant: "error",
+            });
+        } finally {
+            setIsConfirming(false);
+        }
+    };
+
+    // Group targets by ladder name
+    const groupedTargets = targets.reduce((acc, target) => {
+        if (!acc[target.ladder_name]) {
+            acc[target.ladder_name] = [];
+        }
+        acc[target.ladder_name].push(target);
+        return acc;
+    }, {} as Record<string, SmartTarget[]>);
 
     if (!loading && targets.length === 0) {
         return (
@@ -70,43 +151,81 @@ export function QuickChallengeWidget() {
                     </div>
                 </div>
 
-                <div className="space-y-3">
-                    {targets.map((target) => (
-                        <div key={`${target.ladder_id}-${target.opponent_id}`}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-100 hover:border-brand-300 transition-all group">
-                            <div className="flex items-center gap-4">
-                                <Avatar
-                                    src={target.opponent_avatar_url}
-                                    name={target.opponent_name}
-                                    size="lg"
-                                />
-                                <div>
-                                    <h3 className="font-semibold text-slate-900">{target.opponent_name}</h3>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[10px] font-bold uppercase py-0.5 px-1.5 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
-                                        <span className="text-xs text-slate-500">{target.ladder_name}</span>
-                                    </div>
-                                </div>
-                            </div>
+                <div className="space-y-6">
+                    {Object.entries(groupedTargets).map(([ladderName, ladderTargets]) => (
+                        <div key={ladderName}>
+                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">
+                                {ladderName}
+                            </h3>
+                            <div className="space-y-3">
+                                {ladderTargets.map((target) => (
+                                    <div key={`${target.ladder_id}-${target.opponent_id}`}
+                                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-100 hover:border-brand-300 transition-all group">
+                                        <div className="flex items-center gap-4">
+                                            <Avatar
+                                                src={target.opponent_avatar_url}
+                                                name={target.opponent_name}
+                                                size="lg"
+                                            />
+                                            <div>
+                                                <h3 className="font-semibold text-slate-900">{target.opponent_name}</h3>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[10px] font-bold uppercase py-0.5 px-1.5 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                            <div className="flex items-center justify-between sm:justify-end gap-5">
-                                <div className="text-right hidden sm:block">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Strategy</p>
-                                    <p className="text-sm font-bold text-green-600 flex items-center gap-1">
-                                        <ArrowUpCircle className="h-3 w-3" /> {target.rank_diff} {target.rank_diff === 1 ? 'spot' : 'spots'} up
-                                    </p>
-                                </div>
-                                <Link
-                                    href={`/ladders/${target.ladder_id}/challenge?opponent=${target.opponent_id}` as any}
-                                    className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700 transition-colors gap-2 shadow-sm shadow-brand-200"
-                                >
-                                    <Swords className="h-4 w-4" /> Challenge
-                                </Link>
+                                        <div className="flex items-center justify-between sm:justify-end gap-5">
+                                            <div className="text-right hidden sm:block">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Strategy</p>
+                                                <p className="text-sm font-bold text-green-600 flex items-center gap-1">
+                                                    <ArrowUpCircle className="h-3 w-3" /> {target.rank_diff} {target.rank_diff === 1 ? 'spot' : 'spots'} up
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setSelectedTarget(target)}
+                                                className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700 transition-colors gap-2 shadow-sm shadow-brand-200 cursor-pointer"
+                                            >
+                                                <Swords className="h-4 w-4" /> Challenge
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={!!selectedTarget}
+                onClose={() => setSelectedTarget(null)}
+                onConfirm={handleChallengeChange}
+                title="Confirm Challenge"
+                message={
+                    selectedTarget ? (
+                        <div className="flex items-center justify-center p-4">
+                            <div className="flex items-center gap-6">
+                                <div className="text-center">
+                                    <Avatar src={user?.avatarUrl} name={user?.firstName || "Me"} size="lg" />
+                                    <p className="text-xs font-semibold mt-1 text-slate-700">You</p>
+                                </div>
+                                <div className="text-brand-300 font-bold text-lg">VS</div>
+                                <div className="text-center">
+                                    <Avatar src={selectedTarget.opponent_avatar_url} name={selectedTarget.opponent_name} size="lg" />
+                                    <p className="text-xs font-semibold mt-1 text-slate-700">#{selectedTarget.opponent_rank}</p>
+                                </div>
+                            </div>
+                            <div className="mt-4 text-center text-sm text-slate-600">
+                                Challenge <strong>{selectedTarget.opponent_name}</strong> in {selectedTarget.ladder_name}?
+                            </div>
+                        </div>
+                    ) : ""
+                }
+                confirmText="Send Challenge"
+                variant="primary"
+                loading={isConfirming}
+            />
         </div>
     );
 }
