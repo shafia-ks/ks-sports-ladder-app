@@ -49,7 +49,7 @@ BEGIN
       AND om.current_rank < um.current_rank -- Only people ranked higher
       AND om.current_rank >= (um.current_rank - 5) -- Within reasonable range (e.g. 5 spots)
       AND om.user_id NOT IN (SELECT u_id FROM busy_users) -- Opponent is free
-      AND p_user_id NOT IN (SELECT u_id FROM busy_users) -- User is free to challenge
+      -- AND p_user_id NOT IN (SELECT u_id FROM busy_users) -- Removed strict check: User can decide to cancel other challenges, don't hide targets.
     ORDER BY (um.current_rank - om.current_rank) ASC -- Sort by closest rank first
     LIMIT 5;
 END;

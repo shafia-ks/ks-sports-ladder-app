@@ -18,7 +18,6 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {/* Modern Header */}
         <div className="border-b border-slate-100 pb-6">
-          <h1 className="text-3xl font-extrabold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">
             Welcome back, <span className="text-brand-600 font-semibold">{user?.firstName || user?.email?.split('@')[0]}</span>!
           </p>
