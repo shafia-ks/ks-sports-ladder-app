@@ -1138,12 +1138,12 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       <span className="text-xs text-slate-500">{data?.ladder?.ranking_rules?.type || "Ranking"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Invitation Button - Organizers Only */}
-                      {isOrganizer && (
+                      {/* Invitation Button - Organizers Only, disabled if ladder inactive */}
+                      {isOrganizer && data?.ladder?.status === 'active' && (
                         <InviteMembersButton ladderId={params.id} onOpen={() => setIsInviteOpen(true)} />
                       )}
 
-                      {isOrganizer && hasZeroRanks && (
+                      {isOrganizer && hasZeroRanks && data?.ladder?.status === 'active' && (
                         <button
                           onClick={handleFixRanks}
                           disabled={fixingRanks}
@@ -1152,13 +1152,20 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                           {fixingRanks ? "Fixing..." : "Fix ranks"}
                         </button>
                       )}
-                      {isOrganizer && (
+                      {isOrganizer && data?.ladder?.status === 'active' && (
                         <Link
                           href={`/organizer/${params.id}/rankings`}
                           className="btn btn-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
                         >
                           Edit rankings
                         </Link>
+                      )}
+                      {/* Show inactive message for organizers when ladder is inactive */}
+                      {isOrganizer && data?.ladder?.status !== 'active' && (
+                        <div className="text-xs text-slate-500 italic flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          Ladder inactive - only Settings accessible
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1185,13 +1192,16 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         // 3. Within maxPositionsUp limit
                         // 4. Target is not busy (no active challenges)
                         // 5. Current user is not busy
+                        // 6. Ladder is active (not inactive)
+                        const isLadderInactive = data?.ladder?.status !== 'active';
                         const canChallenge = !isCurrentUser &&
                           currentUserRank > 0 &&
                           targetRank > 0 &&
                           targetRank < currentUserRank &&
                           (currentUserRank - targetRank) <= maxPositionsUp &&
                           !isBusy &&
-                          !currentMember?.is_busy;
+                          !currentMember?.is_busy &&
+                          !isLadderInactive; // Block challenges if ladder is inactive
 
                         return (
                           <tr key={member.id} className="border-t border-slate-100">
@@ -1270,13 +1280,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                               ) : (
                                 !isCurrentUser && (
                                   <span className="text-[10px] sm:text-xs text-slate-400">
-                                    {isBusy
-                                      ? "Busy"
-                                      : currentMember?.is_busy
+                                    {isLadderInactive
+                                      ? "Inactive Ladder"
+                                      : isBusy
                                         ? "Busy"
-                                        : targetRank >= currentUserRank
-                                          ? <Lock className="h-4 w-4 text-slate-300" />
-                                          : "Range"}
+                                        : currentMember?.is_busy
+                                          ? "Busy"
+                                          : targetRank >= currentUserRank
+                                            ? <Lock className="h-4 w-4 text-slate-300" />
+                                            : "Range"}
                                   </span>
                                 )
                               )}

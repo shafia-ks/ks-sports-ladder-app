@@ -24,6 +24,8 @@ interface RankingsTableProps {
     canChallenge: (targetRank: number, myRank: number | null) => boolean;
     currentUserRank: number | null;
     onChallenge: (playerId: string) => void;
+    ladderStatus?: string; // 'active' | 'inactive'
+    isOrganizer?: boolean; // Whether current user is admin/organizer
 }
 
 export function RankingsTable({
@@ -32,10 +34,15 @@ export function RankingsTable({
     ladderId,
     canChallenge,
     currentUserRank,
-    onChallenge
+    onChallenge,
+    ladderStatus = 'active',
+    isOrganizer = false
 }: RankingsTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterOption, setFilterOption] = useState<"all" | "challengeable">("all");
+
+    // Block all challenge actions if ladder is inactive
+    const isLadderInactive = ladderStatus !== 'active';
 
     const getDisplayName = (player: Player) => {
         return player.users?.full_name ||
@@ -136,7 +143,16 @@ export function RankingsTable({
                             </div>
                             {!isCurrentUser && (
                                 <div className="mt-3">
-                                    {eligible ? (
+                                    {isLadderInactive ? (
+                                        <button
+                                            disabled
+                                            className="btn btn-sm bg-slate-100 text-slate-500 cursor-not-allowed w-full inline-flex items-center justify-center gap-1"
+                                            title="Ladder is inactive"
+                                        >
+                                            <Lock className="h-3 w-3" aria-hidden="true" />
+                                            Inactive Ladder
+                                        </button>
+                                    ) : eligible ? (
                                         <button
                                             onClick={() => onChallenge(player.user_id)}
                                             disabled={player.is_busy}
@@ -227,7 +243,16 @@ export function RankingsTable({
                                     <td className="px-4 py-4 text-right">
                                         {!isCurrentUser && (
                                             <>
-                                                {eligible ? (
+                                                {isLadderInactive ? (
+                                                    <button
+                                                        disabled
+                                                        className="btn btn-sm bg-slate-100 text-slate-500 cursor-not-allowed inline-flex items-center gap-1"
+                                                        title="Ladder is inactive"
+                                                    >
+                                                        <Lock className="h-3 w-3" aria-hidden="true" />
+                                                        Inactive Ladder
+                                                    </button>
+                                                ) : eligible ? (
                                                     <button
                                                         onClick={() => onChallenge(player.user_id)}
                                                         disabled={player.is_busy}
