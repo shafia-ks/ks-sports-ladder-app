@@ -1,6 +1,5 @@
--- Migration: Create get_smart_targets RPC for Quick Challenge Feature
--- This function finds active ladder members who are valid targets for the user
--- It filters out users who are busy (in pending challenges or submitted matches)
+-- Migration: Update get_smart_targets RPC to return user busy status per ladder
+-- This allows the frontend to show "Locked" state for specific ladders where the user is busy
 
 CREATE OR REPLACE FUNCTION public.get_smart_targets(p_user_id UUID)
 RETURNS TABLE (
@@ -10,7 +9,8 @@ RETURNS TABLE (
     ladder_id UUID,
     ladder_name TEXT,
     opponent_rank INT,
-    rank_diff INT
+    rank_diff INT,
+    is_user_busy BOOLEAN
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -22,16 +22,15 @@ BEGIN
         WHERE lm.user_id = p_user_id 
           AND lm.status = 'active'
     ),
-    busy_users AS (
-        -- Users involved in active/pending challenges
-        SELECT challenger_id as u_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
+    active_engagements AS (
+        -- Get (user_id, ladder_id) pairs for anyone currently busy
+        SELECT challenger_id as u_id, ladder_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
         UNION
-        SELECT challenged_id as u_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
+        SELECT challenged_id as u_id, ladder_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
         UNION
-        -- Users involved in matches that aren't finished/confirmed
-        SELECT player1_id as u_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed')
+        SELECT player1_id as u_id, ladder_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending') -- Included Pending matches if they count as busy
         UNION
-        SELECT player2_id as u_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed')
+        SELECT player2_id as u_id, ladder_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
     )
     SELECT 
         u.id as opponent_id,
@@ -40,17 +39,23 @@ BEGIN
         um.ladder_id,
         um.ladder_name,
         om.current_rank as opponent_rank,
-        (um.current_rank - om.current_rank) as rank_diff
+        (um.current_rank - om.current_rank) as rank_diff,
+        (EXISTS (
+            SELECT 1 FROM active_engagements ae 
+            WHERE ae.u_id = p_user_id AND ae.ladder_id = um.ladder_id
+        )) as is_user_busy
     FROM user_memberships um
     JOIN public.ladder_memberships om ON om.ladder_id = um.ladder_id
     JOIN public.users u ON u.id = om.user_id
     WHERE om.user_id != p_user_id
       AND om.status = 'active'
-      AND om.current_rank < um.current_rank -- Only people ranked higher
-      AND om.current_rank >= (um.current_rank - 5) -- Within reasonable range (e.g. 5 spots)
-      AND om.user_id NOT IN (SELECT u_id FROM busy_users) -- Opponent is free
-      -- AND p_user_id NOT IN (SELECT u_id FROM busy_users) -- Removed strict check: User can decide to cancel other challenges, don't hide targets.
-    ORDER BY (um.current_rank - om.current_rank) ASC -- Sort by closest rank first
-    LIMIT 5;
+      AND om.current_rank < um.current_rank
+      AND om.current_rank >= (um.current_rank - 5)
+      AND NOT EXISTS ( -- Opponent must NOT be busy
+          SELECT 1 FROM active_engagements ae 
+          WHERE ae.u_id = om.user_id AND ae.ladder_id = um.ladder_id
+      )
+    ORDER BY (um.current_rank - om.current_rank) ASC
+    LIMIT 20; -- Increased limit to allow multiple ladders to show options
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

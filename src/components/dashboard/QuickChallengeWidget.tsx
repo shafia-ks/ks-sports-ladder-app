@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToast } from "@/components/ui/toast";
-import { usePendingActions } from "@/hooks/usePendingActions";
 import { Zap, ArrowUpCircle, Swords, Lock } from "lucide-react";
 
 export interface SmartTarget {
@@ -17,26 +16,20 @@ export interface SmartTarget {
     ladder_name: string;
     opponent_rank: number;
     rank_diff: number;
+    is_user_busy: boolean; // New field from RPC
 }
 
 export function QuickChallengeWidget() {
     const { user } = useAuth();
     const { push: toast } = useToast();
-    const { data: actions } = usePendingActions();
 
+    // We strictly rely on the RPC to tell us if we are busy in a specific ladder
+    // This handles "Playing", "Pending Challenge", etc. accurately per database rules.
     const [targets, setTargets] = useState<SmartTarget[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTarget, setSelectedTarget] = useState<SmartTarget | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
     const supabase = createClient();
-
-    // Check if user is busy in a specific ladder
-    const isBusyInLadder = (ladderId: string) => {
-        return actions?.some(a =>
-            a.ladder_id === ladderId &&
-            ['challenge', 'submit_score', 'confirm_score'].includes(a.type)
-        );
-    };
 
     const fetchTargets = async () => {
         if (!user) return;
@@ -163,8 +156,8 @@ export function QuickChallengeWidget() {
 
                 <div className="space-y-8">
                     {Object.entries(groupedTargets).map(([ladderName, ladderTargets]) => {
-                        const ladderId = ladderTargets[0]?.ladder_id;
-                        const isLadderBusy = isBusyInLadder(ladderId);
+                        // The user is busy in this ladder if ANY target in this group says so (they all should agree)
+                        const isLadderBusy = ladderTargets[0]?.is_user_busy;
 
                         return (
                             <div key={ladderName} className="relative">
