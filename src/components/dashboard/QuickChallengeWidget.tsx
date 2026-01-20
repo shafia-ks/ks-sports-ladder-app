@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToast } from "@/components/ui/toast";
-import { Zap, ArrowUpCircle, Swords } from "lucide-react";
+import { usePendingActions } from "@/hooks/usePendingActions";
+import { Zap, ArrowUpCircle, Swords, Lock } from "lucide-react";
 
 export interface SmartTarget {
     opponent_id: string;
@@ -21,6 +22,13 @@ export interface SmartTarget {
 export function QuickChallengeWidget() {
     const { user } = useAuth();
     const { push: toast } = useToast();
+    const { data: actions } = usePendingActions();
+
+    // Check if user is busy (has pending challenges or unconfirmed matches)
+    const isBusy = actions?.some(a =>
+        ['challenge', 'submit_score', 'confirm_score'].includes(a.type)
+    );
+
     const [targets, setTargets] = useState<SmartTarget[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTarget, setSelectedTarget] = useState<SmartTarget | null>(null);
@@ -60,7 +68,6 @@ export function QuickChallengeWidget() {
             const ladderDetails = ladderData.ladder;
 
             // 2. Prepare payload
-            // Assuming rank_diff = rank(me) - rank(op)  => rank(me) = rank(op) + rank_diff
             const myRank = selectedTarget.opponent_rank + selectedTarget.rank_diff;
 
             const payload = {
@@ -140,8 +147,16 @@ export function QuickChallengeWidget() {
     }
 
     return (
-        <div className="card overflow-hidden border-brand-100 bg-gradient-to-br from-white to-brand-50/20 shadow-sm transition-all hover:shadow-md">
-            <div className="p-6">
+        <div className="card overflow-hidden border-brand-100 bg-gradient-to-br from-white to-brand-50/20 shadow-sm transition-all hover:shadow-md relative">
+            {/* Busy Overlay / Lock Message */}
+            {isBusy && (
+                <div className="absolute inset-x-0 top-0 z-10 bg-amber-50/90 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm font-medium animate-in slide-in-from-top-2">
+                    <Lock className="h-4 w-4" />
+                    You have pending challenges or matches. Resolve them to climb!
+                </div>
+            )}
+
+            <div className={`p-6 ${isBusy ? 'opacity-75 pointer-events-none grayscale-[0.3]' : ''}`}>
                 <div className="flex items-center justify-between mb-5">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -183,10 +198,16 @@ export function QuickChallengeWidget() {
                                                 </p>
                                             </div>
                                             <button
-                                                onClick={() => setSelectedTarget(target)}
-                                                className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700 transition-colors gap-2 shadow-sm shadow-brand-200 cursor-pointer"
+                                                onClick={() => !isBusy && setSelectedTarget(target)}
+                                                disabled={!!isBusy}
+                                                className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold transition-colors gap-2 shadow-sm
+                                                    ${isBusy
+                                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                                        : 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-200 cursor-pointer'
+                                                    }`}
                                             >
-                                                <Swords className="h-4 w-4" /> Challenge
+                                                {isBusy ? <Lock className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
+                                                {isBusy ? 'Locked' : 'Challenge'}
                                             </button>
                                         </div>
                                     </div>
