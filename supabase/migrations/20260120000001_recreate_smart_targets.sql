@@ -1,5 +1,5 @@
--- Migration: Re-create get_smart_targets RPC to fix return type mismatch
--- We use a new migration file to ensure this runs even if the previous one failed/blocked
+-- Migration: Update get_smart_targets RPC to exclude inactive ladders
+-- AND qualified columns to prevent ambiguity
 
 DROP FUNCTION IF EXISTS public.get_smart_targets(UUID) CASCADE;
 
@@ -23,10 +23,10 @@ BEGIN
         JOIN public.ladders l ON l.id = lm.ladder_id
         WHERE lm.user_id = p_user_id 
           AND lm.status = 'active'
+          AND l.status = 'active' -- Check if ladder itself is active
     ),
     active_engagements AS (
         -- Get (user_id, ladder_id) pairs for anyone currently busy
-        -- Explicitly qualify tables to avoid ambiguity with output parameter 'ladder_id'
         SELECT c.challenger_id as u_id, c.ladder_id FROM public.challenges c WHERE c.status IN ('Pending', 'Accepted')
         UNION
         SELECT c.challenged_id as u_id, c.ladder_id FROM public.challenges c WHERE c.status IN ('Pending', 'Accepted')

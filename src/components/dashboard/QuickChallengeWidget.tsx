@@ -165,58 +165,55 @@ export function QuickChallengeWidget() {
                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                                         {ladderName}
                                     </h3>
-                                    {isLadderBusy && (
-                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 shadow-sm">
-                                            <Lock className="h-3 w-3 text-amber-600" />
-                                            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-tight">Pending Activity</span>
-                                        </div>
-                                    )}
                                 </div>
 
-                                <div className={`space-y-3 ${isLadderBusy ? 'opacity-70 saturate-50' : ''}`}>
-                                    {ladderTargets.map((target) => (
-                                        <div key={`${target.ladder_id}-${target.opponent_id}`}
-                                            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-100 transition-all group
-                                                ${!isLadderBusy ? 'hover:border-brand-300' : ''}`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <Avatar
-                                                    src={target.opponent_avatar_url}
-                                                    name={target.opponent_name}
-                                                    size="lg"
-                                                />
-                                                <div>
-                                                    <h3 className="font-semibold text-slate-900">{target.opponent_name}</h3>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="text-[10px] font-bold uppercase py-0.5 px-1.5 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
+                                {isLadderBusy ? (
+                                    <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 border-l-4 border-l-amber-400 flex flex-col items-center justify-center text-center">
+                                        <div className="bg-amber-100 p-3 rounded-full mb-3">
+                                            <Lock className="h-6 w-6 text-amber-600" />
+                                        </div>
+                                        <h4 className="font-bold text-slate-900">Active Challenge in Progress</h4>
+                                        <p className="text-sm text-slate-500 mt-1 max-w-xs">
+                                            You already have an active match or pending challenge in {ladderName}. finish it to unlock new opponents.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {ladderTargets.map((target) => (
+                                            <div key={`${target.ladder_id}-${target.opponent_id}`}
+                                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-100 hover:border-brand-300 transition-all group">
+                                                <div className="flex items-center gap-4">
+                                                    <Avatar
+                                                        src={target.opponent_avatar_url}
+                                                        name={target.opponent_name}
+                                                        size="lg"
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-semibold text-slate-900">{target.opponent_name}</h3>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] font-bold uppercase py-0.5 px-1.5 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="flex items-center justify-between sm:justify-end gap-5">
-                                                <div className="text-right hidden sm:block">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Strategy</p>
-                                                    <p className="text-sm font-bold text-green-600 flex items-center gap-1">
-                                                        <ArrowUpCircle className="h-3 w-3" /> {target.rank_diff} {target.rank_diff === 1 ? 'spot' : 'spots'} up
-                                                    </p>
+                                                <div className="flex items-center justify-between sm:justify-end gap-5">
+                                                    <div className="text-right hidden sm:block">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Strategy</p>
+                                                        <p className="text-sm font-bold text-green-600 flex items-center gap-1">
+                                                            <ArrowUpCircle className="h-3 w-3" /> {target.rank_diff} {target.rank_diff === 1 ? 'spot' : 'spots'} up
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setSelectedTarget(target)}
+                                                        className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700 transition-colors gap-2 shadow-sm shadow-brand-200 cursor-pointer"
+                                                    >
+                                                        <Swords className="h-4 w-4" /> Challenge
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => !isLadderBusy && setSelectedTarget(target)}
-                                                    disabled={!!isLadderBusy}
-                                                    title={isLadderBusy ? "Resolve pending actions in this ladder first" : "Send Challenge"}
-                                                    className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold transition-colors gap-2 shadow-sm
-                                                        ${isLadderBusy
-                                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                                                            : 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-200 cursor-pointer'
-                                                        }`}
-                                                >
-                                                    {isLadderBusy ? <Lock className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
-                                                    {isLadderBusy ? 'Locked' : 'Challenge'}
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
