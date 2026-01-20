@@ -26,13 +26,14 @@ BEGIN
     ),
     active_engagements AS (
         -- Get (user_id, ladder_id) pairs for anyone currently busy
-        SELECT challenger_id as u_id, ladder_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
+        -- Explicitly qualify tables to avoid ambiguity with output parameter 'ladder_id'
+        SELECT c.challenger_id as u_id, c.ladder_id FROM public.challenges c WHERE c.status IN ('Pending', 'Accepted')
         UNION
-        SELECT challenged_id as u_id, ladder_id FROM public.challenges WHERE status IN ('Pending', 'Accepted')
+        SELECT c.challenged_id as u_id, c.ladder_id FROM public.challenges c WHERE c.status IN ('Pending', 'Accepted')
         UNION
-        SELECT player1_id as u_id, ladder_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
+        SELECT m.player1_id as u_id, m.ladder_id FROM public.matches m WHERE m.status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
         UNION
-        SELECT player2_id as u_id, ladder_id FROM public.matches WHERE status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
+        SELECT m.player2_id as u_id, m.ladder_id FROM public.matches m WHERE m.status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
     )
     SELECT 
         u.id as opponent_id,
