@@ -1,5 +1,5 @@
--- Migration: Update get_smart_targets RPC to exclude inactive ladders
--- AND qualified columns to prevent ambiguity
+-- Migration: Update get_smart_targets RPC to show all user's ladders (even when busy)
+-- This ensures busy ladders are displayed with lock message
 
 DROP FUNCTION IF EXISTS public.get_smart_targets(UUID) CASCADE;
 
@@ -23,7 +23,7 @@ BEGIN
         JOIN public.ladders l ON l.id = lm.ladder_id
         WHERE lm.user_id = p_user_id 
           AND lm.status = 'active'
-          AND l.status = 'active' -- Check if ladder itself is active
+          AND l.status = 'active' -- Only active ladders
     ),
     active_engagements AS (
         -- Get (user_id, ladder_id) pairs for anyone currently busy
@@ -34,31 +34,50 @@ BEGIN
         SELECT m.player1_id as u_id, m.ladder_id FROM public.matches m WHERE m.status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
         UNION
         SELECT m.player2_id as u_id, m.ladder_id FROM public.matches m WHERE m.status IN ('Submitted', 'ScoreSubmitted', 'Disputed', 'Pending')
+    ),
+    available_opponents AS (
+        -- Find available opponents for each ladder
+        SELECT 
+            u.id as opponent_id,
+            u.full_name as opponent_name,
+            u.avatar_url as opponent_avatar_url,
+            um.ladder_id,
+            um.ladder_name,
+            om.current_rank as opponent_rank,
+            (um.current_rank - om.current_rank) as rank_diff
+        FROM user_memberships um
+        JOIN public.ladder_memberships om ON om.ladder_id = um.ladder_id
+        JOIN public.users u ON u.id = om.user_id
+        WHERE om.user_id != p_user_id
+          AND om.status = 'active'
+          AND om.current_rank < um.current_rank
+          AND om.current_rank >= (um.current_rank - 5)
+          AND NOT EXISTS ( -- Opponent must NOT be busy
+              SELECT 1 FROM active_engagements ae 
+              WHERE ae.u_id = om.user_id AND ae.ladder_id = um.ladder_id
+          )
+        ORDER BY (um.current_rank - om.current_rank) ASC
+        LIMIT 20
     )
+    -- Return available opponents OR just ladder info if user is busy (even with no opponents)
     SELECT 
-        u.id as opponent_id,
-        u.full_name as opponent_name,
-        u.avatar_url as opponent_avatar_url,
-        um.ladder_id,
-        um.ladder_name,
-        om.current_rank as opponent_rank,
-        (um.current_rank - om.current_rank) as rank_diff,
+        ao.opponent_id,
+        ao.opponent_name,
+        ao.opponent_avatar_url,
+        COALESCE(ao.ladder_id, um.ladder_id) as ladder_id,
+        COALESCE(ao.ladder_name, um.ladder_name) as ladder_name,
+        ao.opponent_rank,
+        ao.rank_diff,
         (EXISTS (
             SELECT 1 FROM active_engagements ae 
-            WHERE ae.u_id = p_user_id AND ae.ladder_id = um.ladder_id
+            WHERE ae.u_id = p_user_id AND ae.ladder_id = COALESCE(ao.ladder_id, um.ladder_id)
         )) as is_user_busy
     FROM user_memberships um
-    JOIN public.ladder_memberships om ON om.ladder_id = um.ladder_id
-    JOIN public.users u ON u.id = om.user_id
-    WHERE om.user_id != p_user_id
-      AND om.status = 'active'
-      AND om.current_rank < um.current_rank
-      AND om.current_rank >= (um.current_rank - 5)
-      AND NOT EXISTS ( -- Opponent must NOT be busy
-          SELECT 1 FROM active_engagements ae 
-          WHERE ae.u_id = om.user_id AND ae.ladder_id = um.ladder_id
-      )
-    ORDER BY (um.current_rank - om.current_rank) ASC
-    LIMIT 20;
+    LEFT JOIN available_opponents ao ON ao.ladder_id = um.ladder_id
+    WHERE ao.opponent_id IS NOT NULL -- Has opponents
+       OR (EXISTS ( -- OR user is busy in this ladder (show even without opponents)
+           SELECT 1 FROM active_engagements ae 
+           WHERE ae.u_id = p_user_id AND ae.ladder_id = um.ladder_id
+       ));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
