@@ -1,5 +1,9 @@
--- Migration: Update get_smart_targets RPC to return user busy status per ladder
--- This allows the frontend to show "Locked" state for specific ladders where the user is busy
+-- Migration: Create get_smart_targets RPC for Quick Challenge Feature
+-- This function finds active ladder members who are valid targets for the user
+-- It filters out users who are busy (in pending challenges or submitted matches)
+
+-- Drop first because we are changing the return type signature
+DROP FUNCTION IF EXISTS public.get_smart_targets(UUID);
 
 CREATE OR REPLACE FUNCTION public.get_smart_targets(p_user_id UUID)
 RETURNS TABLE (
