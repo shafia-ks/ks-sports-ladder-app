@@ -168,14 +168,9 @@ export function QuickChallengeWidget() {
                                 </div>
 
                                 {isLadderBusy ? (
-                                    <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 border-l-4 border-l-amber-400 flex flex-col items-center justify-center text-center">
-                                        <div className="bg-amber-100 p-3 rounded-full mb-3">
-                                            <Lock className="h-6 w-6 text-amber-600" />
-                                        </div>
-                                        <h4 className="font-bold text-slate-900">Active Challenge in Progress</h4>
-                                        <p className="text-sm text-slate-500 mt-1 max-w-xs">
-                                            You already have an active match or pending challenge in {ladderName}. finish it to unlock new opponents.
-                                        </p>
+                                    <div className="px-4 py-3 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-2 text-sm">
+                                        <Lock className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                                        <span className="text-amber-900 font-medium">Active challenge in progress - complete it to unlock new opponents</span>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
