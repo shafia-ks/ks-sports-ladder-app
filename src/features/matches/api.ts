@@ -84,7 +84,7 @@ export function useCancelMatch() {
       });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-matches"] });
-      queryClient.invalidateQueries({ queryKey: ["pending-actions"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
     },
     onError: (error) => {
       console.error("Error cancelling match:", error);
