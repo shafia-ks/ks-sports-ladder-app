@@ -54,7 +54,13 @@ export function useSubmitMatch() {
   return useMutation({
     mutationFn: submitMatch,
     onSuccess: () => {
+      // Invalidate all match-related queries
       client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["dashboard-matches"] });
+      client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["challenges"] });
+      client.invalidateQueries({ queryKey: ["ladder"] });
+      client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
   });
 }
@@ -82,10 +88,13 @@ export function useCancelMatch() {
         description: "The match has been voided and players are unlocked.",
         variant: "default",
       });
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-matches"] });
       queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
       queryClient.invalidateQueries({ queryKey: ["challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["ladder"] });
+      queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
     },
     onError: (error) => {
       console.error("Error cancelling match:", error);
@@ -114,8 +123,13 @@ export function useConfirmMatch() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["challenges"] });
+      client.invalidateQueries({ queryKey: ["ladder"] });
+      client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
   });
 }
@@ -142,8 +156,13 @@ export function useSubmitScore() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["challenges"] });
+      client.invalidateQueries({ queryKey: ["ladder"] });
+      client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
   });
 }

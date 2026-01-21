@@ -33,7 +33,11 @@ export function useCreateChallenge() {
   return useMutation({
     mutationFn: createChallenge,
     onSuccess: () => {
+      // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["challenges"] });
+      client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["ladder"] });
+      client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
   });
 }
@@ -54,9 +58,13 @@ export function useRespondToChallenge() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
       client.invalidateQueries({ queryKey: ["matches"] });
+      client.invalidateQueries({ queryKey: ["dashboard-matches"] });
+      client.invalidateQueries({ queryKey: ["ladder"] });
+      client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
   });
 }
