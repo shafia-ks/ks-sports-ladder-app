@@ -1,6 +1,5 @@
 "use client";
 
-import { ActionRequiredWidget } from "./ActionRequiredWidget";
 import { RecentActivityFeed } from "./RecentActivityFeed";
 import { Trophy } from "lucide-react";
 
@@ -12,10 +11,7 @@ export function ActivityHub() {
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Activity Hub</h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
-                <ActionRequiredWidget />
-                <RecentActivityFeed />
-            </div>
+            <RecentActivityFeed />
         </div>
     );
 }

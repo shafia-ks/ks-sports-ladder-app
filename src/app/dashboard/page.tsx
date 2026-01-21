@@ -8,6 +8,7 @@ import { MyLaddersGrid } from "@/components/dashboard/my-ladders-grid";
 import { PendingInvitationsCard } from "@/components/dashboard/pending-invitations";
 import { QuickChallengeWidget } from "@/components/dashboard/QuickChallengeWidget";
 import { ActivityHub } from "@/components/dashboard/ActivityHubWidget";
+import { ActionRequiredWidget } from "@/components/dashboard/ActionRequiredWidget";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -29,7 +30,10 @@ export default function DashboardPage() {
             {/* 1. Quick Challenge (Climb the Ladder) */}
             <QuickChallengeWidget />
 
-            {/* 2. Pending Invitations */}
+            {/* 2. Action Required */}
+            <ActionRequiredWidget />
+
+            {/* 3. Pending Invitations */}
             <PendingInvitationsCard />
 
             {/* 3. My Ladders List */}
