@@ -123,6 +123,7 @@ function LoginForm() {
               src="/app-icon-base.png"
               alt="KS Sports Ladder"
               fill
+              sizes="80px"
               className="object-cover"
               priority
             />

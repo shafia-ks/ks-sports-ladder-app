@@ -50,6 +50,11 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
 
             // Refetch immediately to update UI - don't just invalidate
             await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Invalidate all related queries for comprehensive updates
+            queryClient.invalidateQueries({ queryKey: ["memberships"] });
+            queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
+            queryClient.invalidateQueries({ queryKey: ["ladders"] });
+            queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -98,6 +103,11 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
 
             // Refetch immediately to update UI
             await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Invalidate all related queries for comprehensive updates
+            queryClient.invalidateQueries({ queryKey: ["memberships"] });
+            queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
+            queryClient.invalidateQueries({ queryKey: ["ladders"] });
+            queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -141,6 +151,11 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
 
             // Refetch immediately to update UI
             await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Invalidate all related queries for comprehensive updates
+            queryClient.invalidateQueries({ queryKey: ["memberships"] });
+            queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
+            queryClient.invalidateQueries({ queryKey: ["ladders"] });
+            queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
             onSuccess?.();
             return true;
         } catch (err) {
@@ -167,6 +182,8 @@ export function useLadderActions(ladderId: string, onSuccess?: () => void) {
 
             // Refetch immediately to update UI
             await queryClient.refetchQueries({ queryKey: queryKeys.ladder(ladderId) });
+            // Invalidate all related queries for comprehensive updates
+            queryClient.invalidateQueries({ queryKey: ["ladders"] });
             onSuccess?.();
             return true;
         } catch (err) {

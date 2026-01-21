@@ -43,7 +43,6 @@ const nextConfig = {
   // Experimental features
   experimental: {
     typedRoutes: true,
-    optimizeCss: true,
   },
 
   // Output configuration
@@ -57,37 +56,6 @@ const nextConfig = {
   // Webpack configuration
   webpack: (config, { isServer }) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');
-
-    // Optimize bundle size
-    if (!isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Vendor chunk
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
-              priority: 20,
-            },
-            // Common chunk
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              priority: 10,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-          },
-        },
-      };
-    }
-
     return config;
   },
 
