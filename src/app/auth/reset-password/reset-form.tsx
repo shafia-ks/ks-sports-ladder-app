@@ -31,19 +31,26 @@ export default function ResetPasswordForm() {
       try {
         // Check if there's a session from the reset link URL hash
         // Supabase automatically handles the token extraction, just need to wait for it
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Increased timeout to give Supabase more time to process the token
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const { data } = await supabase.auth.getSession();
 
         if (!data.session) {
-          // Try one more time after a brief delay
-          await new Promise(resolve => setTimeout(resolve, 300));
-          const { data: retryData } = await supabase.auth.getSession();
+          // Try multiple times with increasing delays
+          for (let i = 0; i < 3; i++) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const { data: retryData } = await supabase.auth.getSession();
 
-          if (!retryData.session) {
-            setError("Reset link expired or invalid. Please request a new one.");
-            setTimeout(() => router.push("/login"), 2000);
+            if (retryData.session) {
+              setValidating(false);
+              return;
+            }
           }
+
+          // If still no session after retries, show error
+          setError("Reset link expired or invalid. Please request a new one.");
+          setTimeout(() => router.push("/login"), 3000);
         }
 
         setValidating(false);
@@ -185,9 +192,9 @@ export default function ResetPasswordForm() {
               {password && (
                 <div className="text-xs text-slate-600">
                   Strength: <span className={`font-medium ${passwordStrength === "weak" ? "text-danger-600" :
-                      passwordStrength === "fair" ? "text-warning-600" :
-                        passwordStrength === "good" ? "text-info-600" :
-                          "text-success-600"
+                    passwordStrength === "fair" ? "text-warning-600" :
+                      passwordStrength === "good" ? "text-info-600" :
+                        "text-success-600"
                     }`}>
                     {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
                   </span>
