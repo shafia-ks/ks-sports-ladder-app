@@ -47,9 +47,20 @@ Supabase needs the redirect URL to be whitelisted in the project settings.
 
 ## Code Changes Made
 
+- **Mobile browser fix**: Manually extracts tokens from URL hash (`#access_token=...`)
 - **Increased timeout**: Changed from 300ms to 1000ms initial wait
 - **Added retry logic**: Now retries 3 times with 500ms delays
 - **Better error handling**: Shows error for 3 seconds before redirecting
+- **URL cleanup**: Removes hash from URL after processing for security
+
+### Why Mobile Browsers Need Special Handling
+
+Mobile browsers (especially iOS Safari and Chrome on mobile) handle URL fragments differently:
+- They may strip the `#access_token=...` part when opening links from email apps
+- JavaScript execution is slower on mobile devices
+- Stricter security policies prevent automatic token processing
+
+The fix manually checks for tokens in the URL hash and calls `setSession()` directly, bypassing Supabase's automatic detection.
 
 ## Common Issues
 

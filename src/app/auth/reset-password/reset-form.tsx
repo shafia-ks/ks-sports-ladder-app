@@ -29,8 +29,37 @@ export default function ResetPasswordForm() {
       }
 
       try {
-        // Check if there's a session from the reset link URL hash
-        // Supabase automatically handles the token extraction, just need to wait for it
+        // MOBILE FIX: Check if there's a hash fragment in the URL
+        // Mobile browsers sometimes don't process this automatically
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+
+        // If we have tokens in the URL hash, manually set the session
+        if (accessToken && type === 'recovery') {
+          console.log('Found recovery tokens in URL hash, setting session...');
+
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+
+          if (sessionError) {
+            console.error('Error setting session from hash:', sessionError);
+            setError("Failed to process reset link. Please try again.");
+            setTimeout(() => router.push("/login"), 3000);
+            setValidating(false);
+            return;
+          }
+
+          // Clear the hash from URL for security
+          window.history.replaceState(null, '', window.location.pathname);
+          setValidating(false);
+          return;
+        }
+
+        // Fallback: Wait for Supabase to automatically process the token
         // Increased timeout to give Supabase more time to process the token
         await new Promise(resolve => setTimeout(resolve, 1000));
 
