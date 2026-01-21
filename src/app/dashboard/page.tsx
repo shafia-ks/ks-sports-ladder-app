@@ -27,11 +27,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Feed (Left) - 8 Cols */}
           <div className="lg:col-span-8 space-y-10">
-            {/* 1. Quick Challenge (Climb the Ladder) */}
-            <QuickChallengeWidget />
-
-            {/* 2. Action Required */}
+            {/* 1. Action Required */}
             <ActionRequiredWidget />
+
+            {/* 2. Quick Challenge (Climb the Ladder) */}
+            <QuickChallengeWidget />
 
             {/* 3. Pending Invitations */}
             <PendingInvitationsCard />

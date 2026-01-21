@@ -73,13 +73,13 @@ export function MyActionsCard({
     // Find the user's active challenge (incoming or outgoing)
     const myChallenge = challenges.find(
         c => (c.challenger_id === currentUserId || c.challenged_id === currentUserId) &&
-            c.status === 'pending'
+            (c.status === 'Pending' || c.status === 'Accepted')
     );
 
     // Find the user's active match
     const myMatch = matches.find(
         m => (m.player1_id === currentUserId || m.player2_id === currentUserId) &&
-            (m.status === 'pending' || m.status === 'submitted')
+            (m.status === 'Pending' || m.status === 'ScoreSubmitted')
     );
 
     const handleChallengeAction = async (action: 'accept' | 'decline') => {
@@ -232,8 +232,8 @@ export function MyActionsCard({
     // If there's a match
     if (myMatch) {
         const opponent = myMatch.player1_id === currentUserId ? myMatch.player2 : myMatch.player1;
-        const needsScore = myMatch.status === 'pending';
-        const needsConfirmation = myMatch.status === 'submitted';
+        const needsScore = myMatch.status === 'Pending';
+        const needsConfirmation = myMatch.status === 'ScoreSubmitted';
 
         return (
             <div className="card p-3 border-l-4 border-blue-500">
