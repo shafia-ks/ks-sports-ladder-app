@@ -96,12 +96,23 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Get ladder info
-        const { data: ladder } = await supabaseAdmin
+        // Get ladder info and check if active
+        const { data: ladder, error: ladderError } = await supabaseAdmin
           .from("ladders")
-          .select("name")
+          .select("name, status")
           .eq("id", targetLadderId)
           .single();
+
+        if (ladderError || !ladder) {
+          return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
+        }
+
+        if (ladder.status !== 'active') {
+          return NextResponse.json(
+            { error: "Ladder is inactive - invitations are not allowed" },
+            { status: 403 } as ResponseInit
+          );
+        }
 
         // Calculate expiration date (30 days from now)
         const expiresAt = new Date();
@@ -188,12 +199,23 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Get ladder info
-        const { data: ladder } = await supabaseAdmin
+        // Get ladder info and check if active
+        const { data: ladder, error: ladderError } = await supabaseAdmin
           .from("ladders")
-          .select("name")
+          .select("name, status")
           .eq("id", targetLadderId)
           .single();
+
+        if (ladderError || !ladder) {
+          return NextResponse.json({ error: "Ladder not found" }, { status: 404 } as ResponseInit);
+        }
+
+        if (ladder.status !== 'active') {
+          return NextResponse.json(
+            { error: "Ladder is inactive - invitations are not allowed" },
+            { status: 403 } as ResponseInit
+          );
+        }
 
         // 1. Fetch emails for these users so we satisfy the NOT NULL constraint
         const { data: users, error: usersError } = await supabaseAdmin

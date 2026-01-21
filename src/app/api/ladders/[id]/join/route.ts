@@ -15,6 +15,24 @@ export async function POST(
     const body = await req.json();
     const { user_id } = body;
 
+    // Check if ladder is active
+    const { data: ladder, error: ladderError } = await supabaseAdmin
+      .from("ladders")
+      .select("status, name, created_by")
+      .eq("id", params.id)
+      .single();
+
+    if (ladderError || !ladder) {
+      return NextResponse.json({ error: "Ladder not found" }, { status: 404 });
+    }
+
+    if (ladder.status !== 'active') {
+      return NextResponse.json(
+        { error: "Ladder is inactive - join requests are not allowed" },
+        { status: 403 }
+      );
+    }
+
     // Check if already a member
     const { data: existing } = await supabaseAdmin
       .from("ladder_memberships")
@@ -53,13 +71,6 @@ export async function POST(
       performedBy: user_id,
     });
 
-    // Get ladder name and organizers
-    const { data: ladder } = await supabaseAdmin
-      .from("ladders")
-      .select("name, created_by")
-      .eq("id", params.id)
-      .single();
-
     // Get all ladder leaders
     const { data: leaders } = await supabaseAdmin
       .from("ladder_leaders")
@@ -67,14 +78,14 @@ export async function POST(
       .eq("ladder_id", params.id);
 
     // Notify all organizers/leaders
-    const organizerIds = [ladder?.created_by, ...(leaders?.map(l => l.user_id) || [])];
+    const organizerIds = [ladder.created_by, ...(leaders?.map(l => l.user_id) || [])];
     const uniqueOrganizers = [...new Set(organizerIds.filter(Boolean))];
 
     for (const orgId of uniqueOrganizers) {
       await createNotification({
         userId: orgId as string,
         type: "join_request",
-        message: `New join request for ${ladder?.name || "your ladder"}`,
+        message: `New join request for ${ladder.name || "your ladder"}`,
         link: `/admin/users`,
       });
     }
