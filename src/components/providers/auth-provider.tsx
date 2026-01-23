@@ -197,6 +197,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuth();
 
+    // Auto-refresh session when app becomes active (PWA opens or tab gains focus)
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          // Refresh the session to keep user logged in
+          const { data: { session }, error } = await client.auth.refreshSession();
+
+          if (error) {
+            console.error('Session refresh failed:', error);
+            // If refresh fails due to expired token, user will be redirected to login by middleware
+            return;
+          }
+
+          if (session?.user) {
+            console.log('Session refreshed successfully');
+            // Profile will be updated by the onAuthStateChange listener if needed
+          }
+        } catch (err) {
+          console.error('Session refresh error:', err);
+        }
+      }
+    };
+
+    // Listen for visibility changes (PWA opening, tab switching)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Listen for auth changes
     const {
       data: { subscription },
@@ -284,6 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       subscription?.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
