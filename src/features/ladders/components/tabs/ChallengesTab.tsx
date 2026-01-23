@@ -308,10 +308,16 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <p className="font-medium text-slate-900">
-                                                        {isChallenger ? "You challenged" : "Challenged you"}:  {opponent?.full_name || opponent?.email}
+                                                        {isChallenger ? "You challenged" : "🎯 Challenge from"} {opponent?.full_name || opponent?.email}
                                                     </p>
                                                     <StatusBadge status={challenge.status} />
                                                 </div>
+
+                                                {!isChallenger && challenge.status === "Pending" && (
+                                                    <p className="text-xs text-amber-600 font-medium">
+                                                        👇 Scroll down to Accept or Decline
+                                                    </p>
+                                                )}
 
                                                 {challenge.scheduled_at && (
                                                     <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">

@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToast } from "@/components/ui/toast";
-import { Zap, ArrowUpCircle, Swords, Lock } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Zap, ArrowUpCircle, Swords, Lock, Loader2 } from "lucide-react";
 
 export interface SmartTarget {
     opponent_id: string;
@@ -22,6 +23,7 @@ export interface SmartTarget {
 export function QuickChallengeWidget() {
     const { user } = useAuth();
     const { push: toast } = useToast();
+    const queryClient = useQueryClient();
 
     // We strictly rely on the RPC to tell us if we are busy in a specific ladder
     // This handles "Playing", "Pending Challenge", etc. accurately per database rules.
@@ -102,6 +104,12 @@ export function QuickChallengeWidget() {
                 description: `You have challenged ${selectedTarget.opponent_name}.`,
                 variant: "success",
             });
+
+            // Invalidate all related queries to update UI immediately
+            queryClient.invalidateQueries({ queryKey: ["challenges"] });
+            queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
+            queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
+            queryClient.invalidateQueries({ queryKey: ["ladder"] });
 
             setSelectedTarget(null);
             fetchTargets(); // Refresh list
@@ -196,11 +204,16 @@ export function QuickChallengeWidget() {
 
                                                 <button
                                                     onClick={() => setSelectedTarget(target)}
-                                                    className="inline-flex items-center justify-center rounded-full bg-brand-600 p-2 text-white hover:bg-brand-700 transition-colors shadow-sm cursor-pointer flex-shrink-0"
+                                                    disabled={isConfirming}
+                                                    className="inline-flex items-center justify-center rounded-full bg-brand-600 p-2 text-white hover:bg-brand-700 transition-colors shadow-sm cursor-pointer flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     title="Challenge"
                                                     aria-label="Challenge"
                                                 >
-                                                    <Swords className="h-3.5 w-3.5" />
+                                                    {isConfirming && selectedTarget?.opponent_id === target.opponent_id ? (
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    ) : (
+                                                        <Swords className="h-3.5 w-3.5" />
+                                                    )}
                                                 </button>
                                             </div>
                                         ))}
