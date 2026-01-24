@@ -104,13 +104,13 @@ export function PendingOrganizerRequests({ ladderId, onRequestProcessed }: Props
     if (requests.length === 0) return null;
 
     return (
-        <div className="card p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-brand-600" />
+        <div className="card p-4">
+            <h2 className="text-base font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-brand-600" />
                 Pending Organizer Requests ({requests.length})
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {requests.map((request) => {
                     const displayName =
                         `${request.users?.first_name || ""} ${request.users?.last_name || ""}`.trim() ||
@@ -120,49 +120,51 @@ export function PendingOrganizerRequests({ ladderId, onRequestProcessed }: Props
                     return (
                         <div
                             key={request.id}
-                            className="flex items-center gap-4 p-4 rounded-lg bg-white border border-slate-200 shadow-sm"
+                            className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg bg-white border border-slate-200 shadow-sm"
                         >
-                            <Avatar name={displayName} email={request.users?.email} size="md" />
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-base font-semibold text-slate-900 truncate">
-                                        {displayName}
-                                    </span>
-                                    <span className="text-xs text-amber-700 flex items-center gap-1">
-                                        <Clock className="h-3 w-3" /> Awaiting review
-                                    </span>
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                                <Avatar name={displayName} email={request.users?.email} size="sm" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-sm font-semibold text-slate-900 truncate">
+                                            {displayName}
+                                        </span>
+                                        <span className="text-[10px] text-amber-700 flex items-center gap-0.5 whitespace-nowrap">
+                                            <Clock className="h-2.5 w-2.5" /> Awaiting review
+                                        </span>
+                                    </div>
+                                    {request.users?.email && (
+                                        <span className="text-[10px] text-slate-500 truncate block">{request.users.email}</span>
+                                    )}
+                                    {request.reason && (
+                                        <p className="text-xs text-slate-600 mt-1 italic line-clamp-2">"{request.reason}"</p>
+                                    )}
                                 </div>
-                                {request.users?.email && (
-                                    <span className="text-xs text-slate-500 truncate block">{request.users.email}</span>
-                                )}
-                                {request.reason && (
-                                    <p className="text-sm text-slate-600 mt-2 italic">"{request.reason}"</p>
-                                )}
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 w-full sm:w-auto">
                                 <button
-                                    className={`btn btn-success btn-sm flex items-center gap-1 ${processingId === request.id ? "opacity-60 pointer-events-none" : ""
+                                    className={`btn btn-success btn-sm flex items-center justify-center gap-1 flex-1 sm:flex-none ${!!processingId ? "opacity-60 pointer-events-none" : ""
                                         }`}
                                     onClick={() => handleApprove(request.id)}
-                                    disabled={processingId === request.id}
+                                    disabled={!!processingId}
                                 >
                                     {processingId === request.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                     ) : (
-                                        <CheckCircle className="h-4 w-4" />
+                                        <CheckCircle className="h-3 w-3" />
                                     )}
                                     Approve
                                 </button>
                                 <button
-                                    className={`btn btn-danger btn-sm flex items-center gap-1 ${processingId === request.id ? "opacity-60 pointer-events-none" : ""
+                                    className={`btn btn-danger btn-sm flex items-center justify-center gap-1 flex-1 sm:flex-none ${!!processingId ? "opacity-60 pointer-events-none" : ""
                                         }`}
                                     onClick={() => handleReject(request.id)}
-                                    disabled={processingId === request.id}
+                                    disabled={!!processingId}
                                 >
                                     {processingId === request.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                     ) : (
-                                        <X className="h-4 w-4" />
+                                        <X className="h-3 w-3" />
                                     )}
                                     Reject
                                 </button>

@@ -95,14 +95,14 @@ export function UpcomingMatchesWidget() {
 
     if (loading) {
         return (
-            <div className="card p-5">
-                <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-brand-600" />
+            <div className="card p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-brand-600" />
                     Upcoming Matches
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                     {[1, 2].map((i) => (
-                        <div key={i} className="h-20 bg-slate-100 rounded-lg animate-pulse" />
+                        <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -111,64 +111,64 @@ export function UpcomingMatchesWidget() {
 
     if (matches.length === 0) {
         return (
-            <div className="card p-5">
-                <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-brand-600" />
+            <div className="card p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-brand-600" />
                     Upcoming Matches
                 </h3>
-                <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-sm text-slate-500">No upcoming matches scheduled</p>
-                    <p className="text-xs text-slate-400 mt-1">Challenge someone to get started!</p>
+                <div className="text-center py-6">
+                    <Calendar className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No upcoming matches scheduled</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Challenge someone to get started!</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="card p-5">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-brand-600" />
+        <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-brand-600" />
                     Upcoming Matches
                 </h3>
 
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {matches.map((match) => (
-                    <div key={match.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div key={match.id} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+                        <div className="flex items-center gap-2 mb-1.5">
                             <div className="flex-shrink-0">
                                 {match.ladder_image ? (
                                     <img
                                         src={match.ladder_image!}
                                         alt={match.ladder_name}
-                                        className="w-8 h-8 rounded-full object-cover"
+                                        className="w-6 h-6 rounded-full object-cover"
                                     />
                                 ) : (
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-[10px] font-bold">
                                         {match.ladder_name.charAt(0)}
                                     </div>
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-900 truncate">
+                                <p className="text-xs font-medium text-slate-900 truncate">
                                     vs {match.opponent_name}
                                 </p>
-                                <p className="text-xs text-slate-500 truncate">{match.ladder_name}</p>
+                                <p className="text-[10px] text-slate-500 truncate">{match.ladder_name}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-xs text-slate-600 bg-white rounded p-2 border border-slate-100">
-                            <div className="flex items-center gap-1.5">
-                                <Clock className="h-3.5 w-3.5 text-brand-500" />
+                        <div className="flex items-center gap-3 text-[10px] text-slate-600 bg-white rounded p-1.5 border border-slate-100">
+                            <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 text-brand-500" />
                                 <span>{formatMatchTime(match.played_at)}</span>
                             </div>
                             {match.location && (
-                                <div className="flex items-center gap-1.5">
-                                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                                    <span className="truncate max-w-[100px]">{match.location}</span>
+                                <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-slate-400" />
+                                    <span className="truncate max-w-[80px]">{match.location}</span>
                                 </div>
                             )}
                         </div>

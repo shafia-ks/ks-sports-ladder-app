@@ -52,7 +52,7 @@ export default function UsersManagementPage() {
         fetch("/api/users"),
         fetch("/api/admin/pending-memberships"),
       ]);
-      
+
       if (!usersRes.ok) throw new Error("Failed to load users");
       const usersData = await usersRes.json();
       setUsers(usersData.users || []);
@@ -102,10 +102,10 @@ export default function UsersManagementPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to approve membership");
-      
+
       // Optimistically remove from pending list
       setPendingMemberships(prev => prev.filter(m => m.id !== membershipId));
-      
+
       // Refetch to get updated counts
       await fetchUsers();
     } catch (err) {
@@ -130,10 +130,10 @@ export default function UsersManagementPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to reject membership");
-      
+
       // Optimistically remove from pending list
       setPendingMemberships(prev => prev.filter(m => m.id !== membershipId));
-      
+
       // Refetch to get updated counts
       await fetchUsers();
     } catch (err) {
@@ -228,7 +228,7 @@ export default function UsersManagementPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleMembershipApprove(membership.id)}
-                              disabled={processingMembership === membership.id}
+                              disabled={!!processingMembership}
                               className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-success-100 text-success-700 text-xs font-semibold hover:bg-success-200 disabled:opacity-50"
                             >
                               {processingMembership === membership.id ? (
@@ -240,7 +240,7 @@ export default function UsersManagementPage() {
                             </button>
                             <button
                               onClick={() => handleMembershipReject(membership.id)}
-                              disabled={processingMembership === membership.id}
+                              disabled={!!processingMembership}
                               className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-danger-100 text-danger-700 text-xs font-semibold hover:bg-danger-200 disabled:opacity-50"
                             >
                               {processingMembership === membership.id ? (
@@ -336,8 +336,8 @@ export default function UsersManagementPage() {
                             {user.role !== "admin" && (
                               <button
                                 onClick={() => updateUserRole(user.id, "admin")}
-                                disabled={updating === user.id}
-                                className="text-xs font-semibold text-danger-600 hover:text-danger-700"
+                                disabled={!!(updating || disabling)}
+                                className="text-xs font-semibold text-danger-600 hover:text-danger-700 disabled:opacity-50"
                                 title="Promote to admin"
                               >
                                 {updating === user.id ? "..." : "→ Admin"}
@@ -346,8 +346,8 @@ export default function UsersManagementPage() {
                             {user.role !== "organizer" && (
                               <button
                                 onClick={() => updateUserRole(user.id, "organizer")}
-                                disabled={updating === user.id}
-                                className="text-xs font-semibold text-warning-600 hover:text-warning-700"
+                                disabled={!!(updating || disabling)}
+                                className="text-xs font-semibold text-warning-600 hover:text-warning-700 disabled:opacity-50"
                                 title="Promote to organizer"
                               >
                                 {updating === user.id ? "..." : "→ Organizer"}
@@ -356,8 +356,8 @@ export default function UsersManagementPage() {
                             {user.role !== "player" && (
                               <button
                                 onClick={() => updateUserRole(user.id, "player")}
-                                disabled={updating === user.id}
-                                className="text-xs font-semibold text-slate-600 hover:text-slate-700"
+                                disabled={!!(updating || disabling)}
+                                className="text-xs font-semibold text-slate-600 hover:text-slate-700 disabled:opacity-50"
                                 title="Demote to player"
                               >
                                 {updating === user.id ? "..." : "→ Player"}
@@ -365,8 +365,8 @@ export default function UsersManagementPage() {
                             )}
                             <button
                               onClick={() => disableUser(user.id)}
-                              disabled={disabling === user.id}
-                              className="text-xs font-semibold text-danger-600 hover:text-danger-700"
+                              disabled={!!(updating || disabling)}
+                              className="text-xs font-semibold text-danger-600 hover:text-danger-700 disabled:opacity-50"
                               title="Disable account"
                             >
                               {disabling === user.id ? "..." : "Disable"}
