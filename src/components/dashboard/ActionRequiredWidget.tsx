@@ -154,12 +154,12 @@ export function ActionRequiredWidget() {
 
     const getActionIcon = (type: string) => {
         switch (type) {
-            case "challenge": return <Swords className="h-5 w-5" />;
-            case "confirm_score": return <CheckCircle className="h-5 w-5" />;
-            case "submit_score": return <Trophy className="h-5 w-5" />;
+            case "challenge": return <Swords className="h-4 w-4" />;
+            case "confirm_score": return <CheckCircle className="h-4 w-4" />;
+            case "submit_score": return <Trophy className="h-4 w-4" />;
             case "approve_member":
-            case "approve_organizer": return <Clock className="h-5 w-5" />;
-            default: return <Clock className="h-5 w-5" />;
+            case "approve_organizer": return <Clock className="h-4 w-4" />;
+            default: return <Clock className="h-4 w-4" />;
         }
     };
 
@@ -176,13 +176,13 @@ export function ActionRequiredWidget() {
 
     if (loadingActions) {
         return (
-            <div className="card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <AlertCircle className="h-6 w-6 text-amber-600" />
-                    <h2 className="text-lg font-semibold text-slate-900">Action Required</h2>
+            <div className="card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <h2 className="text-base font-semibold text-slate-900">Action Required</h2>
                 </div>
-                <div className="space-y-3">
-                    {[1, 2].map((i) => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />)}
+                <div className="space-y-2">
+                    {[1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}
                 </div>
             </div>
         );
@@ -190,12 +190,12 @@ export function ActionRequiredWidget() {
 
     if (actions.length === 0) {
         return (
-            <div className="card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <div className="flex items-center gap-3">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+            <div className="card p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
                     <div>
-                        <h2 className="text-lg font-semibold text-green-900">All Caught Up!</h2>
-                        <p className="text-sm text-green-700">No pending actions at the moment.</p>
+                        <h2 className="text-base font-semibold text-green-900">All Caught Up!</h2>
+                        <p className="text-xs text-green-700">No pending actions at the moment.</p>
                     </div>
                 </div>
             </div>
@@ -203,31 +203,31 @@ export function ActionRequiredWidget() {
     }
 
     return (
-        <div className="card p-6 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <AlertCircle className="h-6 w-6 text-amber-600" />
-                    <h2 className="text-lg font-semibold text-slate-900">
+        <div className="card p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <h2 className="text-base font-semibold text-slate-900">
                         Action Required ({actions.length})
                     </h2>
                 </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {actions.map((action) => {
                     const isProcessing = processingId === (action.id || action.match_id);
 
                     return (
-                        <div key={action.id} className="bg-white rounded-lg p-4 border border-amber-200 shadow-sm">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-start gap-3">
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                        <div key={action.id} className="bg-white rounded-lg p-3 border border-amber-200 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="flex items-start gap-2">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
                                         {getActionIcon(action.type)}
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900">{getActionTitle(action)}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs text-slate-600">{action.ladder_name}</span>
+                                        <p className="text-sm font-medium text-slate-900">{getActionTitle(action)}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[10px] text-slate-600">{action.ladder_name}</span>
                                         </div>
                                     </div>
                                 </div>

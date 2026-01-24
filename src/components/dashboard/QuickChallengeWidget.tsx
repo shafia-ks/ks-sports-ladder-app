@@ -152,51 +152,51 @@ export function QuickChallengeWidget() {
 
     return (
         <div className="card overflow-hidden border-brand-100 bg-gradient-to-br from-white to-brand-50/20 shadow-sm transition-all hover:shadow-md relative">
-            <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
+            <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
                     <div>
-                        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <Zap className="h-4 w-4 text-amber-500 fill-amber-500" /> Climb the Ladder
+                        <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                            <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-500" /> Climb the Ladder
                         </h2>
-                        <p className="text-xs text-slate-500">Available opponents within your reach</p>
+                        <p className="text-[10px] text-slate-500">Available opponents within your reach</p>
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {Object.entries(groupedTargets).map(([ladderName, ladderTargets]) => {
                         // The user is busy in this ladder if ANY target in this group says so (they all should agree)
                         const isLadderBusy = ladderTargets[0]?.is_user_busy;
 
                         return (
                             <div key={ladderName} className="relative">
-                                <div className="flex items-center justify-between mb-1.5 px-1">
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <div className="flex items-center justify-between mb-1 px-0.5">
+                                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                                         {ladderName}
                                     </h3>
                                 </div>
 
                                 {isLadderBusy ? (
-                                    <div className="px-4 py-3 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-2 text-sm">
-                                        <Lock className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                                        <span className="text-amber-900 font-medium">Active challenge in progress - complete it to unlock new opponents</span>
+                                    <div className="px-3 py-2 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-1.5 text-xs">
+                                        <Lock className="h-3 w-3 text-amber-600 flex-shrink-0" />
+                                        <span className="text-amber-900 font-medium">Active challenge - complete to unlock</span>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         {ladderTargets.map((target) => (
                                             <div key={`${target.ladder_id}-${target.opponent_id}`}
-                                                className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white border border-slate-100 hover:border-brand-300 transition-all group">
-                                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                                className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-slate-100 hover:border-brand-300 transition-all group">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
                                                     <Avatar
                                                         src={target.opponent_avatar_url}
                                                         name={target.opponent_name}
-                                                        size="sm"
+                                                        size="xs"
                                                     />
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="text-sm font-semibold text-slate-900 truncate">{target.opponent_name}</h3>
-                                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                                            <span className="text-[9px] font-bold uppercase py-0.5 px-1 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
-                                                            <span className="text-[9px] font-medium text-green-600 flex items-center gap-0.5">
-                                                                <ArrowUpCircle className="h-2.5 w-2.5" /> +{target.rank_diff}
+                                                        <h3 className="text-xs font-semibold text-slate-900 truncate">{target.opponent_name}</h3>
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <span className="text-[8px] font-bold uppercase py-0.5 px-1 bg-slate-100 text-slate-600 rounded">Rank #{target.opponent_rank}</span>
+                                                            <span className="text-[8px] font-medium text-green-600 flex items-center gap-0.5">
+                                                                <ArrowUpCircle className="h-2 w-2" /> +{target.rank_diff}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -205,14 +205,14 @@ export function QuickChallengeWidget() {
                                                 <button
                                                     onClick={() => setSelectedTarget(target)}
                                                     disabled={isConfirming}
-                                                    className="inline-flex items-center justify-center rounded-full bg-brand-600 p-2 text-white hover:bg-brand-700 transition-colors shadow-sm cursor-pointer flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="inline-flex items-center justify-center rounded-full bg-brand-600 p-1.5 text-white hover:bg-brand-700 transition-colors shadow-sm cursor-pointer flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     title="Challenge"
                                                     aria-label="Challenge"
                                                 >
                                                     {isConfirming && selectedTarget?.opponent_id === target.opponent_id ? (
-                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
                                                     ) : (
-                                                        <Swords className="h-3.5 w-3.5" />
+                                                        <Swords className="h-3 w-3" />
                                                     )}
                                                 </button>
                                             </div>
