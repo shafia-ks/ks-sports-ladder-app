@@ -325,7 +325,7 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                                     <StatusBadge status={challenge.status} />
                                                 </div>
 
-                                                {!isChallenger && challenge.status === "Pending" && (
+                                                {viewFilter === "my" && !isChallenger && challenge.status === "Pending" && (
                                                     <p className="text-xs text-amber-600 font-medium">
                                                         👇 Scroll down to Accept or Decline
                                                     </p>
