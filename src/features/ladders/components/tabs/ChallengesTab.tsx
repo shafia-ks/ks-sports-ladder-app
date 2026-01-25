@@ -308,7 +308,19 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
 
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <p className="font-medium text-slate-900">
-                                                        {isChallenger ? "You challenged" : "🎯 Challenge from"} {opponent?.full_name || opponent?.email}
+                                                        {viewFilter === "all" ? (
+                                                            // Show both players when viewing all challenges
+                                                            <>
+                                                                {challenge.challenger?.full_name || challenge.challenger?.email}
+                                                                <span className="text-brand-600 mx-1">vs</span>
+                                                                {challenge.challenged?.full_name || challenge.challenged?.email}
+                                                            </>
+                                                        ) : (
+                                                            // Show relative text when viewing "My Challenges"
+                                                            <>
+                                                                {isChallenger ? "You challenged" : "🎯 Challenge from"} {opponent?.full_name || opponent?.email}
+                                                            </>
+                                                        )}
                                                     </p>
                                                     <StatusBadge status={challenge.status} />
                                                 </div>
@@ -468,7 +480,19 @@ export function ChallengesTab({ ladderId, userId }: ChallengesTabProps) {
                                         />
                                         <div>
                                             <p className="text-sm font-medium text-slate-900">
-                                                {isChallenger ? "vs" : "from"} {opponent?.full_name || opponent?.email}
+                                                {viewFilter === "all" ? (
+                                                    // Show both players when viewing all challenges
+                                                    <>
+                                                        {challenge.challenger?.full_name || challenge.challenger?.email}
+                                                        <span className="text-slate-400 mx-1">vs</span>
+                                                        {challenge.challenged?.full_name || challenge.challenged?.email}
+                                                    </>
+                                                ) : (
+                                                    // Show relative text when viewing "My Challenges"
+                                                    <>
+                                                        {isChallenger ? "vs" : "from"} {opponent?.full_name || opponent?.email}
+                                                    </>
+                                                )}
                                             </p>
                                             <p className="text-xs text-slate-500">
                                                 {new Date(challenge.created_at).toLocaleDateString()}
