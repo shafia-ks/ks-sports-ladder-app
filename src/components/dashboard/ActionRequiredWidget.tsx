@@ -168,17 +168,7 @@ export function ActionRequiredWidget() {
     }
 
     if (actions.length === 0) {
-        return (
-            <div className="card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <div className="flex items-center gap-3">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                    <div>
-                        <h2 className="text-lg font-semibold text-green-900">All Caught Up!</h2>
-                        <p className="text-sm text-green-700">No pending actions at the moment.</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return null; // Don't show anything when there are no actions
     }
 
     // Group actions by type

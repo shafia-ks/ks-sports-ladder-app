@@ -84,7 +84,16 @@ export async function GET(req: Request) {
             if (m.player2_id) userIds.add(m.player2_id);
         });
 
-        // 4. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
+        // 4. Check if user is admin
+        const { data: userData } = await supabase
+            .from("users")
+            .select("is_admin")
+            .eq("id", userId)
+            .single();
+
+        const isAdmin = userData?.is_admin || false;
+
+        // 5. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
         const { data: organizedLadders } = await supabase
             .from("ladder_leaders")
             .select("ladder_id")
@@ -114,9 +123,30 @@ export async function GET(req: Request) {
             pendingMemberApprovals = pendingApprovals || [];
         }
 
-        // 5. Get pending organizer requests for ladders user organizes (ORGANIZER ACTIONS)
+        // 6. Get pending organizer requests
+        // - If admin: show ALL pending organizer requests
+        // - If organizer: show only for ladders they organize
         let pendingOrganizerRequests: any[] = [];
-        if (organizedLadderIds.length > 0) {
+        if (isAdmin) {
+            // Admin sees ALL pending organizer requests
+            const { data: orgRequests } = await supabase
+                .from("leader_requests")
+                .select(`
+                    id,
+                    user_id,
+                    ladder_id,
+                    created_at,
+                    ladders (name)
+                `)
+                .eq("status", "pending");
+
+            orgRequests?.forEach(req => {
+                if (req.user_id) userIds.add(req.user_id);
+            });
+
+            pendingOrganizerRequests = orgRequests || [];
+        } else if (organizedLadderIds.length > 0) {
+            // Organizer sees only for their ladders
             const { data: orgRequests } = await supabase
                 .from("leader_requests")
                 .select(`
@@ -136,7 +166,7 @@ export async function GET(req: Request) {
             pendingOrganizerRequests = orgRequests || [];
         }
 
-        // 6. Fetch Users manually
+        // 7. Fetch Users manually
         const { data: users } = await supabase
             .from("users")
             .select("id, full_name, first_name, last_name, email")
