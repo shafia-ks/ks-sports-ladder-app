@@ -61,11 +61,11 @@ export async function PUT(
 
         const { data: userData } = await supabase
             .from("users")
-            .select("is_admin")
+            .select("role")
             .eq("id", user.id)
             .single();
 
-        const isAdmin = userData?.is_admin || false;
+        const isAdmin = userData?.role === "admin";
 
         if (!isOrganizer && !isAdmin) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -1,151 +1,99 @@
--- Inactivity Penalty System - Safe Migration
--- This migration uses IF NOT EXISTS to avoid conflicts
+-- ============================================
+-- MANUAL MIGRATION: Inactivity Penalty System
+-- ============================================
+-- Copy and paste this entire file into Supabase SQL Editor
+-- Then click "Run" to execute
 
--- ============================================================================
--- Table: ladder_inactivity_settings
--- ============================================================================
+-- Step 1: Create Tables
+-- ============================================
+
 CREATE TABLE IF NOT EXISTS ladder_inactivity_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ladder_id UUID NOT NULL REFERENCES ladders(id) ON DELETE CASCADE,
-  
-  -- Master switch
   enabled BOOLEAN DEFAULT false,
-  
-  -- Calculation method
   calculation_method VARCHAR(20) DEFAULT 'rolling_30_days',
-  
-  -- Thresholds
   threshold_days INTEGER DEFAULT 30,
   new_member_grace_days INTEGER DEFAULT 14,
-  
-  -- Penalty configuration
   penalty_type VARCHAR(20) DEFAULT 'rank_drop',
   penalty_severity INTEGER DEFAULT 3,
   penalty_frequency VARCHAR(20) DEFAULT 'once',
-  
-  -- Protection floor
   floor_enabled BOOLEAN DEFAULT true,
   floor_type VARCHAR(20) DEFAULT 'percentage',
   floor_value INTEGER DEFAULT 50,
-  
-  -- Notifications
   notify_before_penalty BOOLEAN DEFAULT true,
   notification_days_before INTEGER DEFAULT 7,
-  
-  -- Leave system
   leave_system_enabled BOOLEAN DEFAULT true,
   max_vacation_leaves_per_year INTEGER DEFAULT 2,
   max_injury_leaves_per_year INTEGER DEFAULT 3,
   max_work_leaves_per_year INTEGER DEFAULT 2,
   max_personal_leaves_per_year INTEGER DEFAULT 2,
-  
-  -- Edge case handling
   penalty_exceeds_bottom_action VARCHAR(20) DEFAULT 'cap_at_bottom',
-  
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
   UNIQUE(ladder_id)
 );
 
-DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS idx_ladder_inactivity_ladder ON ladder_inactivity_settings(ladder_id);
-EXCEPTION WHEN duplicate_table THEN NULL;
-END $$;
-
--- ============================================================================
--- Table: member_inactivity_tracking
--- ============================================================================
 CREATE TABLE IF NOT EXISTS member_inactivity_tracking (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ladder_id UUID NOT NULL REFERENCES ladders(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
-  -- Tracking
   last_match_completed_at TIMESTAMPTZ,
   last_penalty_applied_at TIMESTAMPTZ,
   total_penalties_applied INTEGER DEFAULT 0,
-  
-  -- Leave of absence
   on_leave BOOLEAN DEFAULT false,
   leave_type VARCHAR(20),
   leave_started_at TIMESTAMPTZ,
   leave_reason TEXT,
-  
-  -- Penalty history
   positions_lost_to_inactivity INTEGER DEFAULT 0,
   original_rank_before_penalties INTEGER,
-  
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
   UNIQUE(ladder_id, user_id)
 );
 
-DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS idx_member_inactivity_ladder_user ON member_inactivity_tracking(ladder_id, user_id);
-  CREATE INDEX IF NOT EXISTS idx_member_inactivity_last_match ON member_inactivity_tracking(last_match_completed_at);
-  CREATE INDEX IF NOT EXISTS idx_member_inactivity_on_leave ON member_inactivity_tracking(on_leave);
-EXCEPTION WHEN duplicate_table THEN NULL;
-END $$;
-
--- ============================================================================
--- Table: member_leave_history
--- ============================================================================
 CREATE TABLE IF NOT EXISTS member_leave_history (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ladder_id UUID NOT NULL REFERENCES ladders(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
   leave_type VARCHAR(20) NOT NULL,
   started_at TIMESTAMPTZ NOT NULL,
   ended_at TIMESTAMPTZ,
   reason TEXT,
-  
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS idx_leave_history_user_ladder ON member_leave_history(user_id, ladder_id);
-  CREATE INDEX IF NOT EXISTS idx_leave_history_year ON member_leave_history(EXTRACT(YEAR FROM started_at));
-EXCEPTION WHEN duplicate_table THEN NULL;
-END $$;
-
--- ============================================================================
--- Table: inactivity_penalty_log
--- ============================================================================
 CREATE TABLE IF NOT EXISTS inactivity_penalty_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ladder_id UUID NOT NULL REFERENCES ladders(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
   penalty_type VARCHAR(20) NOT NULL,
   penalty_severity INTEGER NOT NULL,
   rank_before INTEGER NOT NULL,
   rank_after INTEGER NOT NULL,
   positions_dropped INTEGER NOT NULL,
-  
   days_inactive INTEGER NOT NULL,
   last_match_date TIMESTAMPTZ,
   reason TEXT,
   capped_at_bottom BOOLEAN DEFAULT false,
   capped_at_floor BOOLEAN DEFAULT false,
-  
   applied_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS idx_inactivity_log_ladder ON inactivity_penalty_log(ladder_id);
-  CREATE INDEX IF NOT EXISTS idx_inactivity_log_user ON inactivity_penalty_log(user_id);
-  CREATE INDEX IF NOT EXISTS idx_inactivity_log_applied ON inactivity_penalty_log(applied_at);
-EXCEPTION WHEN duplicate_table THEN NULL;
-END $$;
+-- Step 2: Create Indexes
+-- ============================================
 
--- ============================================================================
--- Functions and Triggers
--- ============================================================================
+CREATE INDEX IF NOT EXISTS idx_ladder_inactivity_ladder ON ladder_inactivity_settings(ladder_id);
+CREATE INDEX IF NOT EXISTS idx_member_inactivity_ladder_user ON member_inactivity_tracking(ladder_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_member_inactivity_last_match ON member_inactivity_tracking(last_match_completed_at);
+CREATE INDEX IF NOT EXISTS idx_member_inactivity_on_leave ON member_inactivity_tracking(on_leave);
+CREATE INDEX IF NOT EXISTS idx_leave_history_user_ladder ON member_leave_history(user_id, ladder_id);
+CREATE INDEX IF NOT EXISTS idx_inactivity_log_ladder ON inactivity_penalty_log(ladder_id);
+CREATE INDEX IF NOT EXISTS idx_inactivity_log_user ON inactivity_penalty_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_inactivity_log_applied ON inactivity_penalty_log(applied_at);
 
--- Function: Update updated_at timestamp
+-- Step 3: Create Functions
+-- ============================================
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -154,20 +102,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Triggers for updated_at
-DROP TRIGGER IF EXISTS update_ladder_inactivity_settings_updated_at ON ladder_inactivity_settings;
-CREATE TRIGGER update_ladder_inactivity_settings_updated_at
-  BEFORE UPDATE ON ladder_inactivity_settings
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS update_member_inactivity_tracking_updated_at ON member_inactivity_tracking;
-CREATE TRIGGER update_member_inactivity_tracking_updated_at
-  BEFORE UPDATE ON member_inactivity_tracking
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- Function: Initialize inactivity tracking for new members
 CREATE OR REPLACE FUNCTION initialize_member_inactivity_tracking()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -178,13 +112,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS auto_initialize_inactivity_tracking ON ladder_memberships;
-CREATE TRIGGER auto_initialize_inactivity_tracking
-  AFTER INSERT ON ladder_memberships
-  FOR EACH ROW
-  EXECUTE FUNCTION initialize_member_inactivity_tracking();
-
--- Function: Update last_match_completed_at when match is confirmed
 CREATE OR REPLACE FUNCTION update_last_match_completed()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -201,39 +128,50 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Step 4: Create Triggers
+-- ============================================
+
+DROP TRIGGER IF EXISTS update_ladder_inactivity_settings_updated_at ON ladder_inactivity_settings;
+CREATE TRIGGER update_ladder_inactivity_settings_updated_at
+  BEFORE UPDATE ON ladder_inactivity_settings
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_member_inactivity_tracking_updated_at ON member_inactivity_tracking;
+CREATE TRIGGER update_member_inactivity_tracking_updated_at
+  BEFORE UPDATE ON member_inactivity_tracking
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS auto_initialize_inactivity_tracking ON ladder_memberships;
+CREATE TRIGGER auto_initialize_inactivity_tracking
+  AFTER INSERT ON ladder_memberships
+  FOR EACH ROW
+  EXECUTE FUNCTION initialize_member_inactivity_tracking();
+
 DROP TRIGGER IF EXISTS auto_update_last_match_completed ON matches;
 CREATE TRIGGER auto_update_last_match_completed
   AFTER UPDATE ON matches
   FOR EACH ROW
   EXECUTE FUNCTION update_last_match_completed();
 
--- ============================================================================
--- RLS Policies
--- ============================================================================
+-- Step 5: Enable RLS
+-- ============================================
 
 ALTER TABLE ladder_inactivity_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE member_inactivity_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE member_leave_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inactivity_penalty_log ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist
-DROP POLICY IF EXISTS "Anyone can view inactivity settings" ON ladder_inactivity_settings;
-DROP POLICY IF EXISTS "Organizers can manage inactivity settings" ON ladder_inactivity_settings;
-DROP POLICY IF EXISTS "Anyone can view inactivity tracking" ON member_inactivity_tracking;
-DROP POLICY IF EXISTS "Users can update their own leave status" ON member_inactivity_tracking;
-DROP POLICY IF EXISTS "System can manage inactivity tracking" ON member_inactivity_tracking;
-DROP POLICY IF EXISTS "Users can view their own leave history" ON member_leave_history;
-DROP POLICY IF EXISTS "Organizers can view leave history for their ladders" ON member_leave_history;
-DROP POLICY IF EXISTS "System can manage leave history" ON member_leave_history;
-DROP POLICY IF EXISTS "Users can view their own penalty log" ON inactivity_penalty_log;
-DROP POLICY IF EXISTS "Organizers can view penalty logs for their ladders" ON inactivity_penalty_log;
-DROP POLICY IF EXISTS "System can create penalty logs" ON inactivity_penalty_log;
+-- Step 6: Create RLS Policies
+-- ============================================
 
--- Create policies
+DROP POLICY IF EXISTS "Anyone can view inactivity settings" ON ladder_inactivity_settings;
 CREATE POLICY "Anyone can view inactivity settings"
   ON ladder_inactivity_settings FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can manage inactivity settings" ON ladder_inactivity_settings;
 CREATE POLICY "Organizers can manage inactivity settings"
   ON ladder_inactivity_settings FOR ALL
   USING (
@@ -246,23 +184,28 @@ CREATE POLICY "Organizers can manage inactivity settings"
     public.is_admin()
   );
 
+DROP POLICY IF EXISTS "Anyone can view inactivity tracking" ON member_inactivity_tracking;
 CREATE POLICY "Anyone can view inactivity tracking"
   ON member_inactivity_tracking FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Users can update their own leave status" ON member_inactivity_tracking;
 CREATE POLICY "Users can update their own leave status"
   ON member_inactivity_tracking FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "System can manage inactivity tracking" ON member_inactivity_tracking;
 CREATE POLICY "System can manage inactivity tracking"
   ON member_inactivity_tracking FOR ALL
   USING (true);
 
+DROP POLICY IF EXISTS "Users can view their own leave history" ON member_leave_history;
 CREATE POLICY "Users can view their own leave history"
   ON member_leave_history FOR SELECT
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Organizers can view leave history for their ladders" ON member_leave_history;
 CREATE POLICY "Organizers can view leave history for their ladders"
   ON member_leave_history FOR SELECT
   USING (
@@ -273,14 +216,17 @@ CREATE POLICY "Organizers can view leave history for their ladders"
     )
   );
 
+DROP POLICY IF EXISTS "System can manage leave history" ON member_leave_history;
 CREATE POLICY "System can manage leave history"
   ON member_leave_history FOR ALL
   USING (true);
 
+DROP POLICY IF EXISTS "Users can view their own penalty log" ON inactivity_penalty_log;
 CREATE POLICY "Users can view their own penalty log"
   ON inactivity_penalty_log FOR SELECT
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Organizers can view penalty logs for their ladders" ON inactivity_penalty_log;
 CREATE POLICY "Organizers can view penalty logs for their ladders"
   ON inactivity_penalty_log FOR SELECT
   USING (
@@ -291,6 +237,13 @@ CREATE POLICY "Organizers can view penalty logs for their ladders"
     )
   );
 
+DROP POLICY IF EXISTS "System can create penalty logs" ON inactivity_penalty_log;
 CREATE POLICY "System can create penalty logs"
   ON inactivity_penalty_log FOR INSERT
   USING (true);
+
+-- ============================================
+-- MIGRATION COMPLETE!
+-- ============================================
+-- You should see "Success. No rows returned" if everything worked.
+-- Check the Tables section in Supabase to verify the new tables exist.
