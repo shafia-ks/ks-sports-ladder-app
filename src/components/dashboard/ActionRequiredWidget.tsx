@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AlertCircle, CheckCircle, Clock, Swords, Check, X, Trophy } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Swords, Trophy } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { usePendingActions, PendingAction } from "@/hooks/usePendingActions";
@@ -12,6 +12,7 @@ import { useConfirmMatch, useSubmitScore, useCancelMatch } from "@/features/matc
 import { useToast } from "@/components/ui/toast";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ScoreSubmitModal } from "@/components/matches/ScoreSubmitModal";
+import { Avatar } from "@/components/ui/avatar";
 
 export function ActionRequiredWidget() {
     const { user } = useAuth();
@@ -152,28 +153,6 @@ export function ActionRequiredWidget() {
         });
     };
 
-    const getActionIcon = (type: string) => {
-        switch (type) {
-            case "challenge": return <Swords className="h-4 w-4" />;
-            case "confirm_score": return <CheckCircle className="h-4 w-4" />;
-            case "submit_score": return <Trophy className="h-4 w-4" />;
-            case "approve_member":
-            case "approve_organizer": return <Clock className="h-4 w-4" />;
-            default: return <Clock className="h-4 w-4" />;
-        }
-    };
-
-    const getActionTitle = (action: PendingAction) => {
-        switch (action.type) {
-            case "challenge": return `Challenge from ${action.opponent_name}`;
-            case "confirm_score": return `Confirm score vs ${action.opponent_name}`;
-            case "submit_score": return `Submit score vs ${action.opponent_name}`;
-            case "approve_member": return `Approve ${action.requester_name}`;
-            case "approve_organizer": return `Approve Organizer ${action.requester_name}`;
-            default: return "Action Required";
-        }
-    };
-
     if (loadingActions) {
         return (
             <div className="card p-4">
@@ -190,131 +169,267 @@ export function ActionRequiredWidget() {
 
     if (actions.length === 0) {
         return (
-            <div className="card p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+            <div className="card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <div className="flex items-center gap-3">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
                     <div>
-                        <h2 className="text-base font-semibold text-green-900">All Caught Up!</h2>
-                        <p className="text-xs text-green-700">No pending actions at the moment.</p>
+                        <h2 className="text-lg font-semibold text-green-900">All Caught Up!</h2>
+                        <p className="text-sm text-green-700">No pending actions at the moment.</p>
                     </div>
                 </div>
             </div>
         );
     }
 
+    // Group actions by type
+    const challengeActions = actions.filter(a => a.type === "challenge");
+    const confirmScoreActions = actions.filter(a => a.type === "confirm_score");
+    const submitScoreActions = actions.filter(a => a.type === "submit_score");
+    const memberApprovalActions = actions.filter(a => a.type === "approve_member");
+    const organizerApprovalActions = actions.filter(a => a.type === "approve_organizer");
+
     return (
-        <div className="card p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-            <div className="flex items-center justify-between mb-3">
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <h2 className="text-base font-semibold text-slate-900">
+                    <AlertCircle className="h-6 w-6 text-amber-600" />
+                    <h2 className="text-xl font-bold text-slate-900">
                         Action Required ({actions.length})
                     </h2>
                 </div>
             </div>
 
-            <div className="space-y-2">
-                {actions.map((action) => {
-                    const isProcessing = processingId === (action.id || action.match_id);
+            {/* Pending Challenges */}
+            {challengeActions.length > 0 && (
+                <div className="card p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                        <Swords className="h-4 w-4" />
+                        Pending Challenges ({challengeActions.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {challengeActions.map((action) => {
+                            const isProcessing = processingId === action.id;
+                            const expiresAt = action.expires_at ? new Date(action.expires_at) : null;
+                            const hoursRemaining = expiresAt ? Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60))) : null;
 
-                    return (
-                        <div key={action.id} className="bg-white rounded-lg p-3 border border-amber-200 shadow-sm">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <div className="flex items-start gap-2">
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                                        {getActionIcon(action.type)}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-900">{getActionTitle(action)}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] text-slate-600">{action.ladder_name}</span>
+                            return (
+                                <div key={action.id} className="bg-white rounded-lg p-3 border border-blue-200 shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <Avatar name={action.opponent_name || "?"} size="sm" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-900">{action.opponent_name}</p>
+                                                <p className="text-xs text-slate-600">{action.ladder_name}</p>
+                                                {hoursRemaining !== null && (
+                                                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        Expires in {hoursRemaining}h
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Interactive Buttons */}
-                                <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                    {action.type === "challenge" && (
-                                        <>
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
                                             <button
                                                 onClick={() => handleChallengeResponse(action.id, "Accepted")}
                                                 disabled={!!processingId}
-                                                className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-green-600 text-white hover:bg-green-700 flex-1 sm:flex-none disabled:opacity-50"
                                             >
-                                                {isProcessing ? "..." : <><Check className="h-4 w-4 mr-1" /> Accept</>}
+                                                {isProcessing ? "..." : <>✓ Accept</>}
                                             </button>
                                             <button
                                                 onClick={() => handleChallengeResponse(action.id, "Declined")}
                                                 disabled={!!processingId}
-                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex-1 sm:flex-none disabled:opacity-50"
                                             >
-                                                <X className="h-4 w-4 mr-1" /> Decline
+                                                ✕ Decline
                                             </button>
-                                        </>
-                                    )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
-                                    {action.type === "confirm_score" && action.match_id && (
-                                        <>
+            {/* Confirm Scores */}
+            {confirmScoreActions.length > 0 && (
+                <div className="card p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Confirm Scores ({confirmScoreActions.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {confirmScoreActions.map((action) => {
+                            const isProcessing = processingId === action.match_id;
+
+                            return (
+                                <div key={action.id} className="bg-white rounded-lg p-3 border border-green-200 shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <Avatar name={action.opponent_name || "?"} size="sm" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-900">vs {action.opponent_name}</p>
+                                                <p className="text-xs text-slate-600">{action.ladder_name}</p>
+                                                <p className="text-xs text-green-700 mt-1">Score submitted - awaiting your confirmation</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
                                             <button
                                                 onClick={() => handleConfirmMatch(action.match_id!, "confirm")}
                                                 disabled={!!processingId}
-                                                className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-green-600 text-white hover:bg-green-700 flex-1 sm:flex-none disabled:opacity-50"
                                             >
-                                                {isProcessing ? "..." : "Confirm"}
+                                                {isProcessing ? "..." : "✓ Confirm"}
                                             </button>
                                             <button
                                                 onClick={() => handleConfirmMatch(action.match_id!, "dispute")}
                                                 disabled={!!processingId}
-                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-orange-600 text-white hover:bg-orange-700 flex-1 sm:flex-none disabled:opacity-50"
                                             >
-                                                Dispute
+                                                ⚠ Dispute
                                             </button>
                                             <button
                                                 onClick={() => openCancelModal(action)}
                                                 disabled={!!processingId}
                                                 title="Void/Cancel Match (No Winner)"
-                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-red-50 text-red-600 flex-1 sm:flex-none justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-white border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                                             >
-                                                Void
+                                                ✕
                                             </button>
-                                        </>
-                                    )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
-                                    {action.type === "submit_score" && (
-                                        <>
+            {/* Submit Scores */}
+            {submitScoreActions.length > 0 && (
+                <div className="card p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+                    <h3 className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                        <Trophy className="h-4 w-4" />
+                        Submit Match Scores ({submitScoreActions.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {submitScoreActions.map((action) => {
+                            const isProcessing = processingId === action.match_id;
+
+                            return (
+                                <div key={action.id} className="bg-white rounded-lg p-3 border border-amber-200 shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <Avatar name={action.opponent_name || "?"} size="sm" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-900">vs {action.opponent_name}</p>
+                                                <p className="text-xs text-slate-600">{action.ladder_name}</p>
+                                                <p className="text-xs text-amber-700 mt-1">Match completed? Submit the score!</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
                                             <button
                                                 onClick={() => openScoreModal(action)}
                                                 disabled={!!processingId}
-                                                className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 w-full sm:w-auto justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 flex-1 sm:flex-none disabled:opacity-50"
                                             >
-                                                Enter Score
+                                                🏆 Enter Score
                                             </button>
                                             <button
                                                 onClick={() => openCancelModal(action)}
                                                 disabled={!!processingId}
                                                 title="Void/Cancel Match (No Winner)"
-                                                className="btn btn-sm bg-white border border-slate-300 hover:bg-red-50 text-red-600 w-full sm:w-auto justify-center disabled:opacity-50"
+                                                className="btn btn-sm bg-white border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                                             >
-                                                Void
+                                                ✕
                                             </button>
-                                        </>
-                                    )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
-                                    {/* Fallback for other types (Organizer approvals) -> Link */}
-                                    {(action.type === "approve_member" || action.type === "approve_organizer") && (
-                                        <Link
-                                            href={`/ladders/${action.ladder_id}?tab=dashboard`}
-                                            className="btn btn-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 w-full sm:w-auto justify-center"
-                                        >
-                                            View Request
-                                        </Link>
-                                    )}
+            {/* Member Approvals */}
+            {memberApprovalActions.length > 0 && (
+                <div className="card p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                    <h3 className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Pending Member Approvals ({memberApprovalActions.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {memberApprovalActions.slice(0, 3).map((action) => (
+                            <div key={action.id} className="bg-white rounded-lg p-3 border border-purple-200 shadow-sm">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <Avatar name={action.requester_name || "?"} size="sm" />
+                                        <div className="flex-1">
+                                            <p className="font-medium text-slate-900">{action.requester_name}</p>
+                                            <p className="text-xs text-slate-600">{action.ladder_name}</p>
+                                            {action.requested_at && (
+                                                <p className="text-xs text-purple-700 mt-1">
+                                                    Requested {new Date(action.requested_at).toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={`/ladders/${action.ladder_id}?tab=dashboard`}
+                                        className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 w-full sm:w-auto"
+                                    >
+                                        Review →
+                                    </Link>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        ))}
+                        {memberApprovalActions.length > 3 && (
+                            <p className="text-xs text-center text-purple-700 pt-2">
+                                + {memberApprovalActions.length - 3} more...
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Organizer Approvals */}
+            {organizerApprovalActions.length > 0 && (
+                <div className="card p-4 bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
+                    <h3 className="text-sm font-semibold text-red-900 mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Pending Organizer Requests ({organizerApprovalActions.length})
+                    </h3>
+                    <div className="space-y-2">
+                        {organizerApprovalActions.map((action) => (
+                            <div key={action.id} className="bg-white rounded-lg p-3 border border-red-200 shadow-sm">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <Avatar name={action.requester_name || "?"} size="sm" />
+                                        <div className="flex-1">
+                                            <p className="font-medium text-slate-900">{action.requester_name}</p>
+                                            <p className="text-xs text-slate-600">{action.ladder_name}</p>
+                                            {action.requested_at && (
+                                                <p className="text-xs text-red-700 mt-1">
+                                                    Requested {new Date(action.requested_at).toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={`/ladders/${action.ladder_id}?tab=dashboard`}
+                                        className="btn btn-sm bg-brand-600 text-white hover:bg-brand-700 w-full sm:w-auto"
+                                    >
+                                        Review →
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Modals */}
             <ConfirmModal

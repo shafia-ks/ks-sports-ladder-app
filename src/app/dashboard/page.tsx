@@ -16,17 +16,17 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
         {/* Modern Header */}
-        <div className="border-b border-slate-100 pb-6">
-          <p className="text-slate-500 mt-1">
+        <div className="border-b border-slate-100 pb-3">
+          <p className="text-slate-500">
             Welcome back, <span className="text-brand-600 font-semibold">{user?.firstName || user?.email?.split('@')[0]}</span>!
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Feed (Left) - 8 Cols */}
-          <div className="lg:col-span-8 space-y-10">
+          <div className="lg:col-span-8 space-y-6">
             {/* 1. Action Required */}
             <ActionRequiredWidget />
 
@@ -44,7 +44,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar / Activity Hub (Right) - 4 Cols */}
-          <div className="lg:col-span-4 space-y-10">
+          <div className="lg:col-span-4 space-y-6">
             {/* 1. Activity Hub (Actions + Feed) */}
             <ActivityHub />
 
