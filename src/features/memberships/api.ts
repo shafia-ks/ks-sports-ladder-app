@@ -11,5 +11,7 @@ export function useMemberships(userId?: string) {
     queryKey: ["memberships", userId],
     queryFn: () => fetchMemberships(userId as string),
     enabled: Boolean(userId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }

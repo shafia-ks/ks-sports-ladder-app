@@ -7,5 +7,10 @@ async function fetchLadders() {
 }
 
 export function useLadders() {
-  return useQuery({ queryKey: ["ladders"], queryFn: fetchLadders });
+  return useQuery({
+    queryKey: ["ladders"],
+    queryFn: fetchLadders,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 }
