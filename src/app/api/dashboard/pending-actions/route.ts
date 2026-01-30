@@ -87,11 +87,11 @@ export async function GET(req: Request) {
         // 4. Check if user is admin
         const { data: userData } = await supabase
             .from("users")
-            .select("is_admin")
+            .select("is_admin, role")
             .eq("id", userId)
             .single();
 
-        const isAdmin = userData?.is_admin || false;
+        const isAdmin = userData?.is_admin || userData?.role === "admin" || false;
 
         // 5. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
         const { data: organizedLadders } = await supabase

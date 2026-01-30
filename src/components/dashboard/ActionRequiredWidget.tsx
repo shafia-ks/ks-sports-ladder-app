@@ -154,17 +154,7 @@ export function ActionRequiredWidget() {
     };
 
     if (loadingActions) {
-        return (
-            <div className="card p-4">
-                <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <h2 className="text-base font-semibold text-slate-900">Action Required</h2>
-                </div>
-                <div className="space-y-2">
-                    {[1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (actions.length === 0) {
