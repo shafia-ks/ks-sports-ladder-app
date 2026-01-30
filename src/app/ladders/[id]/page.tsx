@@ -38,6 +38,7 @@ import { InviteMembersModal } from "@/features/ladders/components/InviteMembersM
 import { PendingOrganizerRequests } from "@/features/ladders/components/PendingOrganizerRequests";
 import { MatchesList } from "@/features/ladders/components/MatchesList";
 import { ChallengesTab } from "@/features/ladders/components/tabs/ChallengesTab";
+import { InactivitySettingsForm } from "@/features/inactivity/components/InactivitySettingsForm";
 import { useLadderRealtime } from "@/hooks/useLadderRealtime";
 
 // Lazy load heavy components for better performance
@@ -1585,7 +1586,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                   </div>
                 </div>
 
-
+                {/* Inactivity & Leave Settings */}
+                <div className="border-t border-slate-200 pt-6 mt-6">
+                  <h3 className="text-base font-semibold text-slate-900 mb-3">Inactivity & Leave Settings</h3>
+                  <div className="mb-4 text-sm text-slate-600">
+                    Configure penalties for inactive players and the leave of absence system.
+                    These settings are managed separately from general ladder settings.
+                  </div>
+                  <InactivitySettingsForm ladderId={params.id} />
+                </div>
 
                 {/* Danger Zone */}
                 <div className="border-t border-slate-200 pt-6 mt-6">
