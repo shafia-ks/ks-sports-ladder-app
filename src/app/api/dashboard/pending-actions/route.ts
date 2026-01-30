@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -127,9 +127,9 @@ export async function GET(req: Request) {
         // - If admin: show ALL pending organizer requests
         // - If organizer: show only for ladders they organize
         let pendingOrganizerRequests: any[] = [];
-        if (isAdmin) {
-            // Admin sees ALL pending organizer requests
-            const { data: orgRequests } = await supabase
+        if (isAdmin && supabaseAdmin) {
+            // Admin sees ALL pending organizer requests (use Admin client to bypass RLS)
+            const { data: orgRequests } = await supabaseAdmin
                 .from("leader_requests")
                 .select(`
                     id,
