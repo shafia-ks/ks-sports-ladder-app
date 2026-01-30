@@ -46,6 +46,7 @@ interface Match {
         avatar_url: string | null;
     };
     set_scores?: string[] | null;
+    submitted_by?: string | null;
 }
 
 interface MyActionsCardProps {
@@ -116,17 +117,27 @@ export function MyActionsCard({
         if (!myMatch) return;
         setLoading('dispute');
         try {
-            const res = await fetch(`/api/matches/${myMatch.id}/submit`, {
-                method: 'PATCH',
+            // Use correct endpoint for dispute (same as confirm)
+            const res = await fetch(`/api/matches/${myMatch.id}/confirm`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'Disputed' })
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    action: 'dispute',
+                    reason: "Disputed via Dashboard"
+                })
             });
-            if (!res.ok) throw new Error('Failed to dispute');
+
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error || 'Failed to dispute');
+            }
 
             showToast({ title: 'Dispute submitted', variant: 'success' });
             if (onMatchAction) onMatchAction();
         } catch (e) {
-            showToast({ title: 'Error', variant: 'error' });
+            console.error(e);
+            showToast({ title: 'Error', description: 'Failed to submit dispute', variant: 'error' });
         } finally {
             setLoading(null);
         }
@@ -276,28 +287,38 @@ export function MyActionsCard({
                             Enter Score
                         </button>
                     ) : (
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handleConfirmResult}
-                                disabled={loading !== null}
-                                className="flex-1 py-1.5 px-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md hover:from-green-700 hover:to-green-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                {loading === 'confirm' ? 'Confirming...' : (
-                                    <>
-                                        <CheckCircle className="h-3 w-3" />
-                                        Confirm
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={handleDispute}
-                                disabled={loading !== null}
-                                className="flex-1 py-1.5 px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                <AlertCircle className="h-3 w-3" />
-                                Dispute
-                            </button>
-                        </div>
+                        // If I submitted the score, show status instead of buttons
+                        myMatch.submitted_by === currentUserId ? (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                                <p className="text-[9px] sm:text-[10px] text-blue-800 text-center flex items-center justify-center gap-1.5">
+                                    <Clock className="h-3 w-3" />
+                                    Waiting for {opponent.full_name || opponent.email.split('@')[0]} to confirm
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleConfirmResult}
+                                    disabled={loading !== null}
+                                    className="flex-1 py-1.5 px-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md hover:from-green-700 hover:to-green-600 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {loading === 'confirm' ? 'Confirming...' : (
+                                        <>
+                                            <CheckCircle className="h-3 w-3" />
+                                            Confirm
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleDispute}
+                                    disabled={loading !== null}
+                                    className="flex-1 py-1.5 px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-all font-semibold text-[10px] sm:text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <AlertCircle className="h-3 w-3" />
+                                    Dispute
+                                </button>
+                            </div>
+                        )
                     )}
                 </div>
                 <SubmitScoreDialog
