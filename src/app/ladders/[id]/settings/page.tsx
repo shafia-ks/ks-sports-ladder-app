@@ -477,6 +477,15 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                 </div>
               </div>
 
+              {/* Inactivity & Leave Settings */}
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-base font-semibold text-slate-900">Inactivity & Leave Settings</h3>
+                <p className="text-sm text-slate-600 mt-1 mb-4">
+                  Configure automatic penalties for inactive players and leave of absence system
+                </p>
+                <InactivitySettingsForm ladderId={params.id} />
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save Settings"}
@@ -487,16 +496,6 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
               </div>
             </form>
 
-            {/* Inactivity & Leave Settings */}
-            <div className="card space-y-6 p-5">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Inactivity & Leave Settings</h2>
-                <p className="text-sm text-slate-600 mt-1">
-                  Configure automatic penalties for inactive players and leave of absence system
-                </p>
-              </div>
-              <InactivitySettingsForm ladderId={params.id} />
-            </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="card p-4">
