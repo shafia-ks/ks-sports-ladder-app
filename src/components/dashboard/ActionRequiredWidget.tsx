@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AlertCircle, CheckCircle, Clock, Swords, Trophy } from "lucide-react";
+import { CheckCircle, Clock, Swords, Trophy } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { usePendingActions, PendingAction } from "@/hooks/usePendingActions";
@@ -170,15 +170,7 @@ export function ActionRequiredWidget() {
 
     return (
         <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <AlertCircle className="h-6 w-6 text-amber-600" />
-                    <h2 className="text-xl font-bold text-slate-900">
-                        Action Required ({actions.length})
-                    </h2>
-                </div>
-            </div>
+
 
             {/* Pending Challenges */}
             {challengeActions.length > 0 && (

@@ -136,7 +136,7 @@ export async function GET(req: Request) {
         // 7. Get Pending Organizer Requests
         // Strategy: Run explicit Organizer query AND Global Admin query if applicable.
         // This ensures that even if Global Admin query fails (e.g. RLS issues), the Organizer query succeeds.
-        const requestQueries: Promise<any>[] = [];
+        const requestQueries: any[] = [];
 
         // Query A: Organizer Scope - Fetch requests specifically for ladders they organize
         if (organizedLadderIds.length > 0) {
