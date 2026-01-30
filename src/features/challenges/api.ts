@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutate } from "swr";
 import { ChallengeValidationContext } from "@/lib/challenges/validation";
 
 async function fetchChallenges(userId?: string) {
@@ -39,6 +40,7 @@ export function useCreateChallenge() {
       client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
+      mutate(() => true);
     },
   });
 }
@@ -67,6 +69,7 @@ export function useRespondToChallenge() {
       client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
+      mutate(() => true);
     },
   });
 }

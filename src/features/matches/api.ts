@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutate } from "swr";
 import { LadderRankingEntry } from "@/lib/ranking/ranking-engine";
 import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
@@ -62,6 +63,8 @@ export function useSubmitMatch() {
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
+      // Force SWR to revalidate
+      mutate(() => true);
     },
   });
 }
@@ -97,6 +100,8 @@ export function useCancelMatch() {
       queryClient.invalidateQueries({ queryKey: ["challenges"] });
       queryClient.invalidateQueries({ queryKey: ["ladder"] });
       queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
+      // Force SWR to revalidate
+      mutate(() => true);
     },
     onError: (error) => {
       console.error("Error cancelling match:", error);
@@ -133,6 +138,8 @@ export function useConfirmMatch() {
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
+      // Force SWR to revalidate
+      mutate(() => true);
     },
   });
 }
@@ -167,6 +174,8 @@ export function useSubmitScore() {
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
+      // Force SWR to revalidate
+      mutate(() => true);
     },
   });
 }
