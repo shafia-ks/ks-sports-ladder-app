@@ -454,27 +454,20 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             )}
 
             {/* Actions Row - Horizontally Stacked Below */}
-            <div className="flex flex-row flex-wrap items-center gap-2 w-full mt-1">
+            <div className="flex flex-row flex-wrap items-center gap-1.5 w-full mt-1.5">
                 {!isEditing && !isEditingDetails && canEdit && (
                     <>
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex-1 py-1 px-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-md hover:from-blue-700 hover:to-blue-600 transition-all font-bold text-[9px] sm:text-xs text-center shadow-sm"
                         >
-                            {effectiveStatus === "Pending" ? "Enter Score" : "Edit Score"}
+                            {effectiveStatus === "Pending" ? "Score" : "Edit"}
                         </button>
                         <button
                             onClick={() => setIsEditingDetails(true)}
-                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
+                            className="flex-1 py-1 px-1 border border-slate-200 text-slate-700 bg-white rounded-md hover:bg-slate-50 transition-all font-bold text-[9px] sm:text-xs text-center shadow-sm"
                         >
-                            Edit Details
-                        </button>
-                        <button
-                            onClick={() => setIsCancelModalOpen(true)}
-                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
-                            title="Void/Cancel Match (No Winner)"
-                        >
-                            Void
+                            Details
                         </button>
                     </>
                 )}
@@ -484,25 +477,30 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
                         <button
                             onClick={handleConfirm}
                             disabled={loading}
-                            className="flex-1 py-1 px-1 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md hover:from-green-700 hover:to-green-600 transition-all font-bold text-[9px] sm:text-xs text-center shadow-sm disabled:opacity-50"
                         >
                             Confirm
                         </button>
                         <button
                             onClick={handleDispute}
                             disabled={loading}
-                            className="flex-1 py-1 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center disabled:opacity-50"
+                            className="flex-1 py-1 px-1 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-md hover:from-red-700 hover:to-red-600 transition-all font-bold text-[9px] sm:text-xs text-center shadow-sm disabled:opacity-50"
                         >
                             Dispute
                         </button>
-                        <button
-                            onClick={() => setIsCancelModalOpen(true)}
-                            className="flex-1 py-1 px-1 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 transition-all font-bold text-[10px] sm:text-xs uppercase tracking-wide text-center"
-                            title="Void/Cancel Match (No Winner)"
-                        >
-                            Void
-                        </button>
                     </>
+                )}
+
+                {/* Void Button - Show if authorized to edit/confirm */}
+                {/* Use a consistent Void button if either mode is active */}
+                {(canEdit || canConfirm) && (
+                    <button
+                        onClick={() => setIsCancelModalOpen(true)}
+                        className="flex-1 py-1 px-1 border border-slate-200 text-slate-700 bg-white rounded-md hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all font-bold text-[9px] sm:text-xs text-center shadow-sm"
+                        title="Void/Cancel Match (No Winner)"
+                    >
+                        Void
+                    </button>
                 )}
 
                 {effectiveStatus === "Confirmed" && (

@@ -77,7 +77,7 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
 
                 <button
                     onClick={() => (isOnLeave ? handleToggleLeave() : setIsExpanded(!isExpanded))}
-                    className={`px-4 py-2 rounded-md font-medium transition-colors ${isOnLeave
+                    className={`px-3 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 rounded-md font-medium transition-colors ${isOnLeave
                         ? "bg-green-600 hover:bg-green-700 text-white"
                         : "bg-orange-600 hover:bg-orange-700 text-white"
                         }`}
