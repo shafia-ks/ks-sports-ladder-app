@@ -23,6 +23,7 @@ import { useDashboardStats, useLadder } from "@/hooks/useSWR";
 import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
 import { Top5Rankings } from "@/features/ladders/components/dashboard/Top5Rankings";
 import { LadderInfoSidebar } from "@/features/ladders/components/dashboard/LadderInfoSidebar";
+import { LeaveToggle } from "@/features/inactivity/components/LeaveToggle";
 import { MyActionsCard } from "@/features/ladders/components/dashboard/MyActionsCard";
 import { ActivityHub } from "@/features/ladders/components/dashboard/ActivityHub";
 import { OrganizerActionBanner } from "@/features/ladders/components/dashboard/OrganizerActionBanner";
@@ -993,6 +994,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         winStreak={dashboardStats?.myStats?.streak || 0}
                       />
                     )
+                  )}
+
+                  {/* Leave of Absence Management */}
+                  {isMember && user && (
+                    <LeaveToggle ladderId={params.id} userId={user.id} />
                   )}
 
                   {/* My Actions - Single unified card for user's pending items */}

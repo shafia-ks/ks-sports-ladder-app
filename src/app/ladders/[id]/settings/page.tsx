@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { HelpTooltip } from "@/components/ui/tooltip";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useAuth } from "@/lib/auth/auth-context";
+import { InactivitySettingsForm } from "@/features/inactivity/components/InactivitySettingsForm";
 
 interface LadderMember {
   id: string;
@@ -485,6 +486,17 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                 </button>
               </div>
             </form>
+
+            {/* Inactivity & Leave Settings */}
+            <div className="card space-y-6 p-5">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Inactivity & Leave Settings</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  Configure automatic penalties for inactive players and leave of absence system
+                </p>
+              </div>
+              <InactivitySettingsForm ladderId={params.id} />
+            </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="card p-4">
