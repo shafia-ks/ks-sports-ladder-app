@@ -8,118 +8,73 @@ All database tables, API routes, React Query hooks, and TypeScript types are com
 
 ## ✅ Phase 2: UI Components (COMPLETE)
 
-### **Components Created:**
-
-#### **1. InactivitySettingsForm.tsx** ✅
-**Location:** `src/features/inactivity/components/InactivitySettingsForm.tsx`  
-**Features:**
-- ✅ Master toggle for inactivity system
-- ✅ Calculation method selection (rolling days / calendar month)
-- ✅ Threshold and grace period configuration
-- ✅ Penalty type and severity settings
-- ✅ Protection floor configuration
-- ✅ Notification settings
-- ✅ Leave system limits (max uses per type)
-- ✅ Dark mode support
-- ✅ Form validation and error handling
-
-**Integration:** Ready to add to Ladder Settings page
+All UI components created and fully functional with dark mode support.
 
 ---
 
-#### **2. LeaveToggle.tsx** ✅
-**Location:** `src/features/inactivity/components/LeaveToggle.tsx`  
-**Features:**
-- ✅ Current leave status display with icons
-- ✅ Toggle leave on/off
-- ✅ Leave type selection (vacation, injury, work/travel, personal)
-- ✅ Usage tracking with remaining counts
-- ✅ Optional reason field
-- ✅ Expandable UI
-- ✅ Validation against usage limits
-- ✅ Dark mode support
+## ✅ Phase 3: Integration (COMPLETE)
 
-**Integration:** Ready to add to Player Dashboard
+### **Completed Integrations:**
 
----
+#### **1. Ladder Settings Page** ✅
+**Location:** `src/app/ladders/[id]/settings/page.tsx`  
+**Integration:**
+- Added InactivitySettingsForm component
+- New "Inactivity & Leave Settings" section
+- Organizers can configure all settings via UI
 
-#### **3. LeaveStatusBadge.tsx** ✅
-**Location:** `src/features/inactivity/components/LeaveStatusBadge.tsx`  
-**Features:**
-- ✅ Small badge showing "🏖️ On Leave"
-- ✅ Different icons for each leave type
-- ✅ Tooltip with leave details
-- ✅ Responsive sizing (sm/md)
+#### **2. Ladder Dashboard** ✅
+**Location:** `src/app/ladders/[id]/page.tsx`  
+**Integration:**
+- Added LeaveToggle component
+- Shows after HeroStats for members
+- Players can manage leave status
 
-**Integration:** Ready for Rankings page and member lists
-
----
-
-#### **4. InactivityWarningBadge.tsx** ✅
-**Location:** `src/features/inactivity/components/InactivityWarningBadge.tsx`  
-**Features:**
-- ✅ Shows "⚠️ Inactive X days"
-- ✅ Color-coded urgency (yellow/red)
-- ✅ Tooltip with penalty countdown
-- ✅ Auto-hides if not close to penalty
-
-**Integration:** Ready for Rankings page
+#### **3. Rankings Page** ✅
+**Location:** `src/app/ladders/[id]/page.tsx`  
+**Integration:**
+- Created MemberInactivityBadges helper component
+- Shows LeaveStatusBadge for players on leave
+- Shows InactivityWarningBadge for players nearing penalty
+- Automatically calculates days inactive
+- Displays in rankings table after status badges
 
 ---
 
-## 🚧 Phase 3: Integration & Logic (NEXT)
+## 🚧 Phase 4: Business Logic (NEXT)
 
-### **Tasks:**
+### **Tasks Remaining:**
 
-1. **Integrate InactivitySettingsForm into Ladder Settings** 🔜
-   - Add new "Inactivity & Leave" tab to ladder settings page
-   - Wire up the form component
-   - Test save/load functionality
+1. **Challenge Validation** 🔜
+   - Prevent challenges if player is on leave
+   - Update challenge creation logic
+   - Add appropriate error messages
 
-2. **Integrate LeaveToggle into Player Dashboard** 🔜
-   - Add to player dashboard or profile page
-   - Ensure proper user context (only show for current user)
-
-3. **Add Badges to Rankings Page** 🔜
-   - Show LeaveStatusBadge for players on leave
-   - Show InactivityWarningBadge for players nearing penalty
-   - Calculate days inactive for each player
-
-4. **Implement Penalty Calculation Logic** 🔜
+2. **Penalty Calculation Logic** 🔜
    - Create `calculateInactivityPenalty.ts` utility
-   - Handle all penalty types (rank drop, percentage, points, etc.)
+   - Implement all penalty types:
+     - Rank drop
+     - Percentage drop
+     - Point deduction
+     - Relegation
+     - Removal
    - Apply protection floor logic
    - Handle edge cases (bottom of ladder, etc.)
 
-5. **Update Challenge Validation** 🔜
-   - Prevent challenges if player is on leave
-   - Show appropriate error messages
-
-6. **Create Notification System** 🔜
+3. **Notification System** 🔜
    - Warning notifications (X days before penalty)
    - Penalty applied notifications
    - Leave status change notifications
 
----
-
-## 🚧 Phase 4: Cron Job & Automation (FINAL)
-
-### **Tasks:**
-
-1. **Create Daily Cron Job**
-   - Check all ladders for inactive players
+4. **Cron Job** (Phase 5) 🔜
+   - Daily automated checks
    - Apply penalties where needed
    - Send notifications
    - Update tracking data
 
-2. **Testing & Refinement**
-   - Test all scenarios
-   - Edge case handling
-   - Performance optimization
-
 ---
 
-## 📋 Files Created:
+## 📋 Files Created/Modified:
 
 ### Phase 1 (Database & API):
 ```
@@ -142,6 +97,12 @@ All database tables, API routes, React Query hooks, and TypeScript types are com
 ✅ src/features/inactivity/components/InactivityWarningBadge.tsx
 ```
 
+### Phase 3 (Integration):
+```
+✅ src/app/ladders/[id]/settings/page.tsx (modified)
+✅ src/app/ladders/[id]/page.tsx (modified - dashboard & rankings)
+```
+
 ---
 
 ## 🎯 Current Status:
@@ -150,31 +111,43 @@ All database tables, API routes, React Query hooks, and TypeScript types are com
 - Database schema deployed
 - API routes working
 - React Query hooks ready
-- Build passing
-- Type check passing
 
 **Phase 2: COMPLETE ✅**
 - All UI components created
 - Properly typed
 - Dark mode support
-- Ready for integration
 
-**Phase 3: STARTING NOW 🚀**
-- Integrate components into pages
-- Implement penalty calculation logic
-- Add challenge validation
-- Create notification system
+**Phase 3: COMPLETE ✅**
+- Settings page integration ✅
+- Dashboard integration ✅
+- Rankings page integration ✅
+- All badges displaying correctly ✅
 
----
-
-## 📝 Next Steps:
-
-1. Find and update ladder settings page to add "Inactivity & Leave" tab
-2. Find and update player dashboard to add LeaveToggle
-3. Update rankings page to show badges
-4. Implement penalty calculation logic
-5. Create cron job for daily checks
+**Phase 4: STARTING NOW 🚀**
+- Challenge validation
+- Penalty calculation logic
+- Notification system
 
 ---
 
-**Status:** Phase 2 complete, ready for Phase 3 (Integration & Logic) 🚀
+## 📝 What's Working Right Now:
+
+1. **Organizers** can configure inactivity settings via UI
+2. **Players** can toggle leave status via dashboard
+3. **Rankings** show leave badges and inactivity warnings
+4. **Leave usage** is tracked and validated
+5. **Database** tracks all inactivity data
+6. **API** handles all CRUD operations
+
+---
+
+## 📝 What's Left to Build:
+
+1. **Challenge validation** - Block challenges for players on leave
+2. **Penalty calculation** - Calculate and apply penalties
+3. **Notifications** - Warn players before penalties
+4. **Cron job** - Automate daily checks
+
+---
+
+**Status:** Phase 3 complete! All UI integrated and functional. Ready for Phase 4 (Business Logic). 🚀

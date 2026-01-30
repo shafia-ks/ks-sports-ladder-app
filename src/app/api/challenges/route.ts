@@ -118,6 +118,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
   }
 
+  // Check if either player is on leave
+  const { data: challengerTracking } = await supabaseAdmin
+    .from("member_inactivity_tracking")
+    .select("on_leave, leave_type")
+    .eq("ladder_id", parsed.data.ladderId)
+    .eq("user_id", parsed.data.challengerId)
+    .single();
+
+  const { data: challengedTracking } = await supabaseAdmin
+    .from("member_inactivity_tracking")
+    .select("on_leave, leave_type")
+    .eq("ladder_id", parsed.data.ladderId)
+    .eq("user_id", parsed.data.challengedId)
+    .single();
+
+  if (challengerTracking?.on_leave) {
+    return NextResponse.json({
+      error: "You are currently on leave. Please end your leave before creating challenges."
+    }, { status: 422 });
+  }
+
+  if (challengedTracking?.on_leave) {
+    return NextResponse.json({
+      error: "This player is currently on leave and cannot be challenged."
+    }, { status: 422 });
+  }
+
   // Cooling period is handled by the database trigger (prevent_challenge_if_busy)
   // which checks ladder_memberships.cooling_expires_at
 
