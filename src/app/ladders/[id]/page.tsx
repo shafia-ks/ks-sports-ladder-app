@@ -1593,7 +1593,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                     Configure penalties for inactive players and the leave of absence system.
                     These settings are managed separately from general ladder settings.
                   </div>
-                  <InactivitySettingsForm ladderId={params.id} />
+                  <InactivitySettingsForm ladderId={params.id} isEditing={isEditingSettings} />
                 </div>
 
                 {/* Danger Zone */}
