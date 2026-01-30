@@ -134,42 +134,58 @@ export async function GET(req: Request) {
         }
 
         // 7. Get Pending Organizer Requests
-        if (isAdmin) {
-            // Admin sees ALL pending requests
-            const { data: orgRequests } = await adminClient
-                .from("leader_requests")
-                .select(`
-                    id,
-                    user_id,
-                    ladder_id,
-                    created_at,
-                    ladders (name)
-                `)
-                .eq("status", "pending");
+        // Strategy: Run explicit Organizer query AND Global Admin query if applicable.
+        // This ensures that even if Global Admin query fails (e.g. RLS issues), the Organizer query succeeds.
+        const requestQueries: Promise<any>[] = [];
 
-            orgRequests?.forEach(req => {
-                if (req.user_id) userIds.add(req.user_id);
-            });
-            pendingOrganizerRequests = orgRequests || [];
-        } else if (organizedLadderIds.length > 0) {
-            // Organizer sees requests for THEIR ladders
-            const { data: orgRequests } = await adminClient
-                .from("leader_requests")
-                .select(`
-                    id,
-                    user_id,
-                    ladder_id,
-                    created_at,
-                    ladders (name)
-                `)
-                .in("ladder_id", organizedLadderIds)
-                .eq("status", "pending");
-
-            orgRequests?.forEach(req => {
-                if (req.user_id) userIds.add(req.user_id);
-            });
-            pendingOrganizerRequests = orgRequests || [];
+        // Query A: Organizer Scope - Fetch requests specifically for ladders they organize
+        if (organizedLadderIds.length > 0) {
+            requestQueries.push(
+                adminClient
+                    .from("leader_requests")
+                    .select(`
+                        id,
+                        user_id,
+                        ladder_id,
+                        created_at,
+                        ladders (name)
+                    `)
+                    .in("ladder_id", organizedLadderIds)
+                    .eq("status", "pending")
+                    .then((res: any) => res.data || [])
+            );
         }
+
+        // Query B: Admin Scope - Fetch ALL pending requests globally
+        if (isAdmin) {
+            requestQueries.push(
+                adminClient
+                    .from("leader_requests")
+                    .select(`
+                        id,
+                        user_id,
+                        ladder_id,
+                        created_at,
+                        ladders (name)
+                    `)
+                    .eq("status", "pending")
+                    .then((res: any) => res.data || [])
+            );
+        }
+
+        // Execute queries and merge results
+        const results = await Promise.all(requestQueries);
+        const requestMap = new Map();
+
+        results.flat().forEach((req: any) => {
+            // Use map to deduplicate by ID since Admin query might return same rows as Organizer query
+            if (!requestMap.has(req.id)) {
+                requestMap.set(req.id, req);
+                if (req.user_id) userIds.add(req.user_id);
+            }
+        });
+
+        pendingOrganizerRequests = Array.from(requestMap.values());
 
         // 8. Fetch Users manually (Use Admin Client to ensure we get names)
         // Even if RLS hides profiles, we need names for the dashboard cards.
