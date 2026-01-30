@@ -20,6 +20,7 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType>("vacation");
     const [reason, setReason] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     const handleToggleLeave = async () => {
         if (tracking?.on_leave) {
@@ -29,13 +30,15 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
             });
             setIsExpanded(false);
         } else {
-            // Start leave
+            // Start break
             await toggleLeave.mutateAsync({
                 on_leave: true,
                 leave_type: selectedLeaveType,
                 reason: reason || undefined,
+                leave_ends_at: endDate ? new Date(endDate).toISOString() : undefined,
             });
             setReason("");
+            setEndDate("");
             setIsExpanded(false);
         }
     };
@@ -79,15 +82,22 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
                         : "bg-orange-600 hover:bg-orange-700 text-white"
                         }`}
                 >
-                    {isOnLeave ? "Return from Leave" : "Take Leave"}
+                    {isOnLeave ? "End Break" : "Take Break"}
                 </button>
             </div>
 
-            {isOnLeave && tracking.leave_reason && (
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Reason:</span> {tracking.leave_reason}
-                    </p>
+            {isOnLeave && (
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md space-y-2">
+                    {tracking.leave_reason && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="font-medium">Reason:</span> {tracking.leave_reason}
+                        </p>
+                    )}
+                    {tracking.leave_ends_at && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="font-medium">Ends on:</span> {new Date(tracking.leave_ends_at).toLocaleDateString()}
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -95,7 +105,7 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
                 <div className="mt-6 space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Leave Type
+                            Break Type
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             {(["vacation", "injury", "work_travel", "personal"] as LeaveType[]).map((type) => {
@@ -144,6 +154,22 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
                         />
                     </div>
 
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Automatically End Break On (Optional)
+                        </label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            min={new Date().toISOString().split('T')[0]}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Your status will automatically revert to Active on this date.
+                        </p>
+                    </div>
+
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
                         <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
                             What happens when you're on leave?
@@ -169,7 +195,7 @@ export function LeaveToggle({ ladderId, userId }: LeaveToggleProps) {
                             disabled={toggleLeave.isPending}
                             className="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {toggleLeave.isPending ? "Starting Leave..." : "Start Leave"}
+                            {toggleLeave.isPending ? "Starting Break..." : "Start Break"}
                         </button>
                     </div>
 

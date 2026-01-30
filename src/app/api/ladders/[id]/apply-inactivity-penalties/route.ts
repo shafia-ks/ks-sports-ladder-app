@@ -62,6 +62,7 @@ export async function POST(
         member_inactivity_tracking (
           last_match_completed_at,
           on_leave,
+          leave_ends_at,
           penalty_count
         )
       `)
@@ -95,6 +96,42 @@ export async function POST(
                 : member.member_inactivity_tracking;
 
             // Skip if on leave
+            // Check for expired leave
+            if (tracking?.on_leave && tracking?.leave_ends_at) {
+                const leaveEnds = new Date(tracking.leave_ends_at);
+                const now = new Date();
+
+                // If leave has expired (end of the day specified)
+                // We assume leave_ends_at is valid timestamp.
+                if (now > leaveEnds) {
+                    console.log(`Ending expired leave for user ${member.user_id}`);
+
+                    // 1. Update tracking
+                    await supabaseAdmin
+                        .from("member_inactivity_tracking")
+                        .update({
+                            on_leave: false,
+                            leave_ends_at: null,
+                            leave_type: null,
+                            leave_reason: null
+                        })
+                        .eq("ladder_id", ladderId)
+                        .eq("user_id", member.user_id);
+
+                    // 2. Update history (close open record)
+                    await supabaseAdmin
+                        .from("member_leave_history")
+                        .update({ ended_at: new Date().toISOString() })
+                        .eq("user_id", member.user_id)
+                        .eq("ladder_id", ladderId)
+                        .is("ended_at", null);
+
+                    // Update local state to allow processing (optional: or skip this run to be safe)
+                    tracking.on_leave = false;
+                }
+            }
+
+            // Skip if still on leave
             if (tracking?.on_leave) {
                 continue;
             }

@@ -25,7 +25,7 @@ export async function POST(
 
         // Get request body
         const body = await request.json();
-        const { on_leave, leave_type, reason } = body;
+        const { on_leave, leave_type, reason, leave_ends_at } = body;
 
         if (on_leave) {
             // Going on leave - check usage limits
@@ -83,6 +83,7 @@ export async function POST(
                     leave_type,
                     leave_started_at: new Date().toISOString(),
                     leave_reason: reason || null,
+                    leave_ends_at: leave_ends_at || null,
                 })
                 .eq("ladder_id", ladderId)
                 .eq("user_id", userId)
@@ -136,6 +137,7 @@ export async function POST(
                     leave_type: null,
                     leave_started_at: null,
                     leave_reason: null,
+                    leave_ends_at: null,
                 })
                 .eq("ladder_id", ladderId)
                 .eq("user_id", userId)

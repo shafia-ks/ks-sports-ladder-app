@@ -284,6 +284,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
 
   // Update URL when tab changes
   const handleTabChange = (newTab: "dashboard" | "ranking" | "challenges" | "matches" | "settings") => {
+    setIsEditingSettings(false);
     setTab(newTab);
     const params = new URLSearchParams(searchParams?.toString() || '');
     if (newTab === "dashboard") {
@@ -429,6 +430,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       setFixingRanks(false);
     }
   };
+
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -1391,6 +1393,15 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         className="btn btn-primary btn-sm"
                       >
                         Edit
+                      </button>
+                    )}
+                    {isEditingSettings && !settingsSuccess && !savingSettings && (
+                      <button
+                        type="button"
+                        onClick={handleCancelSettings}
+                        className="btn btn-sm border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Cancel Edit
                       </button>
                     )}
                     {savingSettings && (

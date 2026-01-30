@@ -68,6 +68,7 @@ export interface MemberInactivityTracking {
     on_leave: boolean;
     leave_type: LeaveType | null;
     leave_started_at: string | null;
+    leave_ends_at: string | null; // Optional return date
     leave_reason: string | null;
 
     // Penalty history
@@ -124,6 +125,7 @@ export interface LeaveToggleRequest {
     on_leave: boolean;
     leave_type?: LeaveType;
     reason?: string;
+    leave_ends_at?: string;
 }
 
 export interface InactivityCheckResult {
