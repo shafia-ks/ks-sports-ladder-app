@@ -58,6 +58,7 @@ export function useSubmitMatch() {
       client.invalidateQueries({ queryKey: ["matches"] });
       client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
@@ -92,6 +93,7 @@ export function useCancelMatch() {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-matches"] });
       queryClient.invalidateQueries({ queryKey: ["pendingActions"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       queryClient.invalidateQueries({ queryKey: ["challenges"] });
       queryClient.invalidateQueries({ queryKey: ["ladder"] });
       queryClient.invalidateQueries({ queryKey: ["smart-targets"] });
@@ -127,6 +129,7 @@ export function useConfirmMatch() {
       client.invalidateQueries({ queryKey: ["matches"] });
       client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
@@ -160,6 +163,7 @@ export function useSubmitScore() {
       client.invalidateQueries({ queryKey: ["matches"] });
       client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });

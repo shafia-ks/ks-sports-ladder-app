@@ -36,6 +36,7 @@ export function useCreateChallenge() {
       // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
       client.invalidateQueries({ queryKey: ["smart-targets"] });
     },
@@ -61,6 +62,7 @@ export function useRespondToChallenge() {
       // Invalidate all related queries
       client.invalidateQueries({ queryKey: ["challenges"] });
       client.invalidateQueries({ queryKey: ["pendingActions"] });
+      client.invalidateQueries({ queryKey: ["pendingActions_v2"] });
       client.invalidateQueries({ queryKey: ["matches"] });
       client.invalidateQueries({ queryKey: ["dashboard-matches"] });
       client.invalidateQueries({ queryKey: ["ladder"] });
