@@ -16,7 +16,7 @@ export async function GET(req: Request) {
         const actions: any[] = [];
         const userIds = new Set<string>();
 
-        // 1. Get pending challenges (Raw)
+        // 1. Get pending challenges (RLS is fine here - user involved)
         const { data: challenges, error: challengesError } = await supabase
             .from("challenges")
             .select(`
@@ -33,13 +33,12 @@ export async function GET(req: Request) {
 
         if (challengesError) throw challengesError;
 
-        // Collect challenge user IDs
         challenges?.forEach(c => {
             if (c.challenger_id) userIds.add(c.challenger_id);
             if (c.challenged_id) userIds.add(c.challenged_id);
         });
 
-        // 2. Get matches awaiting score confirmation (Raw)
+        // 2. Get matches awaiting score confirmation (RLS is fine)
         const { data: matches, error: matchesError } = await supabase
             .from("matches")
             .select(`
@@ -56,13 +55,12 @@ export async function GET(req: Request) {
 
         if (matchesError) throw matchesError;
 
-        // Collect match user IDs
         matches?.forEach(m => {
             if (m.player1_id) userIds.add(m.player1_id);
             if (m.player2_id) userIds.add(m.player2_id);
         });
 
-        // 3. Get matches awaiting score submission (Raw)
+        // 3. Get matches awaiting score submission (RLS is fine)
         const { data: pendingMatches, error: pendingError } = await supabase
             .from("matches")
             .select(`
@@ -78,34 +76,45 @@ export async function GET(req: Request) {
 
         if (pendingError) throw pendingError;
 
-        // Collect pending match user IDs
         pendingMatches?.forEach(m => {
             if (m.player1_id) userIds.add(m.player1_id);
             if (m.player2_id) userIds.add(m.player2_id);
         });
 
-        // 4. Check if user is admin (Use Admin Client to ensure we can read the role)
-        const { data: userData } = await supabaseAdmin!
+        // --------------------------------------------------------------------------
+        // ADMIN & ORGANIZER ACTIONS (Bypass RLS using supabaseAdmin if available)
+        // --------------------------------------------------------------------------
+
+        let isAdmin = false;
+        let organizedLadderIds: string[] = [];
+
+        // Use Admin Client for checking roles and organized ladders if available
+        // This ensures we don't return false negatives due to strict RLS
+        const adminClient = supabaseAdmin || supabase;
+
+        // 4. Check if user is admin
+        const { data: userData } = await adminClient
             .from("users")
             .select("is_admin, role")
             .eq("id", userId)
             .single();
 
-        const isAdmin = userData?.is_admin || userData?.role === "admin" || false;
+        isAdmin = userData?.is_admin || userData?.role === "admin" || false;
 
-        // 5. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
-        // Use Admin Client to ensure we find all ladders regardless of RLS
-        const { data: organizedLadders } = await supabaseAdmin!
+        // 5. Get organized ladders
+        const { data: organizedLadders } = await adminClient
             .from("ladder_leaders")
             .select("ladder_id")
             .eq("user_id", userId);
 
-
-        const organizedLadderIds = organizedLadders?.map(l => l.ladder_id) || [];
+        organizedLadderIds = organizedLadders?.map(l => l.ladder_id) || [];
 
         let pendingMemberApprovals: any[] = [];
+        let pendingOrganizerRequests: any[] = [];
+
+        // 6. Get Pending Member Approvals (Organizer Only)
         if (organizedLadderIds.length > 0) {
-            const { data: pendingApprovals } = await supabase
+            const { data: pendingApprovals } = await adminClient
                 .from("ladder_memberships")
                 .select(`
                     id,
@@ -124,13 +133,10 @@ export async function GET(req: Request) {
             pendingMemberApprovals = pendingApprovals || [];
         }
 
-        // 6. Get pending organizer requests
-        // - If admin: show ALL pending organizer requests
-        // - If organizer: show only for ladders they organize
-        let pendingOrganizerRequests: any[] = [];
-        if (isAdmin && supabaseAdmin) {
-            // Admin sees ALL pending organizer requests (use Admin client to bypass RLS)
-            const { data: orgRequests } = await supabaseAdmin
+        // 7. Get Pending Organizer Requests
+        if (isAdmin) {
+            // Admin sees ALL pending requests
+            const { data: orgRequests } = await adminClient
                 .from("leader_requests")
                 .select(`
                     id,
@@ -144,30 +150,10 @@ export async function GET(req: Request) {
             orgRequests?.forEach(req => {
                 if (req.user_id) userIds.add(req.user_id);
             });
-
-            pendingOrganizerRequests = orgRequests || [];
-        } else if (organizedLadderIds.length > 0 && supabaseAdmin) {
-            // Organizer sees only for their ladders (use Admin client to bypass RLS)
-            const { data: orgRequests } = await supabaseAdmin
-                .from("leader_requests")
-                .select(`
-                    id,
-                    user_id,
-                    ladder_id,
-                    created_at,
-                    ladders (name)
-                `)
-                .in("ladder_id", organizedLadderIds)
-                .eq("status", "pending");
-
-            orgRequests?.forEach(req => {
-                if (req.user_id) userIds.add(req.user_id);
-            });
-
             pendingOrganizerRequests = orgRequests || [];
         } else if (organizedLadderIds.length > 0) {
-            // Fallback to RLS if supabaseAdmin missing
-            const { data: orgRequests } = await supabase
+            // Organizer sees requests for THEIR ladders
+            const { data: orgRequests } = await adminClient
                 .from("leader_requests")
                 .select(`
                     id,
@@ -182,19 +168,22 @@ export async function GET(req: Request) {
             orgRequests?.forEach(req => {
                 if (req.user_id) userIds.add(req.user_id);
             });
-
             pendingOrganizerRequests = orgRequests || [];
         }
 
-        // 7. Fetch Users manually
-        const { data: users } = await supabase
+        // 8. Fetch Users manually (Use Admin Client to ensure we get names)
+        // Even if RLS hides profiles, we need names for the dashboard cards.
+        const { data: users } = await adminClient
             .from("users")
             .select("id, full_name, first_name, last_name, email")
             .in("id", Array.from(userIds));
 
         const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
-        // 7. Build Actions List
+
+        // --------------------------------------------------------------------------
+        //  Build Actions List
+        // --------------------------------------------------------------------------
 
         // Challenges
         if (challenges) {
