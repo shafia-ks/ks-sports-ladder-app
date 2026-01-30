@@ -145,8 +145,27 @@ export async function GET(req: Request) {
             });
 
             pendingOrganizerRequests = orgRequests || [];
+        } else if (organizedLadderIds.length > 0 && supabaseAdmin) {
+            // Organizer sees only for their ladders (use Admin client to bypass RLS)
+            const { data: orgRequests } = await supabaseAdmin
+                .from("leader_requests")
+                .select(`
+                    id,
+                    user_id,
+                    ladder_id,
+                    created_at,
+                    ladders (name)
+                `)
+                .in("ladder_id", organizedLadderIds)
+                .eq("status", "pending");
+
+            orgRequests?.forEach(req => {
+                if (req.user_id) userIds.add(req.user_id);
+            });
+
+            pendingOrganizerRequests = orgRequests || [];
         } else if (organizedLadderIds.length > 0) {
-            // Organizer sees only for their ladders
+            // Fallback to RLS if supabaseAdmin missing
             const { data: orgRequests } = await supabase
                 .from("leader_requests")
                 .select(`
