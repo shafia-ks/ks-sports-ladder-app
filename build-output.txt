@@ -1,0 +1,49 @@
+﻿
+> ks-sports-ladder-app@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+  - Environments: .env.local
+  - Experiments (use with caution):
+    ┬╖ typedRoutes
+
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:St 
+   ring) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+> Build error occurred
+Error: You cannot use different slug names for 
+the same dynamic path ('id' !== 'ladderId').
+    at handleSlug (D:\Application\ks-sports-ladde
+r-app\node_modules\next\dist\shared\lib\router\ut
+ils\sorted-routes.js:94:31)
+    at UrlNode._insert (D:\Application\ks-sports-
+ladder-app\node_modules\next\dist\shared\lib\rout
+er\utils\sorted-routes.js:131:17)
+    at UrlNode._insert (D:\Application\ks-sports-
+ladder-app\node_modules\next\dist\shared\lib\rout
+er\utils\sorted-routes.js:142:40)
+    at UrlNode._insert (D:\Application\ks-sports-
+ladder-app\node_modules\next\dist\shared\lib\rout
+er\utils\sorted-routes.js:142:40)
+    at UrlNode.insert (D:\Application\ks-sports-l
+adder-app\node_modules\next\dist\shared\lib\route
+r\utils\sorted-routes.js:13:14)
+    at D:\Application\ks-sports-ladder-app\node_m
+odules\next\dist\shared\lib\router\utils\sorted-r
+outes.js:165:46
+    at Array.forEach (<anonymous>)
+    at getSortedRoutes (D:\Application\ks-sports-
+ladder-app\node_modules\next\dist\shared\lib\rout
+er\utils\sorted-routes.js:165:21)
+    at D:\Application\ks-sports-ladder-app\node_m
+odules\next\dist\build\index.js:625:65
+    at Span.traceFn (D:\Application\ks-sports-lad
+der-app\node_modules\next\dist\trace\trace.js:147
+:20)
