@@ -24,6 +24,10 @@ import { HeroStats } from "@/features/ladders/components/dashboard/HeroStats";
 import { Top5Rankings } from "@/features/ladders/components/dashboard/Top5Rankings";
 import { LadderInfoSidebar } from "@/features/ladders/components/dashboard/LadderInfoSidebar";
 import { LeaveToggle } from "@/features/inactivity/components/LeaveToggle";
+import { LeaveStatusBadge } from "@/features/inactivity/components/LeaveStatusBadge";
+import { InactivityWarningBadge } from "@/features/inactivity/components/InactivityWarningBadge";
+import { useMemberTracking } from "@/features/inactivity/api/useLeaveManagement";
+import { useInactivitySettings } from "@/features/inactivity/api/useInactivitySettings";
 import { MyActionsCard } from "@/features/ladders/components/dashboard/MyActionsCard";
 import { ActivityHub } from "@/features/ladders/components/dashboard/ActivityHub";
 import { OrganizerActionBanner } from "@/features/ladders/components/dashboard/OrganizerActionBanner";
@@ -117,6 +121,51 @@ interface LadderResponse {
   error?: string;
 }
 
+// Helper component to display inactivity badges for a member
+function MemberInactivityBadges({
+  ladderId,
+  userId
+}: {
+  ladderId: string;
+  userId: string;
+}) {
+  const { data: trackingData } = useMemberTracking(ladderId, userId);
+  const { data: settingsData } = useInactivitySettings(ladderId);
+
+  const tracking = trackingData;
+  const settings = settingsData;
+
+  if (!tracking || !settings?.enabled) return null;
+
+  // Show leave badge if on leave
+  if (tracking.on_leave && tracking.leave_type && tracking.leave_started_at) {
+    return (
+      <LeaveStatusBadge
+        leaveType={tracking.leave_type}
+        leaveStartedAt={tracking.leave_started_at}
+        leaveReason={tracking.leave_reason}
+        size="sm"
+      />
+    );
+  }
+
+  // Calculate days inactive
+  if (tracking.last_match_completed_at) {
+    const lastMatch = new Date(tracking.last_match_completed_at);
+    const now = new Date();
+    const daysInactive = Math.floor((now.getTime() - lastMatch.getTime()) / (1000 * 60 * 60 * 24));
+
+    return (
+      <InactivityWarningBadge
+        daysInactive={daysInactive}
+        thresholdDays={settings.threshold_days}
+        size="sm"
+      />
+    );
+  }
+
+  return null;
+}
 
 
 export default function LadderDetailPage({ params }: { params: { id: string } }) {
@@ -1271,6 +1320,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                         Available
                                       </span>
                                     )}
+                                    {/* Inactivity & Leave Badges */}
+                                    <MemberInactivityBadges ladderId={params.id} userId={member.user_id} />
                                   </div>
                                 </div>
                               </div>
