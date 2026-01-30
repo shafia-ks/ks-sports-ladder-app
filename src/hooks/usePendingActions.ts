@@ -29,6 +29,6 @@ export function usePendingActions() {
         queryKey: ["pendingActions_v2", user?.id],
         queryFn: () => fetchPendingActions(user!.id),
         enabled: !!user?.id,
-        staleTime: 60 * 1000, // 1 minute cache
+        staleTime: 0, // Always fetch fresh data to sync with PWA/other devices
     });
 }
