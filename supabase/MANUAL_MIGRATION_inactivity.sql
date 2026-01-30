@@ -166,6 +166,7 @@ ALTER TABLE inactivity_penalty_log ENABLE ROW LEVEL SECURITY;
 -- Step 6: Create RLS Policies
 -- ============================================
 
+-- ladder_inactivity_settings policies
 DROP POLICY IF EXISTS "Anyone can view inactivity settings" ON ladder_inactivity_settings;
 CREATE POLICY "Anyone can view inactivity settings"
   ON ladder_inactivity_settings FOR SELECT
@@ -182,8 +183,18 @@ CREATE POLICY "Organizers can manage inactivity settings"
     )
     OR
     public.is_admin()
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM ladder_leaders
+      WHERE ladder_leaders.ladder_id = ladder_inactivity_settings.ladder_id
+      AND ladder_leaders.user_id = auth.uid()
+    )
+    OR
+    public.is_admin()
   );
 
+-- member_inactivity_tracking policies
 DROP POLICY IF EXISTS "Anyone can view inactivity tracking" ON member_inactivity_tracking;
 CREATE POLICY "Anyone can view inactivity tracking"
   ON member_inactivity_tracking FOR SELECT
@@ -198,8 +209,10 @@ CREATE POLICY "Users can update their own leave status"
 DROP POLICY IF EXISTS "System can manage inactivity tracking" ON member_inactivity_tracking;
 CREATE POLICY "System can manage inactivity tracking"
   ON member_inactivity_tracking FOR ALL
-  USING (true);
+  USING (true)
+  WITH CHECK (true);
 
+-- member_leave_history policies
 DROP POLICY IF EXISTS "Users can view their own leave history" ON member_leave_history;
 CREATE POLICY "Users can view their own leave history"
   ON member_leave_history FOR SELECT
@@ -219,8 +232,10 @@ CREATE POLICY "Organizers can view leave history for their ladders"
 DROP POLICY IF EXISTS "System can manage leave history" ON member_leave_history;
 CREATE POLICY "System can manage leave history"
   ON member_leave_history FOR ALL
-  USING (true);
+  USING (true)
+  WITH CHECK (true);
 
+-- inactivity_penalty_log policies
 DROP POLICY IF EXISTS "Users can view their own penalty log" ON inactivity_penalty_log;
 CREATE POLICY "Users can view their own penalty log"
   ON inactivity_penalty_log FOR SELECT
@@ -240,7 +255,7 @@ CREATE POLICY "Organizers can view penalty logs for their ladders"
 DROP POLICY IF EXISTS "System can create penalty logs" ON inactivity_penalty_log;
 CREATE POLICY "System can create penalty logs"
   ON inactivity_penalty_log FOR INSERT
-  USING (true);
+  WITH CHECK (true);
 
 -- ============================================
 -- MIGRATION COMPLETE!
