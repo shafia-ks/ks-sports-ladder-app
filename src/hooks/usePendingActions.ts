@@ -26,7 +26,7 @@ export function usePendingActions() {
     const { user } = useAuth();
 
     return useQuery({
-        queryKey: ["pendingActions", user?.id],
+        queryKey: ["pendingActions_v2", user?.id],
         queryFn: () => fetchPendingActions(user!.id),
         enabled: !!user?.id,
         staleTime: 60 * 1000, // 1 minute cache

@@ -44,13 +44,15 @@ export function ActionRequiredWidget() {
         const channel = supabase
             .channel('action-required-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges', filter: `challenged_id=eq.${user.id}` },
-                () => queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] }))
+                () => queryClient.invalidateQueries({ queryKey: ["pendingActions_v2", user.id] }))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `player1_id=eq.${user.id}` },
-                () => queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] }))
+                () => queryClient.invalidateQueries({ queryKey: ["pendingActions_v2", user.id] }))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `player2_id=eq.${user.id}` },
-                () => queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] }))
+                () => queryClient.invalidateQueries({ queryKey: ["pendingActions_v2", user.id] }))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ladder_memberships' },
-                () => queryClient.invalidateQueries({ queryKey: ["pendingActions", user.id] }))
+                () => queryClient.invalidateQueries({ queryKey: ["pendingActions_v2", user.id] }))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'leader_requests' },
+                () => queryClient.invalidateQueries({ queryKey: ["pendingActions_v2", user.id] }))
             .subscribe();
 
         return () => {
