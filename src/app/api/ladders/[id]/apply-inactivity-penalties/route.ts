@@ -6,11 +6,15 @@ import {
     isInGracePeriod,
     shouldSendWarning
 } from "@/features/inactivity/utils/penaltyCalculation";
+import {
+    sendInactivityWarning,
+    sendPenaltyApplied
+} from "@/features/inactivity/utils/notifications";
 import { LadderInactivitySettings } from "@/types/inactivity";
 
 /**
  * POST /api/ladders/[id]/apply-inactivity-penalties
- * 
+ *
  * Applies inactivity penalties to all eligible members of a ladder.
  * This should be called by a cron job daily.
  */
@@ -75,6 +79,15 @@ export async function POST(
         const penaltiesApplied: string[] = [];
         const warningsSent: string[] = [];
 
+        // Get ladder name for notifications
+        const { data: ladder } = await supabaseAdmin
+            .from("ladders")
+            .select("name")
+            .eq("id", ladderId)
+            .single();
+
+        const ladderName = ladder?.name || "Unknown Ladder";
+
         // Process each member
         for (const member of members) {
             const tracking = Array.isArray(member.member_inactivity_tracking)
@@ -97,7 +110,15 @@ export async function POST(
             // Check if should send warning
             if (settings.notify_before_penalty && settings.notification_days_before) {
                 if (shouldSendWarning(daysInactive, settings.threshold_days, settings.notification_days_before)) {
-                    // TODO: Send notification
+                    const daysUntilPenalty = settings.threshold_days - daysInactive;
+                    await sendInactivityWarning({
+                        userId: member.user_id,
+                        ladderName,
+                        daysInactive,
+                        daysUntilPenalty,
+                        penaltyType: settings.penalty_type,
+                        penaltySeverity: settings.penalty_severity,
+                    });
                     warningsSent.push(member.user_id);
                 }
             }
@@ -159,6 +180,16 @@ export async function POST(
                     })
                     .eq("ladder_id", ladderId)
                     .eq("user_id", member.user_id);
+
+                // Send penalty notification
+                await sendPenaltyApplied({
+                    userId: member.user_id,
+                    ladderName,
+                    penaltyType: settings.penalty_type,
+                    rankBefore: member.current_rank!,
+                    rankAfter: penaltyResult.newRank,
+                    daysInactive,
+                });
 
                 penaltiesApplied.push(member.user_id);
             }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendLeaveStatusChange } from "@/features/inactivity/utils/notifications";
 
 export async function POST(
     request: NextRequest,
@@ -102,6 +103,21 @@ export async function POST(
                 reason: reason || null,
             });
 
+            // Get ladder name for notification
+            const { data: ladder } = await supabase
+                .from("ladders")
+                .select("name")
+                .eq("id", ladderId)
+                .single();
+
+            // Send notification
+            await sendLeaveStatusChange({
+                userId,
+                ladderName: ladder?.name || "Unknown Ladder",
+                onLeave: true,
+                leaveType: leave_type,
+            });
+
             return NextResponse.json({ tracking }, { status: 200 });
         } else {
             // Returning from leave
@@ -141,6 +157,20 @@ export async function POST(
                     .eq("started_at", currentTracking.leave_started_at)
                     .is("ended_at", null);
             }
+
+            // Get ladder name for notification
+            const { data: ladder } = await supabase
+                .from("ladders")
+                .select("name")
+                .eq("id", ladderId)
+                .single();
+
+            // Send notification
+            await sendLeaveStatusChange({
+                userId,
+                ladderName: ladder?.name || "Unknown Ladder",
+                onLeave: false,
+            });
 
             return NextResponse.json({ tracking }, { status: 200 });
         }
