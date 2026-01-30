@@ -84,8 +84,8 @@ export async function GET(req: Request) {
             if (m.player2_id) userIds.add(m.player2_id);
         });
 
-        // 4. Check if user is admin
-        const { data: userData } = await supabase
+        // 4. Check if user is admin (Use Admin Client to ensure we can read the role)
+        const { data: userData } = await supabaseAdmin!
             .from("users")
             .select("is_admin, role")
             .eq("id", userId)
@@ -94,7 +94,8 @@ export async function GET(req: Request) {
         const isAdmin = userData?.is_admin || userData?.role === "admin" || false;
 
         // 5. Get pending member approvals for ladders user organizes (ORGANIZER ACTIONS)
-        const { data: organizedLadders } = await supabase
+        // Use Admin Client to ensure we find all ladders regardless of RLS
+        const { data: organizedLadders } = await supabaseAdmin!
             .from("ladder_leaders")
             .select("ladder_id")
             .eq("user_id", userId);
