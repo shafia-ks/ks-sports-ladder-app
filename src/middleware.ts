@@ -74,9 +74,9 @@ export async function middleware(req: NextRequest) {
   if (pathname === '/') {
     if (user) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
-    } else {
-      return NextResponse.redirect(new URL('/login', req.url));
     }
+    // Allow public access to landing page
+    return response;
   }
 
   // Redirect authenticated users away from auth pages
