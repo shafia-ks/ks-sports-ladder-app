@@ -78,6 +78,13 @@ export async function GET() {
       .limit(5),
   ]);
 
+  if (membershipsResult.error) console.error("[dashboard] memberships:", membershipsResult.error.message);
+  if (pendingChallengesResult.error) console.error("[dashboard] pendingChallenges:", pendingChallengesResult.error.message);
+  if (pendingMatchesResult.error) console.error("[dashboard] pendingMatches:", pendingMatchesResult.error.message);
+  if (upcomingMatchesResult.error) console.error("[dashboard] upcomingMatches:", upcomingMatchesResult.error.message);
+  if (recentActivityResult.error) console.error("[dashboard] recentActivity:", recentActivityResult.error.message);
+  if (invitationsResult.error) console.error("[dashboard] invitations:", invitationsResult.error.message);
+
   return NextResponse.json({
     memberships: membershipsResult.data ?? [],
     pendingChallenges: pendingChallengesResult.data ?? [],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { Plus, Minus } from "lucide-react";
 
@@ -30,6 +30,12 @@ export function ScoreSubmitModal({
         { p1: "", p2: "" },
         { p1: "", p2: "" },
     ]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setSets([{ p1: "", p2: "" }, { p1: "", p2: "" }, { p1: "", p2: "" }]);
+        }
+    }, [isOpen]);
 
     const filledSets = sets.filter((s) => s.p1 !== "" && s.p2 !== "");
     const hasTiedSet = filledSets.some((s) => s.p1 === s.p2);
@@ -71,9 +77,7 @@ export function ScoreSubmitModal({
     const handleSubmit = () => {
         const winnerId = calculateWinner();
         if (!winnerId) return;
-        const formattedScores = sets.map(s =>
-            `${s.p1 === "" ? 0 : s.p1}-${s.p2 === "" ? 0 : s.p2}`
-        );
+        const formattedScores = filledSets.map(s => `${s.p1}-${s.p2}`);
         onSubmit({ setScores: formattedScores, winnerId });
     };
 
