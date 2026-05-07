@@ -103,60 +103,89 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
+  }
+
   const json = await req.json();
   const parsed = challengeInput.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.issues }, { status: 400 });
   }
 
-  const errors = validateChallenge(parsed.data);
+  const { ladderId, challengerId, challengedId, challengerRank, challengedRank, rules } = parsed.data;
+
+  // Check leave status for both players in parallel before range validation,
+  // so we can compute the effective range extension from locked players.
+  const [{ data: challengerTracking }, { data: challengedTracking }] = await Promise.all([
+    supabaseAdmin
+      .from("member_inactivity_tracking")
+      .select("on_leave")
+      .eq("ladder_id", ladderId)
+      .eq("user_id", challengerId)
+      .single(),
+    supabaseAdmin
+      .from("member_inactivity_tracking")
+      .select("on_leave")
+      .eq("ladder_id", ladderId)
+      .eq("user_id", challengedId)
+      .single(),
+  ]);
+
+  if (challengerTracking?.on_leave) {
+    return NextResponse.json(
+      { error: "You are currently on leave. Please end your leave before creating challenges." },
+      { status: 422 }
+    );
+  }
+
+  if (challengedTracking?.on_leave) {
+    return NextResponse.json(
+      { error: "This player is currently on leave and cannot be challenged." },
+      { status: 422 }
+    );
+  }
+
+  // Count active members ranked strictly between the two players who are on leave.
+  // Each locked player in the window extends the effective challenge range by 1,
+  // so the challenger retains access to their full configured number of live opponents.
+  const { data: membersInRange } = await supabaseAdmin
+    .from("ladder_memberships")
+    .select("user_id")
+    .eq("ladder_id", ladderId)
+    .eq("status", "active")
+    .gt("current_rank", challengedRank)
+    .lt("current_rank", challengerRank);
+
+  let lockedCount = 0;
+  if (membersInRange && membersInRange.length > 0) {
+    const userIdsInRange = membersInRange.map((m) => m.user_id);
+    const { data: onLeave } = await supabaseAdmin
+      .from("member_inactivity_tracking")
+      .select("user_id")
+      .eq("ladder_id", ladderId)
+      .eq("on_leave", true)
+      .in("user_id", userIdsInRange);
+    lockedCount = onLeave?.length ?? 0;
+  }
+
+  const effectiveMaxPositionsUp = rules.maxPositionsUp + lockedCount;
+
+  const errors = validateChallenge({ ...parsed.data, effectiveMaxPositionsUp });
   if (errors.length) {
     return NextResponse.json({ errors }, { status: 422 });
   }
 
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
-  }
-
-  // Check if either player is on leave
-  const { data: challengerTracking } = await supabaseAdmin
-    .from("member_inactivity_tracking")
-    .select("on_leave, leave_type")
-    .eq("ladder_id", parsed.data.ladderId)
-    .eq("user_id", parsed.data.challengerId)
-    .single();
-
-  const { data: challengedTracking } = await supabaseAdmin
-    .from("member_inactivity_tracking")
-    .select("on_leave, leave_type")
-    .eq("ladder_id", parsed.data.ladderId)
-    .eq("user_id", parsed.data.challengedId)
-    .single();
-
-  if (challengerTracking?.on_leave) {
-    return NextResponse.json({
-      error: "You are currently on leave. Please end your leave before creating challenges."
-    }, { status: 422 });
-  }
-
-  if (challengedTracking?.on_leave) {
-    return NextResponse.json({
-      error: "This player is currently on leave and cannot be challenged."
-    }, { status: 422 });
-  }
-
-  // Cooling period is handled by the database trigger (prevent_challenge_if_busy)
-  // which checks ladder_memberships.cooling_expires_at
-
+  // Cooling period is enforced by the DB trigger (prevent_challenge_if_busy)
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + parsed.data.rules.expiryDays);
+  expiresAt.setDate(expiresAt.getDate() + rules.expiryDays);
 
   const { data, error } = await supabaseAdmin
     .from("challenges")
     .insert({
-      ladder_id: parsed.data.ladderId,
-      challenger_id: parsed.data.challengerId,
-      challenged_id: parsed.data.challengedId,
+      ladder_id: ladderId,
+      challenger_id: challengerId,
+      challenged_id: challengedId,
       status: "Pending",
       expires_at: expiresAt.toISOString(),
     })
@@ -164,38 +193,43 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    // Handle database trigger errors with user-friendly messages
     if (error.message.includes("Challenger is currently busy")) {
-      return NextResponse.json({
-        error: "You are currently busy with another challenge or match. Please complete it before creating a new challenge."
-      }, { status: 422 });
+      return NextResponse.json(
+        { error: "You are currently busy with another challenge or match. Please complete it before creating a new challenge." },
+        { status: 422 }
+      );
     }
     if (error.message.includes("Challenged player is currently busy")) {
-      return NextResponse.json({
-        error: "This player is currently busy with another challenge or match. Please try again later."
-      }, { status: 422 });
+      return NextResponse.json(
+        { error: "This player is currently busy with another challenge or match. Please try again later." },
+        { status: 422 }
+      );
     }
     if (error.message.includes("cooling period")) {
-      return NextResponse.json({
-        error: "You or your opponent are in a cooling period. Please wait before challenging again."
-      }, { status: 422 });
+      return NextResponse.json(
+        { error: "You or your opponent are in a cooling period. Please wait before challenging again." },
+        { status: 422 }
+      );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Audit log
   await createAuditLog({
     entityType: "challenge",
     entityId: data?.id ?? "",
     action: "Challenge created",
-    performedBy: parsed.data.challengerId,
+    performedBy: challengerId,
   });
 
-  // Notify challenged player
-  const ladderResult = await supabaseAdmin.from("ladders").select("name").eq("id", parsed.data.ladderId).single();
+  const ladderResult = await supabaseAdmin
+    .from("ladders")
+    .select("name")
+    .eq("id", ladderId)
+    .single();
+
   await notifyChallenge({
-    challengedId: parsed.data.challengedId,
-    challengerId: parsed.data.challengerId,
+    challengedId,
+    challengerId,
     ladderName: ladderResult.data?.name ?? "Unknown Ladder",
   });
 
