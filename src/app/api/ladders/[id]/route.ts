@@ -121,9 +121,10 @@ export async function GET(
               .in("status", ["Pending", "Submitted"]),
             supabaseAdmin
               .from("member_inactivity_tracking")
-              .select("user_id, on_leave, leave_type")
+              .select("user_id, on_leave, leave_type, leave_started_at")
               .eq("ladder_id", params.id)
               .eq("on_leave", true)
+              .not("leave_started_at", "is", null)
               .in("user_id", allUserIds),
           ]);
 
