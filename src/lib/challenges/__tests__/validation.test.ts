@@ -38,9 +38,10 @@ describe("validateChallenge — range", () => {
   });
 
   it("still blocks when beyond effectiveMaxPositionsUp", () => {
-    // rank 10 vs rank 3 = 7 positions up; effectiveMax = 6 → still blocked
     const ctx = { ...baseCtx, challengedRank: 3, effectiveMaxPositionsUp: 6 };
-    expect(validateChallenge(ctx).length).toBeGreaterThan(0);
+    expect(validateChallenge(ctx)).toContain(
+      "You can only challenge up to 5 positions above your current rank."
+    );
   });
 
   it("error message always shows the rule value, not the effective value", () => {
@@ -48,6 +49,52 @@ describe("validateChallenge — range", () => {
     const errors = validateChallenge(ctx);
     expect(errors).toContain(
       "You can only challenge up to 5 positions above your current rank."
+    );
+  });
+});
+
+describe("validateChallenge — other rules", () => {
+  it("blocks when challenger is banned", () => {
+    const ctx = { ...baseCtx, challengerBanned: true };
+    expect(validateChallenge(ctx)).toContain(
+      "One or both players are not eligible to challenge."
+    );
+  });
+
+  it("blocks when challenged is banned", () => {
+    const ctx = { ...baseCtx, challengedBanned: true };
+    expect(validateChallenge(ctx)).toContain(
+      "One or both players are not eligible to challenge."
+    );
+  });
+
+  it("blocks busy challenged when preventChallengingBusyPlayers is true", () => {
+    const ctx = {
+      ...baseCtx,
+      challengedBusy: true,
+      rules: { ...baseRules, preventChallengingBusyPlayers: true },
+    };
+    expect(validateChallenge(ctx)).toContain(
+      "This player is currently engaged in an ongoing challenge or match."
+    );
+  });
+
+  it("does not block busy challenged when preventChallengingBusyPlayers is false", () => {
+    const ctx = { ...baseCtx, challengedBusy: true };
+    expect(validateChallenge(ctx)).toEqual([]);
+  });
+
+  it("blocks when challenger exceeds maxActiveChallengesPerPlayer", () => {
+    const ctx = { ...baseCtx, challengerActiveChallenges: 2 };
+    expect(validateChallenge(ctx)).toContain(
+      "You already have the maximum number of active challenges for this ladder."
+    );
+  });
+
+  it("blocks when challenged exceeds maxActiveChallengesPerPlayer", () => {
+    const ctx = { ...baseCtx, challengedActiveChallenges: 2 };
+    expect(validateChallenge(ctx)).toContain(
+      "The challenged player has the maximum number of active challenges."
     );
   });
 });

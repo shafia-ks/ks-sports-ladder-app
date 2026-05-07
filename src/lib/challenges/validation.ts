@@ -22,10 +22,6 @@ export function validateChallenge(ctx: ChallengeValidationContext): string[] {
   const errors: string[] = [];
   const rangeLimit = ctx.effectiveMaxPositionsUp ?? ctx.rules.maxPositionsUp;
 
-  if (ctx.challengerRank === ctx.challengedRank) {
-    errors.push("Challenge must involve two different players.");
-  }
-
   const positionsUp = ctx.challengerRank - ctx.challengedRank;
   if (positionsUp < 0) {
     errors.push("You can only challenge players ranked above you.");
