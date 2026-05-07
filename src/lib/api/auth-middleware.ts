@@ -72,7 +72,7 @@ export async function withRateLimit(
     handler: (req: NextRequest) => Promise<NextResponse>
 ): Promise<NextResponse> {
     const ip = getClientIp(req.headers);
-    const rateLimit = await checkRateLimit(limiter, ip);
+    const rateLimit = await checkRateLimit(limiter, ip, "api");
 
     if (!rateLimit.success) {
         return NextResponse.json(
