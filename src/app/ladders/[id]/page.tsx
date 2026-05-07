@@ -86,6 +86,8 @@ interface LadderMember {
   last_rank_change_at?: string;
   cooling_expires_at?: string | null;
   is_busy?: boolean;
+  on_leave?: boolean;
+  leave_type?: string | null;
   users?: {
     id: string;
     full_name: string | null;
@@ -1244,13 +1246,8 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         const targetRank = member.current_rank || 0;
                         const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
 
-                        // Can only challenge if:
-                        // 1. Not yourself
-                        // 2. Target is ranked ABOVE you (lower rank number)
-                        // 3. Within maxPositionsUp limit
-                        // 4. Target is not busy (no active challenges)
-                        // 5. Current user is not busy
-                        // 6. Ladder is active (not inactive)
+                        const isOnLeave = member.on_leave === true;
+                        const isCurrentUserOnLeave = currentMember?.on_leave === true;
                         const isLadderInactive = data?.ladder?.status !== 'active';
                         const canChallenge = !isCurrentUser &&
                           currentUserRank > 0 &&
@@ -1258,8 +1255,10 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                           targetRank < currentUserRank &&
                           (currentUserRank - targetRank) <= maxPositionsUp &&
                           !isBusy &&
+                          !isOnLeave &&
                           !currentMember?.is_busy &&
-                          !isLadderInactive; // Block challenges if ladder is inactive
+                          !isCurrentUserOnLeave &&
+                          !isLadderInactive;
 
                         return (
                           <tr key={member.id} className="border-t border-slate-100">
@@ -1295,7 +1294,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                   </p>
                                   <div className="mt-1 flex items-center gap-2">
                                     {renderRolePill(getMemberRole(member))}
-                                    {isBusy ? (
+                                    {isOnLeave ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-800 rounded-full">
+                                        On Leave
+                                      </span>
+                                    ) : isBusy ? (
                                       (() => {
                                         const now = new Date();
                                         const coolingDate = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
@@ -1342,13 +1345,17 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                   <span className="text-[10px] sm:text-xs text-slate-400">
                                     {isLadderInactive
                                       ? "Inactive Ladder"
-                                      : isBusy
-                                        ? "Busy"
-                                        : currentMember?.is_busy
+                                      : isOnLeave
+                                        ? "On Leave"
+                                        : isBusy
                                           ? "Busy"
-                                          : targetRank >= currentUserRank
-                                            ? <Lock className="h-4 w-4 text-slate-300" />
-                                            : "Range"}
+                                          : isCurrentUserOnLeave
+                                            ? "On Leave"
+                                            : currentMember?.is_busy
+                                              ? "Busy"
+                                              : targetRank >= currentUserRank
+                                                ? <Lock className="h-4 w-4 text-slate-300" />
+                                                : "Range"}
                                   </span>
                                 )
                               )}

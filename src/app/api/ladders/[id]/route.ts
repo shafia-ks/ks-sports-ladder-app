@@ -107,8 +107,8 @@ export async function GET(
 
           if (userProfilesError) throw userProfilesError;
 
-          // Fetch active challenges and matches to determine 'busy' status
-          const [{ data: activeChallenges }, { data: activeMatches }] = await Promise.all([
+          // Fetch active challenges, matches, and leave status in parallel
+          const [{ data: activeChallenges }, { data: activeMatches }, { data: leaveTracking }] = await Promise.all([
             supabaseAdmin
               .from("challenges")
               .select("challenger_id, challenged_id")
@@ -118,7 +118,13 @@ export async function GET(
               .from("matches")
               .select("player1_id, player2_id")
               .eq("ladder_id", params.id)
-              .in("status", ["Pending", "Submitted"])
+              .in("status", ["Pending", "Submitted"]),
+            supabaseAdmin
+              .from("member_inactivity_tracking")
+              .select("user_id, on_leave, leave_type")
+              .eq("ladder_id", params.id)
+              .eq("on_leave", true)
+              .in("user_id", allUserIds),
           ]);
 
           const busyUserIds = new Set<string>();
@@ -131,18 +137,24 @@ export async function GET(
             busyUserIds.add(m.player2_id);
           });
 
+          const leaveMap = new Map(
+            (leaveTracking ?? []).map((t) => [t.user_id, t.leave_type as string])
+          );
+
           const userMap = new Map((userProfiles ?? []).map((u) => [u.id, u]));
           const now = new Date();
 
           membersWithUsers = members.map((member) => {
-            // Check cooling period
             const coolingUntil = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
             const isCooling = coolingUntil && coolingUntil > now;
+            const leaveType = leaveMap.get(member.user_id) ?? null;
 
             return {
               ...member,
               users: userMap.get(member.user_id) ?? null,
-              is_busy: busyUserIds.has(member.user_id) || isCooling
+              is_busy: busyUserIds.has(member.user_id) || isCooling,
+              on_leave: leaveType !== null,
+              leave_type: leaveType,
             };
           });
         }
