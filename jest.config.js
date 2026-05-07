@@ -8,6 +8,8 @@ const config = {
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@upstash/ratelimit$": "<rootDir>/src/__mocks__/@upstash/ratelimit.ts",
+    "^@upstash/redis$": "<rootDir>/src/__mocks__/@upstash/redis.ts",
   },
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/", "<rootDir>/e2e/"],
 };
