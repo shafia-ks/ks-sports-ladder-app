@@ -31,6 +31,9 @@ export function ScoreSubmitModal({
         { p1: "", p2: "" },
     ]);
 
+    const filledSets = sets.filter((s) => s.p1 !== "" && s.p2 !== "");
+    const hasTiedSet = filledSets.some((s) => s.p1 === s.p2);
+
     const updateSet = (index: number, player: "p1" | "p2", value: string) => {
         const newSets = [...sets];
         if (value === "") {
@@ -53,13 +56,12 @@ export function ScoreSubmitModal({
     };
 
     const calculateWinner = () => {
+        if (hasTiedSet) return null;
         let p1Wins = 0;
         let p2Wins = 0;
-        sets.forEach(s => {
-            const s1 = s.p1 === "" ? 0 : s.p1;
-            const s2 = s.p2 === "" ? 0 : s.p2;
-            if (s1 > s2) p1Wins++;
-            if (s2 > s1) p2Wins++;
+        filledSets.forEach((s) => {
+            if ((s.p1 as number) > (s.p2 as number)) p1Wins++;
+            if ((s.p2 as number) > (s.p1 as number)) p2Wins++;
         });
         if (p1Wins > p2Wins) return player1Id;
         if (p2Wins > p1Wins) return player2Id;
@@ -93,7 +95,11 @@ export function ScoreSubmitModal({
                         min="0"
                         value={set.p1}
                         onChange={(e) => updateSet(idx, "p1", e.target.value)}
-                        className="w-16 h-10 text-center border border-slate-300 rounded-md focus:ring-2 focus:ring-brand-500"
+                        className={`w-16 h-10 text-center border rounded-md focus:ring-2 focus:ring-brand-500 ${
+                            set.p1 !== "" && set.p2 !== "" && set.p1 === set.p2
+                                ? "border-red-400 bg-red-50"
+                                : "border-slate-300"
+                        }`}
                         placeholder="0"
                     />
                     <span className="text-slate-300">-</span>
@@ -102,7 +108,11 @@ export function ScoreSubmitModal({
                         min="0"
                         value={set.p2}
                         onChange={(e) => updateSet(idx, "p2", e.target.value)}
-                        className="w-16 h-10 text-center border border-slate-300 rounded-md focus:ring-2 focus:ring-brand-500"
+                        className={`w-16 h-10 text-center border rounded-md focus:ring-2 focus:ring-brand-500 ${
+                            set.p1 !== "" && set.p2 !== "" && set.p1 === set.p2
+                                ? "border-red-400 bg-red-50"
+                                : "border-slate-300"
+                        }`}
                         placeholder="0"
                     />
                 </div>
@@ -129,20 +139,27 @@ export function ScoreSubmitModal({
         </div>
     );
 
+    const messageWithTieWarning = (
+        <div>
+            {scoreContent}
+            {hasTiedSet && (
+                <p className="text-xs text-red-600 text-center mt-4">
+                    A set cannot end in a tie. Please correct the highlighted scores.
+                </p>
+            )}
+        </div>
+    );
+
     return (
         <ConfirmModal
             isOpen={isOpen}
             onClose={onClose}
             onConfirm={handleSubmit}
             title="Submit Match Score"
-            message={scoreContent}
+            message={messageWithTieWarning}
             confirmText={loading ? "Submitting..." : "Submit Score"}
             loading={loading}
-            // Disable confirm if no winner calculated
-            // ConfirmModal might not have 'disabled' prop exposed for external logic?
-            // Checking ConfirmModal props: disabled={loading} only.
-            // I should modify ConfirmModal to accept 'confirmDisabled' prop OR handle validation inside handleSubmit
-            confirmDisabled={!winnerId}
+            confirmDisabled={!winnerId || hasTiedSet || loading}
         />
     );
 }
