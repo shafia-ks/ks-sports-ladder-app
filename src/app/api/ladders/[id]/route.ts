@@ -118,7 +118,7 @@ export async function GET(
               .from("matches")
               .select("player1_id, player2_id")
               .eq("ladder_id", params.id)
-              .in("status", ["Pending", "Submitted"]),
+              .in("status", ["Pending", "ScoreSubmitted", "Disputed"]),
             supabaseAdmin
               .from("member_inactivity_tracking")
               .select("user_id, on_leave, leave_type, leave_started_at")

@@ -35,7 +35,7 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
             const data = await res.json();
             // Filter client-side for active matches
             const activeMatches = (data.matches || []).filter((m: Match) =>
-                m.status === 'Pending' || m.status === 'Submitted'
+                m.status === 'Pending' || m.status === 'ScoreSubmitted' || m.status === 'Disputed'
             );
             setMatches(activeMatches);
         } catch (error) {
@@ -46,7 +46,7 @@ export function MyActiveMatchesCard({ userId, ladderId }: Props) {
     };
 
     const toScore = matches.filter((m) => m.status === "Pending"); // Matches ready to play
-    const toConfirm = matches.filter((m) => m.status === "Submitted"); // Matches awaiting confirmation
+    const toConfirm = matches.filter((m) => m.status === "ScoreSubmitted"); // Matches awaiting confirmation
 
     if (loading) {
         return (
