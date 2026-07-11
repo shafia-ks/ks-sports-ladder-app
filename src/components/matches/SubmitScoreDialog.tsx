@@ -31,8 +31,17 @@ export function SubmitScoreDialog({ match, open, onOpenChange, onSuccess }: Subm
 
     // Initialize sets (default to 1 empty set or existing scores)
     const [sets, setSets] = useState<{ player1: number; player2: number }[]>(() => {
-        if (match?.set_scores && match.set_scores.length > 0) {
-            return match.set_scores.map(s => {
+        let scoresArray: any = match?.set_scores;
+        if (typeof scoresArray === "string") {
+            try {
+                scoresArray = JSON.parse(scoresArray);
+            } catch (e) {
+                scoresArray = null;
+            }
+        }
+        if (Array.isArray(scoresArray) && scoresArray.length > 0) {
+            return scoresArray.map(s => {
+                if (typeof s !== 'string') return { player1: 0, player2: 0 };
                 const [p1, p2] = s.split('-').map(Number);
                 return { player1: p1 || 0, player2: p2 || 0 };
             });
