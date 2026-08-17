@@ -16,7 +16,7 @@ const challengeInput = z.object({
   challengerBusy: z.boolean(),
   challengedBusy: z.boolean(),
   rules: z.object({
-    maxPositionsUp: z.number().int().positive(),
+    maxPositionsUp: z.number().int().positive().nullable().optional(),
     preventChallengingBusyPlayers: z.boolean(),
     maxActiveChallengesPerPlayer: z.number().int().positive(),
     expiryDays: z.number().int().positive(),
@@ -169,7 +169,7 @@ export async function POST(req: Request) {
     lockedCount = onLeave?.length ?? 0;
   }
 
-  const effectiveMaxPositionsUp = rules.maxPositionsUp + lockedCount;
+  const effectiveMaxPositionsUp = rules.maxPositionsUp ? (rules.maxPositionsUp + lockedCount) : undefined;
 
   const errors = validateChallenge({ ...parsed.data, effectiveMaxPositionsUp });
   if (errors.length) {

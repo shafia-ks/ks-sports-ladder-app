@@ -95,7 +95,7 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
         kFactor: ladder?.ranking_rules?.kFactor ?? 24,
         bonusWinStreak: ladder?.ranking_rules?.bonusWinStreak ?? 0,
         maxDrop: ladder?.ranking_rules?.maxDrop ?? 1,
-        maxPositionsUp: ladder?.challenge_rules?.max_positions_up ?? 3,
+        maxPositionsUp: ladder?.challenge_rules?.max_positions_up ?? "",
         expiryDays: ladder?.challenge_rules?.expiry_days ?? 7,
         cooldownHours: ladder?.challenge_rules?.cooldown_hours ?? 0,
       }));
@@ -119,7 +119,9 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
     const numericFields = ["kFactor", "bonusWinStreak", "maxDrop", "maxPositionsUp", "expiryDays", "cooldownHours"];
     setFormData((prev) => ({
       ...prev,
-      [name]: numericFields.includes(name) ? parseInt(value) : value,
+      [name]: name === "maxPositionsUp"
+        ? (value === "" ? null : parseInt(value, 10))
+        : numericFields.includes(name) ? (value === "" ? "" : parseInt(value, 10)) : value,
     }));
   };
 
@@ -429,18 +431,19 @@ export default function LadderSettingsPage({ params }: { params: { id: string } 
                   <div className="space-y-2">
                     <label htmlFor="maxPositionsUp" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                       Max Positions Up
-                      <HelpTooltip content="How many ranks above can players challenge? Example: 3 means rank #10 can challenge #7, #8, #9. Lower = more conservative." />
+                      <HelpTooltip content="How many ranks above can players challenge? Leave empty for unlimited. Example: 3 means rank #10 can challenge #7, #8, #9." />
                     </label>
                     <input
                       id="maxPositionsUp"
                       name="maxPositionsUp"
                       type="number"
                       min="1"
-                      max="10"
-                      value={formData.maxPositionsUp}
+                      placeholder="Unlimited"
+                      value={formData.maxPositionsUp ?? ""}
                       onChange={handleChange}
                       className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     />
+                    <p className="text-[11px] text-slate-500 mt-1">Leave empty for Unlimited challenge range</p>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="expiryDays" className="flex items-center gap-2 text-sm font-medium text-slate-700">

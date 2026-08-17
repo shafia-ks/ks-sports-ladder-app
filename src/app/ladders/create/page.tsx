@@ -56,9 +56,11 @@ export default function CreateLadderPage() {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "maxPositionsUp" || name === "expiryDays" || name === "cooldownHours" || name === "kFactor" ||
-          name === "maxDrop" || name === "bonusWinStreak"
-          ? parseInt(value)
+        name === "maxPositionsUp"
+          ? (value === "" ? null : parseInt(value, 10))
+          : name === "expiryDays" || name === "cooldownHours" || name === "kFactor" ||
+            name === "maxDrop" || name === "bonusWinStreak"
+          ? (value === "" ? "" : parseInt(value, 10))
           : value,
     }));
   };
@@ -328,18 +330,19 @@ export default function CreateLadderPage() {
                 <div className="space-y-2">
                   <label htmlFor="maxPositionsUp" className="flex items-center gap-2 text-sm font-medium text-slate-700">
                     Max Positions Up
-                    <HelpTooltip content="How many ranks above can players challenge? 3 is standard for most ladders." />
+                    <HelpTooltip content="How many ranks above can players challenge? Leave empty for unlimited." />
                   </label>
                   <input
                     id="maxPositionsUp"
                     name="maxPositionsUp"
                     type="number"
                     min="1"
-                    max="10"
-                    value={formData.maxPositionsUp}
+                    placeholder="Unlimited"
+                    value={formData.maxPositionsUp ?? ""}
                     onChange={handleChange}
                     className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
+                  <p className="text-[11px] text-slate-500 mt-1">Leave empty for Unlimited</p>
                 </div>
 
                 <div className="space-y-2">

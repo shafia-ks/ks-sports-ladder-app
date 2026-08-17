@@ -27,7 +27,7 @@ export function validateChallenge(ctx: ChallengeValidationContext): string[] {
     errors.push("You can only challenge players ranked above you.");
   } else if (positionsUp === 0) {
     errors.push("Challenge must involve two different players.");
-  } else if (positionsUp > rangeLimit) {
+  } else if (rangeLimit != null && rangeLimit > 0 && positionsUp > rangeLimit) {
     // Always show the rule-configured limit in the message, not the effective one
     errors.push(
       `You can only challenge up to ${ctx.rules.maxPositionsUp} positions above your current rank.`

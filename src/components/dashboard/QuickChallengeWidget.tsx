@@ -79,7 +79,7 @@ export function QuickChallengeWidget() {
                 challengerBusy: false,
                 challengedBusy: false,
                 rules: {
-                    maxPositionsUp: ladderDetails.challenge_rules?.max_positions_up || 3,
+                    maxPositionsUp: ladderDetails.challenge_rules?.max_positions_up ?? null,
                     preventChallengingBusyPlayers: true,
                     maxActiveChallengesPerPlayer: ladderDetails.challenge_rules?.max_active_challenges_per_player || 3,
                     expiryDays: ladderDetails.challenge_rules?.expiry_days || 7,

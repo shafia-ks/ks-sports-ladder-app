@@ -51,6 +51,11 @@ describe("validateChallenge — range", () => {
       "You can only challenge up to 5 positions above your current rank."
     );
   });
+
+  it("allows unlimited challenge range when maxPositionsUp is null or undefined", () => {
+    const ctx = { ...baseCtx, challengedRank: 1, rules: { ...baseRules, maxPositionsUp: null } };
+    expect(validateChallenge(ctx)).toEqual([]);
+  });
 });
 
 describe("validateChallenge — other rules", () => {
