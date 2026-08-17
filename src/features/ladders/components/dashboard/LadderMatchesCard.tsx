@@ -30,7 +30,7 @@ export function LadderMatchesCard({ ladderId }: Props) {
             const data = await res.json();
             // Show Pending (scheduled) and Submitted (awaiting confirmation) matches
             const activeMatches = (data.matches || []).filter((m: Match) =>
-                m.status === 'Pending' || m.status === 'Submitted'
+                m.status === 'Pending' || m.status === 'ScoreSubmitted' || m.status === 'Disputed'
             );
             setMatches(activeMatches.slice(0, 5)); // Limit to 5
         } catch (error) {
@@ -89,11 +89,11 @@ export function LadderMatchesCard({ ladderId }: Props) {
                                             <Clock className="h-3 w-3 inline mr-1" />
                                             {new Date(match.created_at).toLocaleDateString()}
                                         </p>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${match.status === "Submitted"
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${match.status === "ScoreSubmitted" || match.status === "Disputed"
                                                 ? "bg-amber-100 text-amber-700"
                                                 : "bg-blue-100 text-blue-700"
                                             }`}>
-                                            {match.status === "Submitted" ? "Confirming" : "Scheduled"}
+                                            {match.status === "ScoreSubmitted" ? "Confirming" : match.status === "Disputed" ? "Disputed" : "Scheduled"}
                                         </span>
                                     </div>
                                 </div>

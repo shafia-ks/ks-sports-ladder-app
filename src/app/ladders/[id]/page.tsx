@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -86,6 +86,8 @@ interface LadderMember {
   last_rank_change_at?: string;
   cooling_expires_at?: string | null;
   is_busy?: boolean;
+  on_leave?: boolean;
+  leave_type?: string | null;
   users?: {
     id: string;
     full_name: string | null;
@@ -329,7 +331,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
         rankingType: data.ladder?.ranking_rules?.type || "default-swap-minimal-drop",
         kFactor: typeof data.ladder?.ranking_rules?.kFactor === "number" ? data.ladder.ranking_rules.kFactor : 24,
         maxDrop: typeof data.ladder?.ranking_rules?.maxDrop === "number" ? data.ladder.ranking_rules.maxDrop : 1,
-        maxPositionsUp: typeof data.ladder?.challenge_rules?.max_positions_up === "number" ? data.ladder.challenge_rules.max_positions_up : 3,
+        maxPositionsUp: typeof data.ladder?.challenge_rules?.max_positions_up === "number" ? data.ladder.challenge_rules.max_positions_up : "",
         expiryDays: typeof data.ladder?.challenge_rules?.expiry_days === "number" ? data.ladder.challenge_rules.expiry_days : 7,
         cooldownHours: typeof data.ladder?.challenge_rules?.cooldown_hours === "number" ? data.ladder.challenge_rules.cooldown_hours : 0,
       }));
@@ -437,7 +439,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     const numericFields = ["kFactor", "maxDrop", "maxPositionsUp", "expiryDays", "cooldownHours"];
     setSettingsForms((prev) => ({
       ...prev,
-      [name]: numericFields.includes(name) ? parseInt(value) : value,
+      [name]: name === "maxPositionsUp"
+        ? (value === "" ? null : parseInt(value, 10))
+        : numericFields.includes(name) ? (value === "" ? "" : parseInt(value, 10)) : value,
     }));
   };
 
@@ -590,7 +594,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
     }
 
     const challengedMember = activeMembers.find((m) => m.user_id === challengedMemberId);
-    const maxPositionsUp = data.ladder.challenge_rules?.max_positions_up ?? 3;
+    const maxPositionsUp = data.ladder.challenge_rules?.max_positions_up;
 
     if (!challengedMember) {
       alert("Member not found");
@@ -612,9 +616,9 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
       return;
     }
 
-    // Check max positions up rule
+    // Check max positions up rule (if configured)
     const positionsUp = currentMember.current_rank - challengedMember.current_rank;
-    if (positionsUp > maxPositionsUp) {
+    if (maxPositionsUp && maxPositionsUp > 0 && positionsUp > maxPositionsUp) {
       alert(`You can only challenge up to ${maxPositionsUp} positions above your current rank`);
       return;
     }
@@ -1062,12 +1066,18 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       ladderId={params.id}
                       onChallengeAction={async (challengeId, action) => {
                         try {
-                          const endpoint = action === 'accept'
-                            ? `/api/ladders/${params.id}/challenges/${challengeId}/accept`
-                            : `/api/ladders/${params.id}/challenges/${challengeId}/decline`;
+                          const res = await fetch(`/api/challenges/${challengeId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              status: action === 'accept' ? 'Accepted' : 'Declined'
+                            })
+                          });
 
-                          const res = await fetch(endpoint, { method: 'POST' });
-                          if (!res.ok) throw new Error('Failed to process challenge');
+                          if (!res.ok) {
+                            const json = await res.json().catch(() => ({}));
+                            throw new Error(json.error || 'Failed to process challenge');
+                          }
 
                           toastPush({
                             title: action === 'accept' ? 'Challenge accepted!' : 'Challenge declined',
@@ -1109,7 +1119,7 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                       currentUserId={user?.id}
                       ladderId={params.id}
                       canChallenge={(targetRank) => {
-                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up ?? 3;
+                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up;
                         // Don't allow challenging if current user is busy
                         if (currentMember?.is_busy) {
                           return false;
@@ -1242,24 +1252,22 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         const isCurrentUser = member.user_id === user?.id;
                         const currentUserRank = currentMember?.current_rank || 0;
                         const targetRank = member.current_rank || 0;
-                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up || 3;
+                        const maxPositionsUp = data?.ladder?.challenge_rules?.max_positions_up;
+                        const isWithinRange = !maxPositionsUp || maxPositionsUp <= 0 || (currentUserRank - targetRank) <= maxPositionsUp;
 
-                        // Can only challenge if:
-                        // 1. Not yourself
-                        // 2. Target is ranked ABOVE you (lower rank number)
-                        // 3. Within maxPositionsUp limit
-                        // 4. Target is not busy (no active challenges)
-                        // 5. Current user is not busy
-                        // 6. Ladder is active (not inactive)
+                        const isOnLeave = member.on_leave === true;
+                        const isCurrentUserOnLeave = currentMember?.on_leave === true;
                         const isLadderInactive = data?.ladder?.status !== 'active';
                         const canChallenge = !isCurrentUser &&
                           currentUserRank > 0 &&
                           targetRank > 0 &&
                           targetRank < currentUserRank &&
-                          (currentUserRank - targetRank) <= maxPositionsUp &&
+                          isWithinRange &&
                           !isBusy &&
+                          !isOnLeave &&
                           !currentMember?.is_busy &&
-                          !isLadderInactive; // Block challenges if ladder is inactive
+                          !isCurrentUserOnLeave &&
+                          !isLadderInactive;
 
                         return (
                           <tr key={member.id} className="border-t border-slate-100">
@@ -1295,7 +1303,11 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                   </p>
                                   <div className="mt-1 flex items-center gap-2">
                                     {renderRolePill(getMemberRole(member))}
-                                    {isBusy ? (
+                                    {isOnLeave ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-800 rounded-full">
+                                        On Leave
+                                      </span>
+                                    ) : isBusy ? (
                                       (() => {
                                         const now = new Date();
                                         const coolingDate = member.cooling_expires_at ? new Date(member.cooling_expires_at) : null;
@@ -1342,13 +1354,17 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                                   <span className="text-[10px] sm:text-xs text-slate-400">
                                     {isLadderInactive
                                       ? "Inactive Ladder"
-                                      : isBusy
-                                        ? "Busy"
-                                        : currentMember?.is_busy
+                                      : isOnLeave
+                                        ? "On Leave"
+                                        : isBusy
                                           ? "Busy"
-                                          : targetRank >= currentUserRank
-                                            ? <Lock className="h-4 w-4 text-slate-300" />
-                                            : "Range"}
+                                          : isCurrentUserOnLeave
+                                            ? "On Leave"
+                                            : currentMember?.is_busy
+                                              ? "Busy"
+                                              : targetRank >= currentUserRank
+                                                ? <Lock className="h-4 w-4 text-slate-300" />
+                                                : "Range"}
                                   </span>
                                 )
                               )}
@@ -1557,12 +1573,14 @@ export default function LadderDetailPage({ params }: { params: { id: string } })
                         type="number"
                         id="maxPositionsUp"
                         name="maxPositionsUp"
-                        value={settingsForms.maxPositionsUp}
+                        placeholder="Unlimited"
+                        value={settingsForms.maxPositionsUp ?? ""}
                         onChange={handleSettingsChange}
-                        min="0"
+                        min="1"
                         disabled={!isEditingSettings}
                         className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
+                      <p className="text-[11px] text-slate-500 mt-1">Leave empty for Unlimited challenge range</p>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700" htmlFor="expiryDays">

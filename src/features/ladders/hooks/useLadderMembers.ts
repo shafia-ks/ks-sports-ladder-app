@@ -8,6 +8,8 @@ interface Member {
     previous_rank?: number | null;
     cooling_expires_at?: string | null;
     is_busy?: boolean;
+    on_leave?: boolean;
+    leave_type?: string | null;
     users?: any;
 }
 

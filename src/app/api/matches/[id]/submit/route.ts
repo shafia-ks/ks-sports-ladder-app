@@ -11,10 +11,19 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { set_scores, winner_id, played_at, location, user_id, status } = body;
+        let { set_scores, winner_id, played_at, location, user_id, status } = body;
         const newStatus = status || "ScoreSubmitted";
 
         console.log("[PATCH /api/matches/:id/submit] Updating match:", params.id, body);
+
+        // Parse set_scores if it was sent as a stringified JSON array
+        if (typeof set_scores === "string") {
+            try {
+                set_scores = JSON.parse(set_scores);
+            } catch (e) {
+                console.error("[PATCH /api/matches/:id/submit] Failed to parse set_scores string:", e);
+            }
+        }
 
         // Validate user_id is provided
         if (!user_id) {

@@ -44,7 +44,7 @@ export interface Sport {
 }
 
 export interface ChallengeRules {
-  maxPositionsUp: number;
+  maxPositionsUp?: number | null;
   preventChallengingBusyPlayers: boolean;
   maxActiveChallengesPerPlayer: number;
   expiryDays: number;

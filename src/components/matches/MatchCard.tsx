@@ -58,19 +58,30 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
     }
 
     // Score state
-    const [sets, setSets] = useState<Array<{ player1: number | ""; player2: number | "" }>>(
-        (Array.isArray(match.set_scores) ? match.set_scores.map((score) => {
-            if (typeof score !== 'string') return { player1: "", player2: "" };
-            const parts = score.split("-");
-            if (parts.length !== 2) return { player1: "", player2: "" };
-            const [p1, p2] = parts.map(Number);
-            return { player1: p1, player2: p2 };
-        }) : []) || [
+    const [sets, setSets] = useState<Array<{ player1: number | ""; player2: number | "" }>>(() => {
+        let scoresArray: any = match.set_scores;
+        if (typeof scoresArray === "string") {
+            try {
+                scoresArray = JSON.parse(scoresArray);
+            } catch (e) {
+                scoresArray = null;
+            }
+        }
+        if (Array.isArray(scoresArray) && scoresArray.length > 0) {
+            return scoresArray.map((score) => {
+                if (typeof score !== 'string') return { player1: "", player2: "" };
+                const parts = score.split("-");
+                if (parts.length !== 2) return { player1: "", player2: "" };
+                const [p1, p2] = parts.map(Number);
+                return { player1: p1, player2: p2 };
+            });
+        }
+        return [
             { player1: "", player2: "" },
             { player1: "", player2: "" },
             { player1: "", player2: "" },
-        ]
-    );
+        ];
+    });
 
     // Match details state
     const [matchDate, setMatchDate] = useState(match.played_at?.split("T")[0] || "");
@@ -517,7 +528,17 @@ export function MatchCard({ match, currentUserId, isOrganizer, onUpdate }: Match
             {/* Score Display (Completed, Submitted, or Disputed matches) */}
             {(effectiveStatus === "Confirmed" || effectiveStatus === "ScoreSubmitted" || effectiveStatus === "Disputed") && !isExpanded && match.set_scores && (
                 <div className="flex items-center gap-2 mt-3">
-                    {match.set_scores.map((score, idx) => (
+                    {(() => {
+                        let scoresArray: any = match.set_scores;
+                        if (typeof scoresArray === "string") {
+                            try {
+                                scoresArray = JSON.parse(scoresArray);
+                            } catch (e) {
+                                scoresArray = null;
+                            }
+                        }
+                        return Array.isArray(scoresArray) ? scoresArray : [];
+                    })().map((score: string, idx: number) => (
                         <span key={idx} className="px-2 sm:px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] sm:text-sm font-medium">
                             {score}
                         </span>

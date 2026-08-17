@@ -23,7 +23,7 @@ export interface Ladder {
     created_at: string;
     profile_picture_url?: string;
     challenge_rules?: {
-        maxPositionsUp: number;
+        maxPositionsUp?: number | null;
         preventChallengingBusyPlayers: boolean;
         maxActiveChallengesPerPlayer: number;
         expiryDays: number;
